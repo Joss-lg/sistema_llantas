@@ -12,14 +12,17 @@ use Illuminate\Support\Facades\DB;
 
 class PuntoVentaController extends Controller
 {
-    public function index()
-    {
-        $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-        $esAdmin = ($empleado && $empleado->rol === 'admin') || Auth::id() === 1;
-        $sucursalDefecto = $empleado ? $empleado->sucursal_id : 1;
+   public function index()
+{
+    $empleado = DB::table('users')->where('id', Auth::id())->first();
 
-        $sucursales = DB::table('sucursales')->where('activa', 1)->get();
+    // Usamos '??' para evitar el error si la propiedad 'rol' no existe en $empleado
+    $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
 
+    // Lo mismo para 'sucursal_id', con valor por defecto 1 si no existe la columna
+    $sucursalDefecto = $empleado->sucursal_id ?? 1;
+
+    $sucursales = DB::table('sucursales')->where('activa', 1)->get();
         $productos = Producto::where('estado', true)->get()->map(function ($producto) {
             $producto->stocks = StockSucursal::where('producto_id', $producto->id)
                 ->pluck('cantidad', 'sucursal_id')

@@ -14,6 +14,11 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Tabla asociada al modelo.
+     */
+    protected $table = 'users';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

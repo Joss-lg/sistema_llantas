@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,11 +16,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Llamar primero a los seeders de tablas independientes o maestras (como sucursales)
+        $this->call([
+            SucursalesSeeder::class,
+            ProductoSeeder::class, 
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 2. Crear el usuario administrador principal para acceder al sistema
+        User::create([
+            'name'     => 'Administrador Chalco',
+            'email'    => 'admin@llantas.com',
+            'password' => Hash::make('12345678'), // Contraseña por defecto
         ]);
     }
 }
