@@ -39,3 +39,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/clientes', function() { return view('clientes.index'); })->name('clientes.index');
     Route::get('/reportes', function() { return view('reportes.index'); })->name('reportes.index');
 });
+Auth::routes();
+
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
