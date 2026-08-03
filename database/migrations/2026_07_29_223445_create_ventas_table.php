@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('folio', 20)->unique();
             $table->foreignId('sucursal_id')->constrained('sucursales');
-            $table->foreignId('usuario_id')->constrained('usuarios');
+            $table->foreignId('usuario_id')->constrained('users');
             $table->foreignId('cliente_id')->nullable()->constrained('clientes');
             $table->string('nombre_cliente_temporal', 150)->nullable();
             $table->enum('tipo_precio', ['menudeo', 'mayoreo'])->default('menudeo');
