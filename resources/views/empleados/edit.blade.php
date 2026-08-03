@@ -149,25 +149,24 @@
     min-height: 100%;
     transition: background-color .35s ease, color .35s ease;
 }
-@media (prefers-color-scheme: dark) {
-    .tv-scope {
-        --tv-bg:        #0A0B0D;
-        --tv-surface:   #131519;
-        --tv-surface-2: #17191E;
-        --tv-border:    rgba(255,255,255,.08);
-        --tv-text:      #F3F3F2;
-        --tv-muted:     #8A8E96;
-        --tv-red:       #EA2E3C;
-        --tv-red-dark:  #B0121C;
-        --tv-green-bg:  rgba(52,211,153,.12);
-        --tv-green-fg:  #45D68A;
-        --tv-red-bg:    rgba(234,46,60,.12);
-        --tv-red-fg:    #F0616C;
-        --tv-blue-bg:   rgba(99,140,255,.12);
-        --tv-blue-fg:   #7C9CFF;
-        --tv-shadow:    0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
-        color-scheme: dark;
-    }
+html.dark .tv-scope,
+.dark .tv-scope {
+    --tv-bg:        #0A0B0D;
+    --tv-surface:   #131519;
+    --tv-surface-2: #17191E;
+    --tv-border:    rgba(255,255,255,.08);
+    --tv-text:      #F3F3F2;
+    --tv-muted:     #8A8E96;
+    --tv-red:       #EA2E3C;
+    --tv-red-dark:  #B0121C;
+    --tv-green-bg:  rgba(52,211,153,.12);
+    --tv-green-fg:  #45D68A;
+    --tv-red-bg:    rgba(234,46,60,.12);
+    --tv-red-fg:    #F0616C;
+    --tv-blue-bg:   rgba(99,140,255,.12);
+    --tv-blue-fg:   #7C9CFF;
+    --tv-shadow:    0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
+    color-scheme: dark;
 }
 
 .tv-title { font-family: 'Space Grotesk', ui-sans-serif, sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }

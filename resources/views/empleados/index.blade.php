@@ -12,9 +12,9 @@
      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
      <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  2. El modo oscuro/claro se aplica automáticamente según la preferencia
-     del sistema operativo del visitante (prefers-color-scheme). No hay
-     botón ni JS de por medio.
+  2. El modo oscuro se activa solo si tu layout agrega la clase `dark`
+     al elemento <html> (el estándar de Tailwind). Por defecto se ve en
+     modo claro, igual que el resto de tu panel. No hay botón ni JS.
   ─────────────────────────────────────────────────────────────
 --}}
 
@@ -159,26 +159,25 @@
     --tv-shadow:    0 1px 2px rgba(20,20,20,.04), 0 8px 24px -8px rgba(20,20,20,.10);
     color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-    .tv-scope {
-        --tv-bg:        #0A0B0D;
-        --tv-surface:   #131519;
-        --tv-surface-2: #17191E;
-        --tv-border:    rgba(255,255,255,.08);
-        --tv-text:      #F3F3F2;
-        --tv-muted:     #8A8E96;
-        --tv-red:       #EA2E3C;
-        --tv-red-dark:  #B0121C;
-        --tv-amber:     #E8A23A;
-        --tv-green-bg:  rgba(52,211,153,.12);
-        --tv-green-fg:  #45D68A;
-        --tv-red-bg:    rgba(234,46,60,.12);
-        --tv-red-fg:    #F0616C;
-        --tv-blue-bg:   rgba(99,140,255,.12);
-        --tv-blue-fg:   #7C9CFF;
-        --tv-shadow:    0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
-        color-scheme: dark;
-    }
+html.dark .tv-scope,
+.dark .tv-scope {
+    --tv-bg:        #0A0B0D;
+    --tv-surface:   #131519;
+    --tv-surface-2: #17191E;
+    --tv-border:    rgba(255,255,255,.08);
+    --tv-text:      #F3F3F2;
+    --tv-muted:     #8A8E96;
+    --tv-red:       #EA2E3C;
+    --tv-red-dark:  #B0121C;
+    --tv-amber:     #E8A23A;
+    --tv-green-bg:  rgba(52,211,153,.12);
+    --tv-green-fg:  #45D68A;
+    --tv-red-bg:    rgba(234,46,60,.12);
+    --tv-red-fg:    #F0616C;
+    --tv-blue-bg:   rgba(99,140,255,.12);
+    --tv-blue-fg:   #7C9CFF;
+    --tv-shadow:    0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
+    color-scheme: dark;
 }
 
 .tv-scope {
