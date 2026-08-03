@@ -105,6 +105,14 @@
                             <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Dashboard</span>
                         </a>
 
+                        <a href="{{ route('empleados.index') }}"
+                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                            {{ request()->routeIs('empleados.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                            :class="sidebarOpen ? '' : 'justify-center px-0'">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Empleados</span>
+                        </a>
+
                         <a href="{{ route('ventas.index') }}"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                            {{ request()->routeIs('ventas.index') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
@@ -189,5 +197,27 @@
             </main>
         </div>
     </div>
+<!-- Detección de retroceso en el historial para destruir sesión -->
+    <script>
+        (function() {
+            // Se inserta un estado extra en el historial al cargar la vista
+            history.pushState(null, null, location.href);
+
+            window.addEventListener('popstate', function (event) {
+                // Al presionar la flecha 'Atrás', enviamos una petición para matar la sesión
+                fetch("{{ route('logout.back') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }).finally(function() {
+                    // Sin importar la respuesta, redirigimos inmediatamente al login
+                    window.location.href = "{{ route('login') }}";
+                });
+            });
+        })();
+    </script>
 </body>
 </html>

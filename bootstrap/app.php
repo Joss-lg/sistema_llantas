@@ -11,7 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Registro de middleware global para el grupo 'web' (evitar caché de historial)
+        $middleware->web(append: [
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
+
+        // Registro del alias para el Middleware de Permisos
+        $middleware->alias([
+            'permiso' => \App\Http\Middleware\CheckPermiso::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

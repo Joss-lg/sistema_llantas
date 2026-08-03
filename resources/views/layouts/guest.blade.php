@@ -15,4 +15,13 @@
 <body class="h-full font-sans antialiased text-gray-100 bg-[#0a0a0a]">
     @yield('content')
 </body>
+
+<!-- Colocar antes del </body> en guest.blade.php -->
+<script>
+    // Reemplaza el historial para que no pueda ir 'Atrás' desde el Login
+    history.pushState(null, null, location.href);
+    window.onpopstate = function () {
+        history.go(1);
+    };
+</script>
 </html>
