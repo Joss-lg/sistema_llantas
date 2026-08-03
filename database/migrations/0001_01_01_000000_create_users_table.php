@@ -17,6 +17,14 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // Relación con la sucursal (Nullable por si creas un admin global sin sucursal fija, o apuntará a "Administración General")
+            $table->foreignId('sucursal_id')
+                  ->nullable()
+                  ->constrained('sucursales')
+                  ->onDelete('set null');
+
+            $table->boolean('activo')->default(true); // Útil para activar/desactivar empleados
             $table->rememberToken();
             $table->timestamps();
         });
