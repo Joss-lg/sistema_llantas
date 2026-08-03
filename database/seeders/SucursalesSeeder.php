@@ -3,18 +3,29 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use App\Models\Sucursal; // <-- Importación corregida en singular
+use App\Models\User;
 
 class SucursalesSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        DB::table('sucursales')->insert([
-            ['id' => 1, 'nombre' => 'Administración General', 'activa' => true],
-            ['id' => 2, 'nombre' => 'Chalco', 'activa' => true],
-            ['id' => 3, 'nombre' => 'Atlanta', 'activa' => true],
-            ['id' => 4, 'nombre' => 'Las Torres', 'activa' => true],
-            ['id' => 5, 'nombre' => 'Valle de Chalco', 'activa' => true],
-        ]);
+        // 1. Crear las 5 sucursales base
+        $adminSucursal = Sucursal::create(['nombre' => 'Administración General', 'activa' => true]);
+        Sucursal::create(['nombre' => 'Chalco', 'activa' => true]);
+        Sucursal::create(['nombre' => 'Atlanta', 'activa' => true]);
+        Sucursal::create(['nombre' => 'Las Torres', 'activa' => true]);
+        Sucursal::create(['nombre' => 'Valle de Chalco', 'activa' => true]);
+
+        // 2. Crear el Usuario Administrador General
+        User::firstOrCreate(
+            ['email' => 'admin@llantas.com'],
+            [
+                'name'        => 'Administrador General',
+                'password'    => '12345678',
+                'sucursal_id' => $adminSucursal->id,
+                'activo'      => true,
+            ]
+        );
     }
 }
