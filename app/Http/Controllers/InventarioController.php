@@ -17,9 +17,9 @@ class InventarioController extends Controller
 {
     public function index(Request $request)
     {
-        $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-        $esAdmin = ($empleado && $empleado->rol === 'admin') || Auth::id() === 1;
-        $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+        $usuario = Auth::user();
+        $esAdmin = $usuario->id === 1 || $usuario->tieneRol('Administrador General');
+        $sucursalUsuario = $usuario->sucursal_id ?? 1;
         $sucursalFiltro = $esAdmin ? $request->input('sucursal_id') : $sucursalUsuario;
 
         // IDs de productos que tuvieron una ENTRADA HOY (para la etiqueta "NUEVO" y el filtro)
@@ -115,8 +115,8 @@ class InventarioController extends Controller
         $request->validate(['archivo_excel' => 'required|mimes:xlsx,xls,csv,txt|max:10240']);
 
         try {
-            $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-            $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+            $usuario = Auth::user();
+            $sucursalUsuario = $usuario->sucursal_id ?? 1;
             $sucursal_destino = $request->input('sucursal_id', $sucursalUsuario);
 
             $path = $request->file('archivo_excel')->path();
@@ -205,8 +205,8 @@ class InventarioController extends Controller
         try {
             DB::beginTransaction();
 
-            $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-            $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+            $usuario = Auth::user();
+            $sucursalUsuario = $usuario->sucursal_id ?? 1;
             $sucursal_destino = $request->input('sucursal_id', $sucursalUsuario);
 
             $producto = Producto::findOrFail($request->producto_id);
@@ -248,8 +248,8 @@ class InventarioController extends Controller
         try {
             DB::beginTransaction();
 
-            $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-            $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+            $usuario = Auth::user();
+            $sucursalUsuario = $usuario->sucursal_id ?? 1;
             $sucursal_destino = $request->input('sucursal_id', $sucursalUsuario);
 
             $stock = StockSucursal::where('producto_id', $request->producto_id)
@@ -285,9 +285,9 @@ class InventarioController extends Controller
 
     public function historial(Request $request)
     {
-        $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-        $esAdmin = ($empleado && $empleado->rol === 'admin') || Auth::id() === 1;
-        $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+        $usuario = Auth::user();
+        $esAdmin = $usuario->id === 1 || $usuario->tieneRol('Administrador General');
+        $sucursalUsuario = $usuario->sucursal_id ?? 1;
 
         $query = MovimientoInventario::with(['producto', 'sucursal']);
 
@@ -337,9 +337,9 @@ class InventarioController extends Controller
 
     private function construirQueryExport(Request $request)
     {
-        $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-        $esAdmin = ($empleado && $empleado->rol === 'admin') || Auth::id() === 1;
-        $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+        $usuario = Auth::user();
+        $esAdmin = $usuario->id === 1 || $usuario->tieneRol('Administrador General');
+        $sucursalUsuario = $usuario->sucursal_id ?? 1;
         $sucursalFiltro = $esAdmin ? $request->input('sucursal_id') : $sucursalUsuario;
 
         $query = Producto::query();
@@ -389,5 +389,106 @@ class InventarioController extends Controller
         $pdf->setPaper('a4', 'portrait');
         $nombre = 'inventario_' . now()->format('Y-m-d_His') . '.pdf';
         return $pdf->download($nombre);
+    }
+
+    public function traspasarStock(Request $request)
+    {
+        $request->validate([
+            'producto_id'      => 'required|exists:productos,id',
+            'sucursal_origen'  => 'required|exists:sucursales,id',
+            'sucursal_destino' => 'required|exists:sucursales,id|different:sucursal_origen',
+            'cantidad'         => 'required|integer|min:1',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $producto = Producto::findOrFail($request->producto_id);
+            $cantidadATraspasar = $request->cantidad;
+
+            // 1. Buscar y descontar de la sucursal origen
+            $stockOrigen = StockSucursal::where('producto_id', $producto->id)
+                ->where('sucursal_id', $request->sucursal_origen)
+                ->first();
+
+            if (!$stockOrigen || $stockOrigen->cantidad < $cantidadATraspasar) {
+                DB::rollBack();
+                $disponible = $stockOrigen ? $stockOrigen->cantidad : 0;
+                return redirect()->back()->with('error', "Stock insuficiente en origen. Disponible: {$disponible} pzas.");
+            }
+
+            $stockOrigen->decrement('cantidad', $cantidadATraspasar);
+
+            // Registrar movimiento de SALIDA en sucursal origen
+            MovimientoInventario::create([
+                'producto_id'   => $producto->id,
+                'sucursal_id'   => $request->sucursal_origen,
+                'usuario_id'    => Auth::id(),
+                'tipo'          => 'salida',
+                'cantidad'      => $cantidadATraspasar,
+                'motivo'        => 'traspaso',
+                'observaciones' => 'Traspaso enviado a sucursal ID: ' . $request->sucursal_destino,
+                'fecha'         => now(),
+            ]);
+
+            // 2. Sumar a la sucursal destino (o crear el registro si no existe)
+            $stockDestino = StockSucursal::firstOrCreate(
+                ['producto_id' => $producto->id, 'sucursal_id' => $request->sucursal_destino],
+                ['cantidad' => 0, 'stock_minimo' => 5]
+            );
+
+            $stockDestino->increment('cantidad', $cantidadATraspasar);
+
+            // Registrar movimiento de ENTRADA en sucursal destino
+            MovimientoInventario::create([
+                'producto_id'    => $producto->id,
+                'sucursal_id'    => $request->sucursal_destino,
+                'usuario_id'     => Auth::id(),
+                'tipo'           => 'entrada',
+                'cantidad'       => $cantidadATraspasar,
+                'motivo'         => 'traspaso',
+                'costo_unitario' => $producto->costo,
+                'observaciones'  => 'Traspaso recibido de sucursal ID: ' . $request->sucursal_origen,
+                'fecha'          => now(),
+            ]);
+
+            DB::commit();
+            return redirect()->back()->with('success', 'Traspaso de llantas realizado con éxito.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error al realizar el traspaso: ' . $e->getMessage());
+        }
+    }
+
+    public function disponibilidad(Producto $producto, Request $request)
+    {
+        $usuario = Auth::user();
+        $esAdmin = $usuario->id === 1 || $usuario->tieneRol('Administrador General');
+        $sucursalUsuario = $usuario->sucursal_id ?? 1;
+
+        // El admin puede estar viendo el filtro "Todas" o una sucursal específica.
+        // El empleado normal siempre consulta desde la suya.
+        $sucursalActual = $esAdmin
+            ? $request->input('sucursal_id', $sucursalUsuario)
+            : $sucursalUsuario;
+
+        $otrasSucursales = StockSucursal::with('sucursal')
+            ->where('producto_id', $producto->id)
+            ->where('sucursal_id', '!=', $sucursalActual)
+            ->where('cantidad', '>', 0)
+            ->orderByDesc('cantidad')
+            ->get()
+            ->map(fn ($stock) => [
+                'sucursal_id' => $stock->sucursal_id,
+                'sucursal'    => $stock->sucursal->nombre,
+                'cantidad'    => $stock->cantidad,
+            ]);
+
+        return response()->json([
+            'producto'            => trim($producto->marca . ' ' . $producto->medida),
+            'sucursal_actual_id'  => $sucursalActual,
+            'disponible_en_otras' => $otrasSucursales,
+        ]);
     }
 }

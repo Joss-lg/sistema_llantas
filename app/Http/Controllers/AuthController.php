@@ -20,17 +20,37 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        // 2. Mapear 'usuario' a 'email' para que Auth::attempt busque en la columna correcta
+        // 2. Mapear 'usuario' a 'email'
         $credentials = [
             'email'    => $request->usuario,
             'password' => $request->password,
         ];
 
-        // 3. Intentar autenticar con las credenciales adaptadas
+        // 3. Intentar autenticar
         if (Auth::attempt($credentials)) {
+
+            $user = Auth::user();
+
+            // Validar que el usuario esté activo
+            if (! $user->activo) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'usuario' => 'Tu cuenta se encuentra inactiva. Contacta al Administrador.',
+                ]);
+            }
+
             $request->session()->regenerate();
 
-            return redirect()->intended('ventas'); 
+            // 4. Redirección según el Rol del usuario
+            return match ($user->role->nombre ?? '') {
+                'Administrador General', 'Gerente de Sucursal' => redirect()->intended(route('dashboard')),
+                'Vendedor'                                     => redirect()->intended(route('inventario.index')),
+                'Cajero'                                       => redirect()->intended(route('ventas.index')),
+                default                                        => redirect()->intended(route('ventas.index')),
+            };
         }
 
         return back()->withErrors([

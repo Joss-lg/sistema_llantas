@@ -97,21 +97,21 @@
                     </div>
 
                     <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto overflow-x-hidden">
+
+                        {{-- ============ GENERAL ============ --}}
                         <a href="{{ route('dashboard') }}"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                            {{ request()->routeIs('dashboard') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
                            :class="sidebarOpen ? '' : 'justify-center px-0'">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Dashboard</span>
+                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Panel</span>
                         </a>
 
-                        <a href="{{ route('empleados.index') }}"
-                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                            {{ request()->routeIs('empleados.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
-                            :class="sidebarOpen ? '' : 'justify-center px-0'">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Empleados</span>
-                        </a>
+                        {{-- ============ VENTAS ============ --}}
+                        <div class="pt-5 pb-1 px-3" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">Ventas</span>
+                        </div>
+                        <div class="my-3 border-t border-gray-100 dark:border-white/5" x-show="!sidebarOpen"></div>
 
                         <a href="{{ route('ventas.index') }}"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
@@ -129,14 +129,6 @@
                             <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Historial de Ventas</span>
                         </a>
 
-                        <a href="{{ route('inventario.index') }}"
-                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                           {{ request()->routeIs('inventario.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
-                           :class="sidebarOpen ? '' : 'justify-center px-0'">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Inventario</span>
-                        </a>
-
                         <a href="{{ route('clientes.index') }}"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                            {{ request()->routeIs('clientes.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
@@ -145,13 +137,42 @@
                             <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Clientes</span>
                         </a>
 
+                        {{-- ============ INVENTARIO ============ --}}
+                        <div class="pt-5 pb-1 px-3" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">Inventario</span>
+                        </div>
+                        <div class="my-3 border-t border-gray-100 dark:border-white/5" x-show="!sidebarOpen"></div>
+
+                        <a href="{{ route('inventario.index') }}"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                           {{ request()->routeIs('inventario.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                           :class="sidebarOpen ? '' : 'justify-center px-0'">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Inventario</span>
+                        </a>
+
+                        {{-- ============ ADMINISTRACIÓN ============ --}}
+                        <div class="pt-5 pb-1 px-3" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                            <span class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600">Administración</span>
+                        </div>
+                        <div class="my-3 border-t border-gray-100 dark:border-white/5" x-show="!sidebarOpen"></div>
+
+                        <a href="{{ route('empleados.index') }}"
+                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                           {{ request()->routeIs('empleados.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                           :class="sidebarOpen ? '' : 'justify-center px-0'">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Empleados</span>
+                        </a>
+
                         <a href="{{ route('reportes.index') }}"
                            class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                            {{ request()->routeIs('reportes.*') ? 'bg-gradient-to-r from-[#D32030]/10 to-transparent text-[#D32030] font-semibold shadow-[inset_3px_0_0_0_#D32030]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
                            :class="sidebarOpen ? '' : 'justify-center px-0'">
                             <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Reportes</span>
+                            <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Informes</span>
                         </a>
+
                     </nav>
 
                     <div class="p-4 border-t border-gray-100 dark:border-white/5">

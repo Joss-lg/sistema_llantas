@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('nombre', 100);
             $table->boolean('activa')->default(true);
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps(); 
         });
     }
 

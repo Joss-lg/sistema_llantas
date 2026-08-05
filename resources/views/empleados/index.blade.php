@@ -22,19 +22,30 @@
 
     <div class="container mx-auto px-4 py-6 tv-fade-in">
 
-        {{-- Header --}}
+        {{-- Header con Botones de Acción --}}
         <div class="tv-header flex justify-between items-center mb-8 tv-slide-down">
             <div>
                 <h1 class="tv-title">Gestión de Empleados</h1>
                 <p class="tv-subtitle">Administra el personal, sus sucursales y permisos de acceso.</p>
             </div>
-            <a href="{{ route('empleados.create') }}" class="tv-btn-primary">
-                <span class="tv-btn-sweep"></span>
-                <svg class="w-5 h-5 tv-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                <span>Nuevo Empleado</span>
-            </a>
+            <div class="flex items-center gap-3">
+                {{-- Botón para ir a la vista de Roles --}}
+                <a href="{{ route('roles.index') }}" class="tv-btn-secondary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                    <span>Gestión de Roles</span>
+                </a>
+
+                {{-- Botón Nuevo Empleado --}}
+                <a href="{{ route('empleados.create') }}" class="tv-btn-primary">
+                    <span class="tv-btn-sweep"></span>
+                    <svg class="w-5 h-5 tv-btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <span>Nuevo Empleado</span>
+                </a>
+            </div>
         </div>
 
         {{-- Alertas --}}
@@ -91,7 +102,7 @@
                             </td>
                             <td class="tv-td">
                                 <span class="tv-badge tv-badge-blue">
-                                    {{ $empleado->rol ? $empleado->rol->nombre : 'Sin rol' }}
+                                    {{ $empleado->role ? $empleado->role->nombre : ($empleado->rol ? $empleado->rol->nombre : 'Sin rol') }}
                                 </span>
                             </td>
                             <td class="tv-td">
@@ -201,7 +212,7 @@ html.dark .tv-scope,
 .tv-name { font-weight: 700; color: var(--tv-text); }
 .tv-email { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: .7rem; color: var(--tv-muted); }
 
-/* ── Botón primario con "barrido" tipo reflejo de llanta ── */
+/* ── Botón primario ── */
 .tv-btn-primary {
     position: relative;
     overflow: hidden;
@@ -231,6 +242,24 @@ html.dark .tv-scope,
 }
 .tv-btn-primary:hover .tv-btn-sweep { left: 130%; }
 
+/* ── Botón secundario (Roles) ── */
+.tv-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem 1.1rem;
+    border-radius: .7rem;
+    font-weight: 600;
+    font-size: .875rem;
+    color: var(--tv-text);
+    background: var(--tv-surface);
+    border: 1px solid var(--tv-border);
+    box-shadow: var(--tv-shadow);
+    transition: transform .25s ease, background-color .25s ease, border-color .25s ease;
+}
+.tv-btn-secondary:hover { transform: translateY(-2px); background: var(--tv-surface-2); border-color: var(--tv-muted); }
+.tv-btn-secondary:active { transform: translateY(0) scale(.97); }
+
 /* ── Alertas ── */
 .tv-alert {
     display: flex; align-items: center; gap: .75rem;
@@ -242,7 +271,7 @@ html.dark .tv-scope,
 .tv-alert-success { background: var(--tv-green-bg); color: var(--tv-green-fg); border-color: var(--tv-green-fg); }
 .tv-alert-error   { background: var(--tv-red-bg); color: var(--tv-red-fg); border-color: var(--tv-red-fg); }
 
-/* ── Card + textura de "banda de rodadura" ── */
+/* ── Card + textura ── */
 .tv-card {
     position: relative;
     background: var(--tv-surface);

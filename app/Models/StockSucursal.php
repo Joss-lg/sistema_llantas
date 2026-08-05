@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 class StockSucursal extends Model
 {
     protected $table = 'stock_sucursal';
-    public $timestamps = false; 
 
     protected $fillable = [
         'producto_id',

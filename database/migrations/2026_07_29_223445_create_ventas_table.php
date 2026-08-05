@@ -12,13 +12,21 @@ return new class extends Migration
             $table->id();
             $table->string('folio', 20)->unique();
             $table->foreignId('sucursal_id')->constrained('sucursales');
-            $table->foreignId('usuario_id')->constrained('users');
+            $table->foreignId('user_id')->constrained('users'); // Corregido al estándar de Laravel
             $table->foreignId('cliente_id')->nullable()->constrained('clientes');
             $table->string('nombre_cliente_temporal', 150)->nullable();
             $table->enum('tipo_precio', ['menudeo', 'mayoreo'])->default('menudeo');
-            $table->boolean('requiere_factura')->default(false);
+            
+            // Totales y Pagos
             $table->decimal('total', 12, 2);
+            $table->decimal('pago_con', 12, 2)->nullable();
+            $table->decimal('cambio', 12, 2)->nullable();
+            
+            $table->boolean('requiere_factura')->default(false);
             $table->dateTime('fecha')->useCurrent();
+            
+            // Agrega created_at y updated_at que requiere el método save() de Eloquent
+            $table->timestamps(); 
         });
     }
 

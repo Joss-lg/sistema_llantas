@@ -40,45 +40,48 @@ class User extends Authenticatable
        RELACIONES
        ===================================================================== */
 
-    /**
-     * Relación con la Sucursal
-     */
     public function sucursal()
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
 
-    /**
-     * Relación con el Rol (Usamos 'role' o 'rol' según como lo invoques)
-     */
     public function role()
     {
         return $this->belongsTo(Role::class, 'rol_id');
     }
 
-    /**
-     * Relación directa de Permisos (vía tabla pivote permiso_user)
-     */
     public function permisos()
     {
         return $this->belongsToMany(Permiso::class, 'permiso_user', 'user_id', 'permiso_id');
     }
 
     /* =====================================================================
-       MÉTODOS DE ACCESO / PERMISOS
+       MÉTODOS DE ACCESO, ROLES Y PERMISOS
        ===================================================================== */
 
     /**
-     * Método requerido por CheckPermiso Middleware
+     * Evalúa si el usuario tiene un rol específico por nombre (o lista de nombres).
      */
-    public function tienePermiso($nombreRuta)
+    public function tieneRol(...$roles): bool
     {
-        // 1. Acceso libre si es el Administrador principal (ID 1) o tiene rol de Administrador
-        if ((int)$this->id === 1 || ($this->role && $this->role->nombre === 'Administrador')) {
+        if (! $this->role) {
+            return false;
+        }
+
+        return in_array($this->role->nombre, $roles);
+    }
+
+    /**
+     * Evalúa permisos específicos por nombre de ruta para el Middleware CheckPermiso
+     */
+    public function tienePermiso($nombreRuta): bool
+    {
+        // 1. Acceso total para Administrador General o ID 1
+        if ((int)$this->id === 1 || ($this->role && $this->role->nombre === 'Administrador General')) {
             return true;
         }
 
-        // 2. Consulta de permisos específicos en la tabla pivote
+        // 2. Consulta de permisos específicos asignados
         return $this->permisos()->where('ruta', $nombreRuta)->exists();
     }
 }

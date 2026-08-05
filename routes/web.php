@@ -2,10 +2,17 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PuntoVentaController;
 use App\Http\Controllers\EmpleadoController;
+use App\Http\Controllers\RoleController; // Dejamos solo RoleController (en inglés)
+
+// Controllers de inventario (antes todo en InventarioController)
+use App\Http\Controllers\ProductoController;
+use App\Http\Controllers\ImportacionInventarioController;
+use App\Http\Controllers\MovimientoInventarioController;
+use App\Http\Controllers\ExportInventarioController;
+use App\Http\Controllers\DisponibilidadController;
 
 // Rutas Públicas (Login y Autenticación)
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -27,21 +34,30 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard Principal
     Route::get('/', function () {
         return view('dashboard');
-    })->name('dashboard');
+    })->middleware('permiso')->name('dashboard');
 
     // Módulo de Empleados
     Route::resource('empleados', EmpleadoController::class)->middleware('permiso');
 
+    // Módulo de Roles (Genera automáticamente roles.index, roles.create, roles.store, roles.edit, roles.update, roles.destroy)
+    Route::resource('roles', RoleController::class)->middleware('permiso');
+
     // Módulo de Inventario
-    Route::get('/inventario', [InventarioController::class, 'index'])->name('inventario.index');
-    Route::get('/inventario/importar', [InventarioController::class, 'importar'])->name('inventario.importar');
-    Route::post('/inventario/importar', [InventarioController::class, 'procesarImportacion'])->name('inventario.procesar');
-    Route::post('/inventario/producto', [InventarioController::class, 'storeProducto'])->name('inventario.producto.store');
-    Route::post('/inventario/entrada', [InventarioController::class, 'storeEntrada'])->name('inventario.entrada.store');
-    Route::post('/inventario/salida', [InventarioController::class, 'storeSalida'])->name('inventario.salida.store');
-    Route::get('/inventario/historial', [InventarioController::class, 'historial'])->name('inventario.historial');
-    Route::get('/inventario/exportar/excel', [InventarioController::class, 'exportarExcel'])->name('inventario.exportar.excel');
-    Route::get('/inventario/exportar/pdf', [InventarioController::class, 'exportarPdf'])->name('inventario.exportar.pdf');
+    Route::get('/inventario', [ProductoController::class, 'index'])->name('inventario.index');
+    Route::post('/inventario/producto', [ProductoController::class, 'store'])->name('inventario.producto.store');
+
+    Route::get('/inventario/importar', [ImportacionInventarioController::class, 'form'])->name('inventario.importar');
+    Route::post('/inventario/importar', [ImportacionInventarioController::class, 'procesar'])->name('inventario.procesar');
+
+    Route::post('/inventario/entrada', [MovimientoInventarioController::class, 'storeEntrada'])->name('inventario.entrada.store');
+    Route::post('/inventario/salida', [MovimientoInventarioController::class, 'storeSalida'])->name('inventario.salida.store');
+    Route::post('/inventario/traspaso', [MovimientoInventarioController::class, 'traspasarStock'])->name('inventario.traspaso.store');
+    Route::get('/inventario/historial', [MovimientoInventarioController::class, 'historial'])->name('inventario.historial');
+
+    Route::get('/inventario/exportar/excel', [ExportInventarioController::class, 'excel'])->name('inventario.exportar.excel');
+    Route::get('/inventario/exportar/pdf', [ExportInventarioController::class, 'pdf'])->name('inventario.exportar.pdf');
+
+    Route::get('/inventario/{producto}/disponibilidad', DisponibilidadController::class)->name('inventario.disponibilidad');
 
     // Módulo de Punto de Venta
     Route::get('/ventas', [PuntoVentaController::class, 'index'])->name('ventas.index');

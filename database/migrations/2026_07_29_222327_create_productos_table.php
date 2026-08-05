@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('precio_publico', 10, 2)->default(0);
             $table->decimal('precio_mayoreo', 10, 2)->default(0);
             $table->boolean('estado')->default(true);
-            $table->timestamp('created_at')->useCurrent();
+            $table->timestamps();
         });
     }
 

@@ -256,7 +256,11 @@
                                     <td class="p-4 font-semibold text-indigo-700 whitespace-nowrap">${{ number_format($producto->precio_mayoreo, 2) }}</td>
                                     <td class="p-4 text-center whitespace-nowrap">
                                         @if($st == 0)
-                                            <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-700 border border-red-100">Agotado</span>
+                                            <button type="button"
+                                                    onclick="verDisponibilidad({{ $producto->id }}, '{{ addslashes($producto->marca . ' ' . $producto->medida) }}')"
+                                                    class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-700 border border-red-100 hover:bg-red-100 transition cursor-pointer">
+                                                Agotado · Ver disponibilidad
+                                            </button>
                                         @elseif($st < $min)
                                             <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-700 border border-amber-100">Bajo</span>
                                         @else
@@ -360,8 +364,80 @@
     </div>
 </div>
 
+<div id="modal-disponibilidad" class="fixed inset-0 bg-black/40 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Disponibilidad en otras sucursales</h3>
+                <p id="disp-producto-nombre" class="text-sm text-gray-500"></p>
+            </div>
+            <button onclick="closeModal('modal-disponibilidad')" class="text-gray-400 text-xl">&times;</button>
+        </div>
+
+        <div id="disp-loading" class="text-center py-6 text-sm text-gray-400 hidden">Buscando...</div>
+        <ul id="disp-lista" class="space-y-2 max-h-80 overflow-y-auto"></ul>
+        <p id="disp-vacio" class="text-sm text-gray-400 text-center py-6 hidden">No hay stock en ninguna otra sucursal.</p>
+    </div>
+</div>
+
 <script>
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    async function verDisponibilidad(productoId, nombreProducto) {
+        openModal('modal-disponibilidad');
+        document.getElementById('disp-producto-nombre').textContent = nombreProducto;
+
+        const lista = document.getElementById('disp-lista');
+        const vacio = document.getElementById('disp-vacio');
+        const loading = document.getElementById('disp-loading');
+
+        lista.innerHTML = '';
+        vacio.classList.add('hidden');
+        loading.classList.remove('hidden');
+
+        // Respeta el filtro de sucursal actual del index, si hay uno
+        const sucursalIdFiltro = new URLSearchParams(window.location.search).get('sucursal_id');
+        const url = new URL(`/inventario/${productoId}/disponibilidad`, window.location.origin);
+        if (sucursalIdFiltro) url.searchParams.set('sucursal_id', sucursalIdFiltro);
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            loading.classList.add('hidden');
+
+            if (!data.disponible_en_otras || data.disponible_en_otras.length === 0) {
+                vacio.classList.remove('hidden');
+                return;
+            }
+
+            data.disponible_en_otras.forEach(s => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-lg';
+                li.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-900 text-sm">${s.sucursal}</p>
+                        <p class="text-xs text-gray-500">${s.cantidad} pzas disponibles</p>
+                    </div>
+                    <form action="{{ route('inventario.traspaso.store') }}" method="POST" class="flex items-center gap-2">
+                        @csrf
+                        <input type="hidden" name="producto_id" value="${productoId}">
+                        <input type="hidden" name="sucursal_origen" value="${s.sucursal_id}">
+                        <input type="hidden" name="sucursal_destino" value="${data.sucursal_actual_id}">
+                        <input type="number" name="cantidad" min="1" max="${s.cantidad}" value="1"
+                               class="w-16 p-1.5 border border-gray-300 rounded-md text-xs text-center">
+                        <button type="submit" class="px-3 py-1.5 bg-emerald-600 text-white rounded-md text-xs font-semibold hover:bg-emerald-700 transition">
+                            Traer
+                        </button>
+                    </form>
+                `;
+                lista.appendChild(li);
+            });
+        } catch (e) {
+            loading.classList.add('hidden');
+            vacio.textContent = 'Error al consultar disponibilidad.';
+            vacio.classList.remove('hidden');
+        }
+    }
 </script>
 @endsection

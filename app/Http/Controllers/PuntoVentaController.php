@@ -12,17 +12,18 @@ use Illuminate\Support\Facades\DB;
 
 class PuntoVentaController extends Controller
 {
-   public function index()
-{
-    $empleado = DB::table('users')->where('id', Auth::id())->first();
+    public function index()
+    {
+        $empleado = DB::table('users')->where('id', Auth::id())->first();
 
-    // Usamos '??' para evitar el error si la propiedad 'rol' no existe en $empleado
-    $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
+        // Usamos '??' para evitar el error si la propiedad 'rol' no existe en $empleado
+        $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
 
-    // Lo mismo para 'sucursal_id', con valor por defecto 1 si no existe la columna
-    $sucursalDefecto = $empleado->sucursal_id ?? 1;
+        // Lo mismo para 'sucursal_id', con valor por defecto 1 si no existe la columna
+        $sucursalDefecto = $empleado->sucursal_id ?? 1;
 
-    $sucursales = DB::table('sucursales')->where('activa', 1)->get();
+        $sucursales = DB::table('sucursales')->where('activa', 1)->get();
+        
         $productos = Producto::where('estado', true)->get()->map(function ($producto) {
             $producto->stocks = StockSucursal::where('producto_id', $producto->id)
                 ->pluck('cantidad', 'sucursal_id')
@@ -42,19 +43,19 @@ class PuntoVentaController extends Controller
         try {
             DB::beginTransaction();
 
-            $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
+            // CORRECCIÓN: Se cambió 'usuarios' por 'users'
+            $empleado = DB::table('users')->where('id', Auth::id())->first();
             
             $sucursal_id = $request->sucursal_id ?: ($empleado ? $empleado->sucursal_id : 1);
 
             $venta = new Venta();
             $venta->folio = 'VNT-' . date('Ymd') . '-' . rand(1000, 9999);
             $venta->sucursal_id = $sucursal_id;
-            $venta->usuario_id = $empleado ? $empleado->id : 1; 
+            
             $venta->user_id = Auth::id(); 
             
             $nombre_cliente = $request->cliente ?: 'Público General';
             $venta->nombre_cliente_temporal = $nombre_cliente;
-            $venta->cliente = $nombre_cliente;
             
             $venta->total = $request->total;
             $venta->pago_con = $request->pagoCon;
@@ -113,8 +114,12 @@ class PuntoVentaController extends Controller
 
     public function historial(Request $request)
     {
-        $empleado = DB::table('usuarios')->where('id', Auth::id())->first();
-        $esAdmin = ($empleado && $empleado->rol === 'admin') || Auth::id() === 1;
+        // CORRECCIÓN: Se cambió 'usuarios' por 'users'
+        $empleado = DB::table('users')->where('id', Auth::id())->first();
+        
+        // CORRECCIÓN: Se agregó el safe operator ?? null igual que en tu index
+        $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
+        
         $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
 
         $query = Venta::with(['detalles']);
