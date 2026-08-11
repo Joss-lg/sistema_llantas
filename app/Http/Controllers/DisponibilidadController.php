@@ -13,13 +13,14 @@ class DisponibilidadController extends Controller
 
     public function __invoke(Producto $producto, Request $request)
     {
-        // El admin puede estar viendo el filtro "Todas" o una sucursal específica.
-        // El empleado normal siempre consulta desde la suya.
         $sucursalActual = $this->usuarioEsAdmin()
             ? $request->input('sucursal_id', $this->sucursalDelUsuario())
             : $this->sucursalDelUsuario();
 
-        $otrasSucursales = StockSucursal::with('sucursal')
+        $otrasSucursales = StockSucursal::whereHas('sucursal', function ($q) {
+                $q->where('activa', true);
+            })
+            ->with('sucursal:id,nombre')
             ->where('producto_id', $producto->id)
             ->where('sucursal_id', '!=', $sucursalActual)
             ->where('cantidad', '>', 0)

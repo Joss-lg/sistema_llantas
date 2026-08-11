@@ -16,9 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\PreventBackHistory::class,
         ]);
 
-        // Registro del alias para el Middleware de Permisos
+        // Registro de los alias para Middlewares
         $middleware->alias([
             'permiso' => \App\Http\Middleware\CheckPermiso::class,
+            'caja.abierta' => \App\Http\Middleware\VerificarCajaAbierta::class, // <--- NUESTRO NUEVO CANDADO
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

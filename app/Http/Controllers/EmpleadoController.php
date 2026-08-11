@@ -13,12 +13,32 @@ use Illuminate\Validation\Rule;
 class EmpleadoController extends Controller
 {
     /**
-     * Lista todos los empleados del sistema.
+     * Lista solo los empleados ACTIVOS del sistema.
+     * El Administrador Principal siempre aparece primero.
      */
     public function index()
     {
-        $empleados = User::with(['sucursal', 'role'])->latest()->get();
+        $empleados = User::with(['sucursal', 'role', 'permisos'])
+            ->where('activo', true)
+            ->orderByRaw("CASE WHEN email = 'admin@llantas.com' THEN 0 ELSE 1 END")
+            ->latest()
+            ->get();
+
         return view('empleados.index', compact('empleados'));
+    }
+
+    /**
+     * Lista los empleados deshabilitados (activo = false).
+     */
+    public function inactivos()
+    {
+        $empleados = User::with(['sucursal', 'role'])
+            ->where('activo', false)
+            ->orderByRaw("CASE WHEN email = 'admin@llantas.com' THEN 0 ELSE 1 END")
+            ->latest()
+            ->get();
+
+        return view('empleados.inactivos', compact('empleados'));
     }
 
     /**
@@ -28,8 +48,6 @@ class EmpleadoController extends Controller
     {
         $roles = Role::all();
         $sucursales = Sucursal::where('activa', true)->get();
-        
-        // Agrupamos los permisos por módulo para organizar la UI en checkboxes
         $permisosGrouped = Permiso::all()->groupBy('modulo');
 
         return view('empleados.create', compact('roles', 'sucursales', 'permisosGrouped'));
@@ -50,7 +68,6 @@ class EmpleadoController extends Controller
             'permisos.*'  => 'exists:permisos,id',
         ]);
 
-        // Crear Empleado
         $empleado = User::create([
             'name'        => $request->name,
             'email'       => $request->email,
@@ -60,7 +77,6 @@ class EmpleadoController extends Controller
             'activo'      => $request->has('activo'),
         ]);
 
-        // Sincronizar Permisos seleccionados en la tabla pivote 'permiso_user'
         if ($request->has('permisos')) {
             $empleado->permisos()->sync($request->permisos);
         }
@@ -69,22 +85,18 @@ class EmpleadoController extends Controller
     }
 
     /**
-     * Muestra el formulario de edición de un empleado.
+     * Muestra el formulario de edición de un empleado (solo datos básicos).
      */
     public function edit(User $empleado)
     {
         $roles = Role::all();
         $sucursales = Sucursal::where('activa', true)->get();
-        $permisosGrouped = Permiso::all()->groupBy('modulo');
 
-        // Obtener array con los IDs de permisos que el empleado ya tiene asignados
-        $userPermisos = $empleado->permisos()->pluck('permisos.id')->toArray();
-
-        return view('empleados.edit', compact('empleado', 'roles', 'sucursales', 'permisosGrouped', 'userPermisos'));
+        return view('empleados.edit', compact('empleado', 'roles', 'sucursales'));
     }
 
     /**
-     * Actualiza los datos y permisos de un empleado.
+     * Actualiza SOLO los datos básicos de un empleado.
      */
     public function update(Request $request, User $empleado)
     {
@@ -94,8 +106,6 @@ class EmpleadoController extends Controller
             'password'    => 'nullable|string|min:8',
             'sucursal_id' => 'required|exists:sucursales,id',
             'rol_id'      => 'required|exists:roles,id',
-            'permisos'    => 'nullable|array',
-            'permisos.*'  => 'exists:permisos,id',
         ]);
 
         $empleado->name        = $request->name;
@@ -104,17 +114,45 @@ class EmpleadoController extends Controller
         $empleado->rol_id      = $request->rol_id;
         $empleado->activo      = $request->has('activo');
 
-        // Actualizar contraseña solo si se ingresó una nueva
         if ($request->filled('password')) {
             $empleado->password = Hash::make($request->password);
         }
 
         $empleado->save();
 
-        // Actualizar Permisos
+        return redirect()->route('empleados.index')->with('success', 'Empleado actualizado correctamente.');
+    }
+
+    /**
+     * Actualiza ÚNICAMENTE los permisos del empleado (usado por el modal "Configurar").
+     */
+    public function updatePermisos(Request $request, User $empleado)
+    {
+        $request->validate([
+            'permisos'   => 'nullable|array',
+            'permisos.*' => 'exists:permisos,id',
+        ]);
+
         $empleado->permisos()->sync($request->permisos ?? []);
 
-        return redirect()->route('empleados.index')->with('success', 'Empleado actualizado correctamente.');
+        return redirect()->route('empleados.index')->with('success', "Permisos de {$empleado->name} actualizados correctamente.");
+    }
+
+    /**
+     * Alterna el estado activo/inactivo de un empleado.
+     */
+    public function toggleStatus(User $empleado)
+    {
+        if ($empleado->email === 'admin@llantas.com') {
+            return redirect()->back()->with('error', 'No se puede deshabilitar al Administrador Principal.');
+        }
+
+        $empleado->activo = ! $empleado->activo;
+        $empleado->save();
+
+        $estado = $empleado->activo ? 'habilitado' : 'deshabilitado';
+
+        return redirect()->back()->with('success', "Empleado {$estado} correctamente.");
     }
 
     /**
@@ -122,7 +160,6 @@ class EmpleadoController extends Controller
      */
     public function destroy(User $empleado)
     {
-        // Evitar eliminar al Administrador principal por seguridad
         if ($empleado->email === 'admin@llantas.com') {
             return redirect()->route('empleados.index')->with('error', 'No se puede eliminar al Administrador Principal.');
         }

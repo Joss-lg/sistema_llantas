@@ -5,6 +5,17 @@
 @section('content')
 
 <style>
+    /* Ocultar completamente todas las barras de desplazamiento en esta vista */
+    *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+    * {
+        -ms-overflow-style: none !important;  /* IE y Edge */
+        scrollbar-width: none !important;  /* Firefox */
+    }
+
     @media (prefers-reduced-motion: no-preference) {
         .dash-rise        { animation: dash-fade-up .7s cubic-bezier(.16,1,.3,1) both; }
         .dash-icon-pop     { animation: icon-pop .6s cubic-bezier(.34,1.56,.64,1) both; }
@@ -210,15 +221,15 @@
                 </div>
                 <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-white/5 px-3 py-1 rounded-full uppercase tracking-wide">Hoy</span>
             </div>
-            <div class="p-6 overflow-x-auto">
-                <table class="w-full">
+            <div class="p-6">
+                <table class="w-full table-fixed">
                     <thead>
                         <tr class="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                            <th class="pb-4 text-left">Sucursal</th>
-                            <th class="pb-4 text-left">Ventas</th>
-                            <th class="pb-4 text-left">Llantas</th>
-                            <th class="pb-4 text-left">Rendimiento</th>
-                            <th class="pb-4 text-left">vs. Ayer</th>
+                            <th class="pb-4 text-left w-1/4">Sucursal</th>
+                            <th class="pb-4 text-left w-1/5">Ventas</th>
+                            <th class="pb-4 text-left w-1/5">Llantas</th>
+                            <th class="pb-4 text-left w-1/4">Rendimiento</th>
+                            <th class="pb-4 text-left w-1/6">vs. Ayer</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-white/10">
@@ -236,7 +247,7 @@
                                     @php $maxV = collect($rendimientoSucursales)->max('ventas') ?: 1; $pct = round(($sucursal->ventas / $maxV) * 100); @endphp
                                     <div class="flex items-center gap-3">
                                         <div class="flex-1 h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
-                                            <div class="dash-bar-fill h-full rounded-full bg-gradient-to-r from-[#D32030] to-[#FF4D5E]" style="width: {{ $pct }}%"></div>
+                                            <div class="dash-bar-fill h-full rounded-full bg-[#D32030]" style="width: {{ $pct }}%"></div>
                                         </div>
                                         <span class="text-xs text-gray-400 dark:text-gray-500 w-8">{{ $pct }}%</span>
                                     </div>

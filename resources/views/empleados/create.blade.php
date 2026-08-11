@@ -1,337 +1,218 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- Estilos para ocultar CUALQUIER barra de desplazamiento y Animaciones Custom --}}
+<style>
+    ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+    * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
 
-{{--
-  Usa el mismo sistema de diseño que empleados/index.blade.php
-  (fuentes Space Grotesk / Inter / JetBrains Mono — ver nota en ese archivo).
-  Si vas a usar esto en varias vistas, considera mover el bloque <style>
-  a un partial (@include('partials.tv-styles')) para no repetirlo.
---}}
+    /* Animación de Pop (Rebote) para los iconos de los checkboxes */
+    @keyframes popIn {
+        0% { transform: scale(0.5); opacity: 0; }
+        70% { transform: scale(1.2); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+</style>
 
-<div class="tv-scope">
-    <div class="container mx-auto px-4 py-6 max-w-5xl tv-fade-in">
+<!-- Contenedor principal -->
+<div class="max-w-5xl mx-auto space-y-6 transition-colors duration-300 relative px-4 py-8 min-h-[80vh] overflow-hidden" x-data="{ cargado: false }" x-init="setTimeout(() => cargado = true, 50)">
 
-        <div class="mb-6 tv-slide-down">
-            <a href="{{ route('empleados.index') }}" class="tv-back-link">
-                <svg class="tv-back-arrow w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                </svg>
-                Volver a Empleados
-            </a>
-            <h1 class="tv-title mt-2">Registrar Nuevo Empleado</h1>
+    {{-- Fondo Decorativo Inteligente (Grid en claro, Aurora en oscuro) --}}
+    <div class="absolute inset-0 pointer-events-none z-0 transition-opacity duration-1000 delay-300" 
+         :class="cargado ? 'opacity-100' : 'opacity-0'" aria-hidden="true">
+        {{-- Grid sutil para modo claro --}}
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] dark:opacity-0"></div>
+        {{-- Aurora animada SOLO para modo oscuro --}}
+        <div class="hidden dark:block opacity-10">
+            <div class="absolute -top-[100px] -left-[100px] w-[300px] h-[300px] rounded-full bg-[#D32030] blur-[80px] animate-[pulse_10s_ease-in-out_infinite]"></div>
+            <div class="absolute bottom-[40px] -right-[100px] w-[300px] h-[300px] rounded-full bg-red-600 blur-[80px] animate-[pulse_14s_ease-in-out_infinite]" style="animation-delay: -5s;"></div>
+        </div>
+    </div>
+
+    {{-- Encabezado y Back Link --}}
+    <div class="relative z-10 transform transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+         :class="cargado ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'">
+        <a href="{{ route('empleados.index') }}" class="group inline-flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-neutral-400 hover:text-[#D32030] dark:hover:text-red-500 transition-colors bg-white/50 dark:bg-[#121212]/50 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-gray-200 dark:border-neutral-800">
+            <svg class="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1.5 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+            </svg>
+            Volver a Empleados
+        </a>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mt-4 transition-colors tracking-tight">Registrar Nuevo Empleado</h1>
+        <p class="text-sm text-gray-500 dark:text-neutral-400 mt-1 font-medium">Completa los datos para dar de alta a un miembro del equipo.</p>
+    </div>
+
+    <form action="{{ route('empleados.store') }}" method="POST" class="space-y-6 relative z-10">
+        @csrf
+
+        {{-- Tarjeta 1: Información Básica (CON ANIMACIÓN DE HOVER) --}}
+        <div class="bg-white/90 dark:bg-[#0c0c0c]/90 backdrop-blur-xl rounded-2xl border border-gray-200/80 dark:border-neutral-800/80 p-6 sm:p-8 shadow-lg dark:shadow-2xl transform transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] delay-100 group/card hover:shadow-xl dark:hover:shadow-[#D32030]/5 hover:border-gray-300 dark:hover:border-neutral-700"
+             :class="cargado ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'">
+            
+            <h2 class="font-bold text-lg text-gray-800 dark:text-gray-100 border-b border-gray-100 dark:border-neutral-800/60 pb-4 mb-6 transition-colors flex items-center gap-3">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-red-50 dark:bg-red-500/10 text-[#D32030] shadow-inner">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                </span>
+                Información Básica
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {{-- Nombre Completo (CON ANIMACIÓN FLOTANTE) --}}
+                <div class="space-y-2 group/input">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider transition-colors group-focus-within/input:text-[#D32030]">Nombre Completo</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within/input:text-[#D32030] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                        </div>
+                        <input type="text" name="name" value="{{ old('name') }}" required placeholder="Ej. Juan Pérez"
+                               class="w-full pl-11 pr-4 py-3 bg-gray-50/50 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-xl text-sm outline-none transition-all duration-300 focus:bg-white dark:focus:bg-[#151515] focus:border-[#D32030] focus:ring-4 focus:ring-[#D32030]/20 focus:-translate-y-1 focus:shadow-lg focus:shadow-[#D32030]/10 hover:border-gray-300 dark:hover:border-neutral-700">
+                    </div>
+                    @error('name') <span class="text-xs text-[#D32030] font-medium animate-pulse">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Correo Electrónico (CON ANIMACIÓN FLOTANTE) --}}
+                <div class="space-y-2 group/input">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider transition-colors group-focus-within/input:text-[#D32030]">Correo Electrónico</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within/input:text-[#D32030] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                        </div>
+                        <input type="email" name="email" value="{{ old('email') }}" required placeholder="correo@empresa.com"
+                               class="w-full pl-11 pr-4 py-3 bg-gray-50/50 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-xl text-sm outline-none transition-all duration-300 focus:bg-white dark:focus:bg-[#151515] focus:border-[#D32030] focus:ring-4 focus:ring-[#D32030]/20 focus:-translate-y-1 focus:shadow-lg focus:shadow-[#D32030]/10 hover:border-gray-300 dark:hover:border-neutral-700">
+                    </div>
+                    @error('email') <span class="text-xs text-[#D32030] font-medium animate-pulse">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Contraseña (CON ANIMACIÓN FLOTANTE) --}}
+                <div class="space-y-2 group/input">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider transition-colors group-focus-within/input:text-[#D32030]">Contraseña</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within/input:text-[#D32030] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </div>
+                        <input type="password" name="password" required placeholder="••••••••"
+                               class="w-full pl-11 pr-4 py-3 bg-gray-50/50 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-xl text-sm outline-none transition-all duration-300 focus:bg-white dark:focus:bg-[#151515] focus:border-[#D32030] focus:ring-4 focus:ring-[#D32030]/20 focus:-translate-y-1 focus:shadow-lg focus:shadow-[#D32030]/10 hover:border-gray-300 dark:hover:border-neutral-700">
+                    </div>
+                    @error('password') <span class="text-xs text-[#D32030] font-medium animate-pulse">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Sucursal Asignada (CON ANIMACIÓN FLOTANTE Y DISEÑO CORREGIDO) --}}
+                <div class="space-y-2 group/input">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider transition-colors group-focus-within/input:text-[#D32030]">Sucursal Asignada</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within/input:text-[#D32030] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        </div>
+                        <select name="sucursal_id" required 
+                                class="w-full pl-11 pr-10 py-3 bg-gray-50/50 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-xl text-sm outline-none transition-all duration-300 appearance-none cursor-pointer focus:bg-white dark:focus:bg-[#151515] focus:border-[#D32030] focus:ring-4 focus:ring-[#D32030]/20 focus:-translate-y-1 focus:shadow-lg focus:shadow-[#D32030]/10 hover:border-gray-300 dark:hover:border-neutral-700">
+                            <option value="" class="bg-white dark:bg-[#121212] text-gray-500">Selecciona una sucursal</option>
+                            @foreach($sucursales as $sucursal)
+                                <option value="{{ $sucursal->id }}" class="bg-white dark:bg-[#121212] text-gray-900 dark:text-white font-medium py-2" {{ old('sucursal_id') == $sucursal->id ? 'selected' : '' }}>
+                                    {{ $sucursal->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-300 group-focus-within/input:rotate-180 group-focus-within/input:text-[#D32030]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+
+                {{-- Rol (CON ANIMACIÓN FLOTANTE Y DISEÑO CORREGIDO) --}}
+                <div class="space-y-2 group/input">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider transition-colors group-focus-within/input:text-[#D32030]">Rol del Sistema</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within/input:text-[#D32030] transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        </div>
+                        <select name="rol_id" required 
+                                class="w-full pl-11 pr-10 py-3 bg-gray-50/50 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 text-gray-900 dark:text-white rounded-xl text-sm outline-none transition-all duration-300 appearance-none cursor-pointer focus:bg-white dark:focus:bg-[#151515] focus:border-[#D32030] focus:ring-4 focus:ring-[#D32030]/20 focus:-translate-y-1 focus:shadow-lg focus:shadow-[#D32030]/10 hover:border-gray-300 dark:hover:border-neutral-700">
+                            <option value="" class="bg-white dark:bg-[#121212] text-gray-500">Selecciona un rol</option>
+                            @foreach($roles as $rol)
+                                <option value="{{ $rol->id }}" class="bg-white dark:bg-[#121212] text-gray-900 dark:text-white font-medium py-2" {{ old('rol_id') == $rol->id ? 'selected' : '' }}>
+                                    {{ $rol->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-300 group-focus-within/input:rotate-180 group-focus-within/input:text-[#D32030]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                </div>
+
+                {{-- Switch Activo (CON GLOW INTENSO Y ESCALA) --}}
+                <div class="flex items-center pt-6">
+                    <label class="relative inline-flex items-center cursor-pointer group hover:scale-105 transition-transform duration-300">
+                        <input type="checkbox" name="activo" value="1" checked class="sr-only peer">
+                        <div class="w-12 h-6 bg-gray-300 dark:bg-neutral-800 rounded-full peer peer-focus:ring-4 peer-focus:ring-red-300/50 dark:peer-focus:ring-red-900/40 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D32030] peer-checked:shadow-[0_0_12px_rgba(211,32,48,0.6)] shadow-inner transition-all duration-300"></div>
+                        <span class="ml-3 text-sm font-bold text-gray-700 dark:text-gray-200 group-hover:text-[#D32030] dark:group-hover:text-white transition-colors">Usuario Activo en el Sistema</span>
+                    </label>
+                </div>
+
+            </div>
         </div>
 
-        <form action="{{ route('empleados.store') }}" method="POST" class="space-y-6">
-            @csrf
+        {{-- Tarjeta 2: Matriz de Permisos (CON ANIMACIÓN DE HOVER 3D) --}}
+        <div class="bg-white/90 dark:bg-[#0c0c0c]/90 backdrop-blur-xl rounded-2xl border border-gray-200/80 dark:border-neutral-800/80 p-6 sm:p-8 shadow-lg dark:shadow-2xl transform transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] delay-300 group/card hover:shadow-xl dark:hover:shadow-[#D32030]/5 hover:border-gray-300 dark:hover:border-neutral-700"
+             :class="cargado ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'">
+            
+            <h2 class="font-bold text-lg text-gray-800 dark:text-gray-100 border-b border-gray-100 dark:border-neutral-800/60 pb-4 mb-6 transition-colors flex items-center gap-3">
+                <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-300 shadow-inner">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                </span>
+                Permisos Específicos por Módulo
+            </h2>
 
-            {{-- Datos Personales y Acceso --}}
-            <div class="tv-form-card tv-fade-in-up" style="animation-delay:.05s">
-                <h2 class="tv-form-card-title">Información Básica</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="tv-field">
-                        <label class="tv-label">Nombre Completo</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required class="tv-input">
-                        @error('name') <span class="tv-error">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="tv-field">
-                        <label class="tv-label">Correo Electrónico</label>
-                        <input type="email" name="email" value="{{ old('email') }}" required class="tv-input">
-                        @error('email') <span class="tv-error">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="tv-field">
-                        <label class="tv-label">Contraseña</label>
-                        <input type="password" name="password" required class="tv-input">
-                        @error('password') <span class="tv-error">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="tv-field">
-                        <label class="tv-label">Sucursal Asignada</label>
-                        <div class="tv-select-wrap">
-                            <select name="sucursal_id" required class="tv-input tv-select">
-                                <option value="">-- Seleccionar Sucursal --</option>
-                                @foreach($sucursales as $sucursal)
-                                    <option value="{{ $sucursal->id }}" {{ old('sucursal_id') == $sucursal->id ? 'selected' : '' }}>
-                                        {{ $sucursal->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <svg class="tv-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="tv-field">
-                        <label class="tv-label">Rol</label>
-                        <div class="tv-select-wrap">
-                            <select name="rol_id" required class="tv-input tv-select">
-                                <option value="">-- Seleccionar Rol --</option>
-                                @foreach($roles as $rol)
-                                    <option value="{{ $rol->id }}" {{ old('rol_id') == $rol->id ? 'selected' : '' }}>
-                                        {{ $rol->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <svg class="tv-select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center pt-5">
-                        <label class="tv-switch-wrap">
-                            <input type="checkbox" name="activo" value="1" checked class="tv-switch-input">
-                            <span class="tv-switch-track"><span class="tv-switch-thumb"></span></span>
-                            <span class="tv-switch-label">Usuario Activo</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Matriz de Permisos --}}
-            <div class="tv-form-card tv-fade-in-up" style="animation-delay:.12s">
-                <h2 class="tv-form-card-title">Permisos Específicos por Módulo</h2>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @foreach($permisosGrouped as $modulo => $permisos)
-                        <div class="tv-module-card" style="animation-delay: {{ $loop->index * 60 }}ms">
-                            <h3 class="tv-module-title">{{ $modulo }}</h3>
-                            <div class="space-y-1">
-                                @foreach($permisos as $permiso)
-                                    <label class="tv-perm-item">
-                                        <input type="checkbox" name="permisos[]" value="{{ $permiso->id }}" class="tv-check">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                @foreach($permisosGrouped as $modulo => $permisos)
+                    @php $delayModulo = $loop->index * 100; @endphp
+                    
+                    {{-- Mini-tarjeta con efecto ZOOM y Flotante --}}
+                    <div class="bg-gray-50/80 dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded-xl p-5 transition-all duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:border-[#D32030]/50 dark:hover:border-[#D32030]/50 hover:shadow-xl dark:hover:shadow-black/60 hover:bg-white dark:hover:bg-[#151515] transform ease-out group/modulo"
+                         style="transition-delay: {{ $delayModulo }}ms"
+                         :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
+                        
+                        <h3 class="text-[11px] font-black uppercase tracking-[0.15em] text-gray-500 dark:text-neutral-500 mb-4 border-b border-gray-200 dark:border-neutral-800/60 pb-2 transition-colors group-hover/modulo:text-[#D32030] group-hover/modulo:border-[#D32030]/30">
+                            {{ $modulo }}
+                        </h3>
+                        
+                        <div class="space-y-3.5">
+                            @foreach($permisos as $permiso)
+                                <label class="flex items-start gap-3 cursor-pointer group/check">
+                                    <div class="relative flex items-center mt-0.5">
+                                        {{-- Checkbox con GLOW --}}
+                                        <input type="checkbox" name="permisos[]" value="{{ $permiso->id }}" 
+                                               class="peer appearance-none w-4 h-4 border-2 border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-[#1a1a1a] checked:bg-[#D32030] checked:border-[#D32030] checked:shadow-[0_0_10px_rgba(211,32,48,0.5)] focus:outline-none focus:ring-4 focus:ring-red-500/30 transition-all duration-200 cursor-pointer group-hover/check:border-[#D32030]/50">
+                                        {{-- Icono Check con Animación PopIn --}}
+                                        <svg class="absolute inset-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 peer-checked:animate-pop-in pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                    <span class="text-sm font-semibold text-gray-600 dark:text-neutral-400 group-hover/check:text-gray-900 dark:group-hover/check:text-white transition-colors leading-tight select-none">
                                         {{ $permiso->nombre }}
-                                    </label>
-                                @endforeach
-                            </div>
+                                    </span>
+                                </label>
+                            @endforeach
                         </div>
-                    @endforeach
-                </div>
+                    </div>
+                @endforeach
             </div>
+        </div>
 
-            <div class="tv-actions">
-                <a href="{{ route('empleados.index') }}" class="tv-btn-secondary">Cancelar</a>
-                <button type="submit" class="tv-btn-primary">
-                    <span class="tv-btn-sweep"></span>
-                    <span>Guardar Empleado</span>
-                </button>
-            </div>
-        </form>
-    </div>
+        {{-- Acciones Finales --}}
+        <div class="flex items-center justify-end gap-4 pt-4 transform transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] delay-500"
+             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
+            
+            <a href="{{ route('empleados.index') }}" class="inline-flex items-center justify-center px-6 py-3 text-sm font-bold text-gray-600 dark:text-neutral-300 bg-white dark:bg-[#121212] border border-gray-200 dark:border-neutral-800 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1a1a1a] hover:text-gray-900 dark:hover:text-white transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1 active:scale-95">
+                Cancelar
+            </a>
+            
+            <button type="submit" class="group relative overflow-hidden inline-flex items-center justify-center px-8 py-3 text-sm font-bold text-white bg-[#D32030] rounded-xl shadow-[0_4px_14px_rgba(211,32,48,0.3)] hover:bg-[#B91C2C] hover:shadow-[0_6px_25px_rgba(211,32,48,0.5)] hover:-translate-y-1 active:scale-95 transition-all duration-300">
+                <span class="absolute top-0 left-[-100%] w-1/2 h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-[-20deg] group-hover:left-[200%] transition-all duration-700 ease-out"></span>
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                    Guardar Registro
+                </span>
+            </button>
+        </div>
+    </form>
 </div>
-
-<style>
-/* ══════════════════════════════════════════════════════════════
-   TOKENS — mismo sistema que empleados/index.blade.php
-   ══════════════════════════════════════════════════════════════ */
-.tv-scope {
-    --tv-bg:        #F6F5F3;
-    --tv-surface:   #FFFFFF;
-    --tv-surface-2: #FBFAF9;
-    --tv-border:    #E6E4E0;
-    --tv-text:      #17181A;
-    --tv-muted:     #71757C;
-    --tv-red:       #DC1F2E;
-    --tv-red-dark:  #A9101C;
-    --tv-green-bg:  #E7F6EC;
-    --tv-green-fg:  #1D8A4C;
-    --tv-red-bg:    #FCE9E9;
-    --tv-red-fg:    #C21E2E;
-    --tv-blue-bg:   #EAF1FE;
-    --tv-blue-fg:   #3159C4;
-    --tv-shadow:    0 1px 2px rgba(20,20,20,.04), 0 8px 24px -8px rgba(20,20,20,.10);
-    color-scheme: light;
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    background: var(--tv-bg);
-    color: var(--tv-text);
-    min-height: 100%;
-    transition: background-color .35s ease, color .35s ease;
-}
-html.dark .tv-scope,
-.dark .tv-scope {
-    --tv-bg:        #0A0B0D;
-    --tv-surface:   #131519;
-    --tv-surface-2: #17191E;
-    --tv-border:    rgba(255,255,255,.08);
-    --tv-text:      #F3F3F2;
-    --tv-muted:     #8A8E96;
-    --tv-red:       #EA2E3C;
-    --tv-red-dark:  #B0121C;
-    --tv-green-bg:  rgba(52,211,153,.12);
-    --tv-green-fg:  #45D68A;
-    --tv-red-bg:    rgba(234,46,60,.12);
-    --tv-red-fg:    #F0616C;
-    --tv-blue-bg:   rgba(99,140,255,.12);
-    --tv-blue-fg:   #7C9CFF;
-    --tv-shadow:    0 1px 2px rgba(0,0,0,.3), 0 12px 32px -12px rgba(0,0,0,.6);
-    color-scheme: dark;
-}
-
-.tv-title { font-family: 'Space Grotesk', ui-sans-serif, sans-serif; font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
-
-/* ── Volver ── */
-.tv-back-link { display:inline-flex; align-items:center; gap:.35rem; font-size:.8rem; font-weight:500; color:var(--tv-muted); transition: color .2s ease, gap .2s ease; }
-.tv-back-link:hover { color: var(--tv-red-fg); gap:.55rem; }
-.tv-back-arrow { transition: transform .2s ease; }
-.tv-back-link:hover .tv-back-arrow { transform: translateX(-3px); }
-
-/* ── Tarjetas de formulario ── */
-.tv-form-card {
-    background: var(--tv-surface);
-    border: 1px solid var(--tv-border);
-    border-radius: 1.1rem;
-    padding: 1.5rem;
-    box-shadow: var(--tv-shadow);
-    transition: background-color .35s ease, border-color .35s ease;
-}
-.tv-form-card-title {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 1.05rem;
-    border-bottom: 1px solid var(--tv-border);
-    padding-bottom: .65rem;
-    margin-bottom: 1.2rem;
-}
-
-/* ── Campos ── */
-.tv-label {
-    display: block;
-    font-size: .78rem;
-    font-weight: 600;
-    color: var(--tv-muted);
-    margin-bottom: .4rem;
-    transition: color .2s ease;
-}
-.tv-field:focus-within .tv-label { color: var(--tv-red-fg); }
-.tv-input {
-    width: 100%;
-    background: var(--tv-surface-2);
-    border: 1px solid var(--tv-border);
-    border-radius: .65rem;
-    padding: .65rem .85rem;
-    font-size: .875rem;
-    color: var(--tv-text);
-    transition: border-color .2s ease, box-shadow .2s ease, background-color .3s ease;
-}
-.tv-input:focus {
-    outline: none;
-    border-color: var(--tv-red);
-    box-shadow: 0 0 0 3px rgba(220,31,46,.15);
-    background: var(--tv-surface);
-}
-.tv-error { display:block; font-size: .72rem; color: var(--tv-red-fg); margin-top: .3rem; }
-
-.tv-select-wrap { position: relative; }
-.tv-select { appearance: none; -webkit-appearance: none; padding-right: 2.4rem; cursor: pointer; }
-.tv-select-arrow {
-    position: absolute; right: .85rem; top: 50%; transform: translateY(-50%);
-    width: 1rem; height: 1rem; color: var(--tv-muted); pointer-events: none;
-    transition: transform .2s ease;
-}
-.tv-select-wrap:focus-within .tv-select-arrow { color: var(--tv-red-fg); transform: translateY(-50%) rotate(180deg); }
-
-/* ── Switch "Usuario Activo" ── */
-.tv-switch-wrap { display: inline-flex; align-items: center; gap: .65rem; cursor: pointer; }
-.tv-switch-input { display: none; }
-.tv-switch-track {
-    width: 2.5rem; height: 1.4rem; border-radius: 999px;
-    background: var(--tv-border); position: relative; flex-shrink: 0;
-    transition: background .25s ease;
-}
-.tv-switch-thumb {
-    position: absolute; top: 2px; left: 2px;
-    width: 1.1rem; height: 1.1rem; border-radius: 50%;
-    background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
-    transition: transform .25s cubic-bezier(.4,0,.2,1);
-}
-.tv-switch-input:checked + .tv-switch-track { background: linear-gradient(135deg, var(--tv-red), var(--tv-red-dark)); }
-.tv-switch-input:checked + .tv-switch-track .tv-switch-thumb { transform: translateX(1.1rem); }
-.tv-switch-label { font-size: .85rem; font-weight: 500; color: var(--tv-text); }
-
-/* ── Checkbox de permisos con check animado ── */
-.tv-check {
-    appearance: none; -webkit-appearance: none;
-    width: 1.05rem; height: 1.05rem; flex-shrink: 0;
-    border: 1.5px solid var(--tv-border); border-radius: .35rem;
-    background: var(--tv-surface); display: inline-grid; place-content: center;
-    cursor: pointer; transition: background-color .2s ease, border-color .2s ease;
-}
-.tv-check::before {
-    content: ''; width: .62rem; height: .62rem; transform: scale(0);
-    transition: transform .18s cubic-bezier(.4,0,.2,1);
-    box-shadow: inset 1em 1em white;
-    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-}
-.tv-check:checked { background: linear-gradient(135deg, var(--tv-red), var(--tv-red-dark)); border-color: var(--tv-red); }
-.tv-check:checked::before { transform: scale(1); }
-.tv-check:hover { border-color: var(--tv-red); }
-.tv-check:focus-visible { outline: 2px solid var(--tv-red); outline-offset: 2px; }
-
-/* ── Módulos de permisos ── */
-.tv-module-card {
-    border: 1px solid var(--tv-border); border-radius: .9rem; padding: 1rem;
-    background: var(--tv-surface-2);
-    animation: tvFadeInUp .4s ease both;
-    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
-}
-.tv-module-card:hover { transform: translateY(-3px); border-color: var(--tv-red); box-shadow: 0 12px 26px -14px rgba(220,31,46,.35); }
-.tv-module-title {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 700;
-    color: var(--tv-muted); border-bottom: 1px solid var(--tv-border);
-    padding-bottom: .55rem; margin-bottom: .75rem;
-}
-.tv-perm-item {
-    display: flex; align-items: center; gap: .55rem;
-    font-size: .78rem; color: var(--tv-text);
-    padding: .35rem .4rem; border-radius: .45rem; cursor: pointer;
-    transition: background-color .2s ease;
-}
-.tv-perm-item:hover { background: var(--tv-border); }
-
-/* ── Botones ── */
-.tv-actions { display: flex; justify-content: flex-end; gap: .75rem; }
-.tv-btn-primary {
-    position: relative; overflow: hidden;
-    display: inline-flex; align-items: center; gap: .5rem;
-    padding: .7rem 1.3rem; border-radius: .7rem;
-    font-weight: 600; font-size: .875rem; color: #fff;
-    background: linear-gradient(135deg, var(--tv-red), var(--tv-red-dark));
-    box-shadow: 0 8px 20px -6px rgba(220,31,46,.45);
-    transition: transform .25s ease, box-shadow .25s ease;
-}
-.tv-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -6px rgba(220,31,46,.6); }
-.tv-btn-primary:active { transform: translateY(0) scale(.97); }
-.tv-btn-sweep {
-    position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
-    background: linear-gradient(120deg, transparent, rgba(255,255,255,.35), transparent);
-    transform: skewX(-20deg); transition: left .6s ease;
-}
-.tv-btn-primary:hover .tv-btn-sweep { left: 130%; }
-.tv-btn-secondary {
-    display: inline-flex; align-items: center;
-    padding: .7rem 1.3rem; border-radius: .7rem;
-    background: var(--tv-surface-2); color: var(--tv-text);
-    border: 1px solid var(--tv-border); font-weight: 600; font-size: .875rem;
-    transition: background-color .2s ease, transform .2s ease;
-}
-.tv-btn-secondary:hover { background: var(--tv-border); transform: translateY(-1px); }
-
-/* ══════════════════════════════════════════════════════════════
-   ANIMACIONES
-   ══════════════════════════════════════════════════════════════ */
-@keyframes tvFadeIn    { from { opacity: 0; } to { opacity: 1; } }
-@keyframes tvFadeInUp  { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes tvSlideDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
-.tv-fade-in    { animation: tvFadeIn .5s ease both; }
-.tv-fade-in-up { animation: tvFadeInUp .55s ease both; }
-.tv-slide-down { animation: tvSlideDown .45s ease both; }
-
-@media (prefers-reduced-motion: reduce) {
-    .tv-scope *, .tv-scope *::before, .tv-scope *::after {
-        animation-duration: .001ms !important;
-        transition-duration: .001ms !important;
-    }
-}
-</style>
 @endsection

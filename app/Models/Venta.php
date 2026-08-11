@@ -28,4 +28,10 @@ class Venta extends Model
     {
         return $this->belongsTo(Sucursal::class);
     }
+
+    // Nueva relación con el cliente
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
 }

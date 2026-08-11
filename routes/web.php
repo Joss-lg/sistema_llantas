@@ -5,24 +5,27 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PuntoVentaController;
 use App\Http\Controllers\EmpleadoController;
-use App\Http\Controllers\RoleController; // Dejamos solo RoleController (en inglés)
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ClienteController;
 
-// Controllers de inventario (antes todo en InventarioController)
+// Controllers de inventario
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\ImportacionInventarioController;
 use App\Http\Controllers\MovimientoInventarioController;
 use App\Http\Controllers\ExportInventarioController;
 use App\Http\Controllers\DisponibilidadController;
 
-// Rutas Públicas (Login y Autenticación)
+// --- NUEVO CONTROLLER DE CAJA ---
+use App\Http\Controllers\CajaController; 
+
+// Rutas Públicas
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Rutas Protegidas por Autenticación
-Route::middleware(['auth'])->group(function () {
+// Rutas Protegidas por Autenticación Y Permisos
+Route::middleware(['auth', 'permiso'])->group(function () {
 
-    // Destruir sesión automáticamente si el usuario navega hacia atrás
     Route::post('/logout-back-navigation', function (\Illuminate\Http\Request $request) {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
@@ -34,13 +37,20 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard Principal
     Route::get('/', function () {
         return view('dashboard');
-    })->middleware('permiso')->name('dashboard');
+    })->name('dashboard');
 
-    // Módulo de Empleados
-    Route::resource('empleados', EmpleadoController::class)->middleware('permiso');
+    // Módulo de Empleados y Roles
+    // IMPORTANTE: estas rutas específicas van ANTES del Route::resource
+    // para que no choquen con la ruta "show" (empleados/{empleado}) que genera el resource.
+    Route::get('/empleados/inactivos', [EmpleadoController::class, 'inactivos'])->name('empleados.inactivos');
+    Route::put('/empleados/{empleado}/permisos', [EmpleadoController::class, 'updatePermisos'])->name('empleados.permisos.update');
+    Route::patch('/empleados/{empleado}/toggle', [EmpleadoController::class, 'toggleStatus'])->name('empleados.toggle');
 
-    // Módulo de Roles (Genera automáticamente roles.index, roles.create, roles.store, roles.edit, roles.update, roles.destroy)
-    Route::resource('roles', RoleController::class)->middleware('permiso');
+    Route::resource('empleados', EmpleadoController::class);
+    Route::resource('roles', RoleController::class);
+
+    // Módulo de Clientes
+    Route::resource('clientes', ClienteController::class);
 
     // Módulo de Inventario
     Route::get('/inventario', [ProductoController::class, 'index'])->name('inventario.index');
@@ -59,17 +69,30 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/inventario/{producto}/disponibilidad', DisponibilidadController::class)->name('inventario.disponibilidad');
 
-    // Módulo de Punto de Venta
-    Route::get('/ventas', [PuntoVentaController::class, 'index'])->name('ventas.index');
-    Route::post('/ventas/cobrar', [PuntoVentaController::class, 'store'])->name('ventas.store');
+    // ==========================================
+    // MÓDULO DE CAJA (CONTROL DE TURNOS)
+    // ==========================================
+    Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
+    Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
+    Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
+
+    // ==========================================
+    // MÓDULO DE PUNTO DE VENTA
+    // ==========================================
+    // 1. Rutas ENCANDADADAS (Obligatorio tener caja abierta para vender)
+    Route::middleware(['caja.abierta'])->group(function () {
+        Route::get('/ventas', [PuntoVentaController::class, 'index'])->name('ventas.index');
+        Route::post('/ventas/cobrar', [PuntoVentaController::class, 'store'])->name('ventas.store');
+    });
+
+    // 2. Rutas LIBRES (Para consultar aunque la caja esté cerrada)
     Route::get('/ventas/ticket/{id}', [PuntoVentaController::class, 'ticket'])->name('ventas.ticket');
     Route::get('/historial-ventas', [PuntoVentaController::class, 'historial'])->name('ventas.historial');
 
-    // Módulo de Gastos / Corte de Caja (MOCKUP)
+    // Módulo de Gastos
     Route::get('/gastos', function() { return view('gastos.index'); })->name('gastos.index');
 
     // Módulos en construcción
-    Route::get('/clientes', function() { return view('clientes.index'); })->name('clientes.index');
     Route::get('/reportes', function() { return view('reportes.index'); })->name('reportes.index');
 });
 

@@ -3,574 +3,478 @@
 @section('header_title', 'Punto de Venta')
 
 @section('content')
-<div x-data="puntoVenta()" class="flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-130px)] pb-6 lg:pb-0">
+{{-- Estilos globales para eliminar barras de desplazamiento y animaciones de resplandor (glow) --}}
+<style>
+    html, body, * {
+        -ms-overflow-style: none !important; /* IE y Edge antiguo */
+        scrollbar-width: none !important;    /* Firefox */
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+        display: none !important;            /* Chrome, Safari, Edge, Opera */
+        width: 0 !important;
+        height: 0 !important;
+        background: transparent !important;
+    }
 
-    {{-- TOAST DE NOTIFICACIONES --}}
-    <div x-show="toastVisible" x-cloak
-        x-transition:enter="transition ease-out duration-250"
-        x-transition:enter-start="opacity-0 -translate-y-3 -translate-x-1/2"
-        x-transition:enter-end="opacity-100 translate-y-0 -translate-x-1/2"
-        x-transition:leave="transition ease-in duration-200"
-        x-transition:leave-start="opacity-100 -translate-x-1/2"
-        x-transition:leave-end="opacity-0 -translate-y-1 -translate-x-1/2"
-        class="fixed top-5 left-1/2 z-50 px-4 py-2.5 rounded-xl shadow-lg shadow-black/10 dark:shadow-black/40 text-sm font-semibold flex items-center gap-2 max-w-sm"
-        :class="toastType === 'error' ? 'bg-red-500 text-white' : 'bg-gray-900 dark:bg-zinc-700 text-white'">
-        <svg x-show="toastType !== 'error'" class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-        <svg x-show="toastType === 'error'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        <span x-text="toastMsg"></span>
+    /* EFECTOS DE RESPLANDOR (GLOW) */
+    .btn-glow-white {
+        transition: all 0.3s ease;
+    }
+    .btn-glow-white:hover, .btn-glow-white:active {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12);
+    }
+    .dark .btn-glow-white:hover, .dark .btn-glow-white:active {
+        box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.22);
+    }
+
+    .btn-glow-green {
+        transition: all 0.3s ease;
+    }
+    .btn-glow-green:hover, .btn-glow-green:active {
+        box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.5);
+    }
+    
+    .btn-glow-red {
+        transition: all 0.3s ease;
+    }
+    .btn-glow-red:hover, .btn-glow-red:active {
+        box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-glow-blue {
+        transition: all 0.3s ease;
+    }
+    .btn-glow-blue:hover, .btn-glow-blue:active {
+        box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+    }
+</style>
+
+<div x-data="puntoVenta()" class="relative transition-colors duration-300">
+
+    {{-- Fondo animado con luces suavizadas --}}
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-20 dark:opacity-10 transition-opacity duration-500" aria-hidden="true">
+        <div class="absolute -top-[160px] -left-[80px] w-[420px] h-[420px] rounded-full bg-[#D32030] blur-[90px] animate-[pulse_16s_ease-in-out_infinite]"></div>
+        <div class="absolute top-[40px] -right-[140px] w-[420px] h-[420px] rounded-full bg-blue-500 blur-[90px] animate-[pulse_20s_ease-in-out_infinite]" style="animation-delay: -6s;"></div>
     </div>
 
-    <div class="panel-in panel-glow flex-1 flex flex-col bg-white dark:bg-zinc-950 rounded-3xl border border-gray-200 dark:border-white/[0.06] overflow-hidden shadow-sm dark:shadow-none h-[65vh] lg:h-full">
-        <div class="h-1 w-full bg-gradient-to-r from-orange-400 via-emerald-400 to-violet-400 bg-[length:200%_100%] animate-gradient-flow shrink-0"></div>
+    <div class="relative z-10 flex flex-col lg:flex-row gap-4 lg:gap-6 h-auto lg:h-[calc(100vh-130px)] pb-6 lg:pb-0 px-2 sm:px-0">
 
-        <div class="px-4 sm:px-6 pt-5 pb-4 border-b border-gray-100 dark:border-zinc-800 space-y-4 shrink-0 transition-shadow duration-300"
-            :class="scrolledProductos ? 'shadow-[0_6px_12px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_6px_12px_-8px_rgba(0,0,0,0.5)]' : ''">
-            <div class="flex items-center justify-between">
-                <div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800 dark:text-zinc-100">Productos y Servicios</h2>
-                        <div class="flex items-center gap-2 mt-1.5 flex-wrap">
-                            <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-zinc-500"></span>
-                                <span x-text="productosFiltrados().length + ' de ' + productos.length"></span>
-                            </span>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                <span x-text="contarConStock() + ' con stock'"></span>
-                            </span>
-                            <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                <span x-text="contarAgotados() + ' agotados'"></span>
-                            </span>
+        {{-- TOAST DE NOTIFICACIONES --}}
+        <div x-show="toastVisible" x-cloak
+            x-transition:enter="transition ease-out duration-250"
+            x-transition:enter-start="opacity-0 -translate-y-3 -translate-x-1/2"
+            x-transition:enter-end="opacity-100 translate-y-0 -translate-x-1/2"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 -translate-x-1/2"
+            x-transition:leave-end="opacity-0 -translate-y-1 -translate-x-1/2"
+            class="fixed top-5 left-1/2 z-50 px-4 py-2.5 rounded-xl shadow-lg shadow-black/10 dark:shadow-black/40 text-sm font-semibold flex items-center gap-2 max-w-sm"
+            :class="toastType === 'error' ? 'bg-red-500 text-white' : 'bg-gray-900 dark:bg-[#0A0A0A] text-white border border-transparent dark:border-neutral-800'">
+            <svg x-show="toastType !== 'error'" class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <svg x-show="toastType === 'error'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span x-text="toastMsg"></span>
+        </div>
+
+        {{-- PANEL IZQUIERDO: PRODUCTOS --}}
+        <div class="flex-1 flex flex-col bg-white dark:bg-[#151515] rounded-3xl border border-gray-200 dark:border-neutral-800 overflow-hidden shadow-lg dark:shadow-none h-[65vh] lg:h-full transform transition-all duration-700 ease-out delay-100"
+             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
+            <div class="h-1 w-full bg-gradient-to-r from-[#D32030] via-emerald-500 to-blue-500 bg-[length:200%_100%] animate-gradient-flow shrink-0"></div>
+
+            <div class="px-4 sm:px-6 pt-5 pb-4 border-b border-gray-100 dark:border-neutral-800 space-y-4 shrink-0 transition-shadow duration-300"
+                :class="scrolledProductos ? 'shadow-[0_6px_12px_-8px_rgba(0,0,0,0.15)] dark:shadow-[0_6px_12px_-8px_rgba(0,0,0,0.8)]' : ''">
+                <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800 dark:text-white">Productos y Servicios</h2>
+                            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                                <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-gray-100 dark:bg-[#0A0A0A] border border-transparent dark:border-neutral-800 text-gray-500 dark:text-neutral-400 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-neutral-600"></span>
+                                    <span x-text="productosFiltrados().length + ' de ' + productos.length"></span>
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-transparent dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-500 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span x-text="contarConStock() + ' con stock'"></span>
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-red-50 dark:bg-red-900/20 border border-transparent dark:border-red-900/50 text-red-600 dark:text-red-500 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                    <span x-text="contarAgotados() + ' agotados'"></span>
+                                </span>
+                            </div>
                         </div>
+
+                        @if($esAdmin)
+                            {{-- DESPLEGABLE PERSONALIZADO: SUCURSAL --}}
+                            <div x-data="{ openSucursal: false }" @click.away="openSucursal = false" class="relative">
+                                <div class="flex items-center gap-2 bg-amber-50 dark:bg-[#0A0A0A] border border-amber-200 dark:border-neutral-800 px-3 py-1.5 rounded-xl shadow-sm hover:shadow transition-all duration-300">
+                                    <svg class="w-3.5 h-3.5 text-amber-700 dark:text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                                    <span class="text-[10px] font-black text-amber-800 dark:text-amber-500 uppercase tracking-wider">Sucursal:</span>
+                                    
+                                    <button @click="openSucursal = !openSucursal" type="button" 
+                                        class="text-xs font-bold bg-white dark:bg-[#151515] border border-amber-300 dark:border-neutral-700 rounded-lg px-2 py-1 text-gray-700 dark:text-white flex items-center gap-2 focus:outline-none cursor-pointer btn-glow-white">
+                                        <span x-text="sucursales.find(s => s.id == sucursalSeleccionada)?.nombre || 'Seleccionar'"></span>
+                                        <svg class="w-3 h-3 text-gray-400 transition-transform duration-200" :class="openSucursal ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+
+                                    <div x-show="openSucursal" x-cloak
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 scale-95"
+                                        x-transition:enter-end="opacity-100 scale-100"
+                                        x-transition:leave="transition ease-in duration-75"
+                                        x-transition:leave-start="opacity-100 scale-100"
+                                        x-transition:leave-end="opacity-0 scale-95"
+                                        class="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl shadow-xl z-50 p-1 space-y-0.5">
+                                        <template x-for="suc in sucursales" :key="suc.id">
+                                            <button @click="sucursalSeleccionada = suc.id; openSucursal = false" type="button"
+                                                class="w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-between"
+                                                :class="sucursalSeleccionada == suc.id ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800'">
+                                                <span x-text="suc.nombre"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
-
-                    @if($esAdmin)
-                        <div class="flex items-center gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-1.5 rounded-xl shadow-sm hover:shadow transition-all duration-300"
-                            :class="sucursalFlash ? 'ring-2 ring-amber-400 ring-offset-1 dark:ring-offset-zinc-900' : ''">
-                            <svg class="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
-                            <span class="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-wider">Sucursal Activa:</span>
-                            <select x-model="sucursalSeleccionada"
-                                class="text-xs font-bold bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 rounded-lg p-1 text-gray-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer transition-shadow">
-                                @foreach($sucursales as $suc)
-                                    <option value="{{ $suc->id }}">{{ $suc->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
+                    <div>
+                        <button @click="limpiarFiltros()" x-show="hayFiltrosActivos()" x-cloak
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-90"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            class="text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/10 px-3 py-2 rounded-lg font-medium btn-glow-red hover:bg-red-100 dark:hover:bg-red-900/30 active:scale-95 flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <span class="hidden sm:inline">Limpiar filtros</span>
+                            <span class="sm:hidden">Limpiar</span>
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <button @click="limpiarFiltros()" x-show="hayFiltrosActivos()" x-cloak
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 scale-90"
+
+                {{-- CAMPO DE BÚSQUEDA --}}
+                <div class="relative">
+                    <input x-model="busqueda" type="text" placeholder="Buscar por medida, marca o descripción..."
+                        class="w-full pl-11 pr-10 py-3 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-[#D32030] focus:border-transparent focus:bg-white dark:focus:bg-[#151515] transition-all">
+                    <svg class="absolute left-4 top-3.5 w-4 h-4 transition-colors" :class="busqueda ? 'text-[#D32030] dark:text-red-500' : 'text-gray-400 dark:text-neutral-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    <button x-show="busqueda" @click="busqueda = ''" x-cloak
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 scale-75"
                         x-transition:enter-end="opacity-100 scale-100"
-                        class="text-xs text-red-500 dark:text-red-400 border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95 transition flex items-center gap-1">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        <span class="hidden sm:inline">Limpiar filtros</span>
-                        <span class="sm:hidden">Limpiar</span>
+                        class="absolute right-3.5 top-3 w-6 h-6 rounded-full bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 active:scale-90 flex items-center justify-center text-gray-500 dark:text-neutral-400 transition-all btn-glow-white">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-            </div>
 
-            <div class="relative">
-                <input x-model="busqueda" type="text" placeholder="Buscar por medida o marca..."
-                    class="w-full pl-11 pr-10 py-3 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm text-gray-800 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent focus:bg-white dark:focus:bg-zinc-800 transition-all">
-                <svg class="absolute left-4 top-3.5 w-4 h-4 transition-colors" :class="busqueda ? 'text-emerald-500' : 'text-gray-400 dark:text-zinc-500'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-                <button x-show="busqueda" @click="busqueda = ''" x-cloak
-                    x-transition:enter="transition ease-out duration-150"
-                    x-transition:enter-start="opacity-0 scale-75"
-                    x-transition:enter-end="opacity-100 scale-100"
-                    class="absolute right-3.5 top-3 w-6 h-6 rounded-full bg-gray-200 dark:bg-zinc-700 hover:bg-gray-300 dark:hover:bg-zinc-600 active:scale-90 flex items-center justify-center text-gray-500 dark:text-zinc-300 transition-all">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
+                {{-- FILTROS --}}
+                <div class="space-y-3">
+                    <div class="flex items-center gap-6 flex-wrap">
+                        
+                        {{-- DESPLEGABLE MARCA --}}
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider shrink-0">Marca</span>
+                            <div x-data="{ openMarca: false }" @click.away="openMarca = false" class="relative min-w-[170px]">
+                                <button @click="openMarca = !openMarca" type="button"
+                                    class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#0A0A0A] text-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#D32030] cursor-pointer transition-shadow btn-glow-white">
+                                    <span class="truncate" x-text="filtroMarca ? filtroMarca + ' (' + contarMarca(filtroMarca) + ')' : 'Todas las marcas'"></span>
+                                    <svg class="w-4 h-4 text-gray-400 transition-transform duration-200" :class="openMarca ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                </button>
 
-            <div class="space-y-3">
-                <div class="flex items-center gap-6 flex-wrap">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Marca</span>
-                        <select x-model="filtroMarca"
-                            class="px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer min-w-[160px] transition-shadow">
-                            <option value="">Todas las marcas</option>
-                            <template x-for="m in marcas" :key="m">
-                                <option :value="m" x-text="m + ' (' + contarMarca(m) + ')'"></option>
-                            </template>
-                        </select>
+                                <div x-show="openMarca" x-cloak
+                                    x-transition:enter="transition ease-out duration-100"
+                                    x-transition:enter-start="opacity-0 scale-95"
+                                    x-transition:enter-end="opacity-100 scale-100"
+                                    x-transition:leave="transition ease-in duration-75"
+                                    x-transition:leave-start="opacity-100 scale-100"
+                                    x-transition:leave-end="opacity-0 scale-95"
+                                    class="absolute left-0 mt-1.5 w-full max-h-60 overflow-y-auto rounded-xl bg-white dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 shadow-2xl z-50 p-1 space-y-0.5">
+                                    
+                                    <button @click="filtroMarca = ''; openMarca = false" type="button"
+                                        class="w-full text-left px-3 py-2 text-xs rounded-lg transition-colors flex items-center justify-between"
+                                        :class="filtroMarca === '' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800/60'">
+                                        <span>Todas las marcas</span>
+                                    </button>
+
+                                    <template x-for="m in marcas" :key="m">
+                                        <button @click="filtroMarca = m; openMarca = false" type="button"
+                                            class="w-full text-left px-3 py-2 text-xs rounded-lg transition-colors flex items-center justify-between"
+                                            :class="filtroMarca === m ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800/60'">
+                                            <span x-text="m" class="truncate pr-2"></span>
+                                            <span class="text-[10px] text-gray-400 dark:text-neutral-500 font-normal shrink-0" x-text="'(' + contarMarca(m) + ')'"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- FILTRO USO --}}
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider shrink-0">Uso</span>
+                            <div class="flex gap-1.5 overflow-x-auto">
+                                <button @click="filtroUso = ''" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 btn-glow-white"
+                                    :class="filtroUso === '' ? 'bg-blue-500 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-500/50'">
+                                    Todos
+                                </button>
+                                <template x-for="u in usos" :key="u">
+                                    <button @click="filtroUso = u" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 btn-glow-white"
+                                        :class="filtroUso === u ? 'bg-blue-500 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-500/50'"
+                                        x-text="u">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Uso</span>
-                        <div class="flex gap-1.5 overflow-x-auto scrollbar-hide">
-                            <button @click="filtroUso = ''" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0"
-                                :class="filtroUso === '' ? 'bg-blue-500 text-white border-blue-500 shadow-sm shadow-blue-200 dark:shadow-blue-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500/50'">
-                                Todos
-                            </button>
-                            <template x-for="u in usos" :key="u">
-                                <button @click="filtroUso = u" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0"
-                                    :class="filtroUso === u ? 'bg-blue-500 text-white border-blue-500 shadow-sm shadow-blue-200 dark:shadow-blue-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-blue-300 dark:hover:border-blue-500/50'"
-                                    x-text="u">
+                    <div class="flex items-center gap-6 flex-wrap">
+                        {{-- FILTRO STOCK --}}
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider shrink-0">Stock</span>
+                            <div class="flex gap-1.5 overflow-x-auto">
+                                <button @click="filtroStock = ''" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1 btn-glow-white"
+                                    :class="filtroStock === '' ? 'bg-gray-800 dark:bg-neutral-700 text-white border-gray-800 dark:border-neutral-600' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800'">
+                                    Todos
+                                </button>
+                                <button @click="filtroStock = 'disponible'" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1 btn-glow-green"
+                                    :class="filtroStock === 'disponible' ? 'bg-emerald-500 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800'">
+                                    Con stock
+                                </button>
+                                <button @click="filtroStock = 'agotado'" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1 btn-glow-red"
+                                    :class="filtroStock === 'agotado' ? 'bg-[#D32030] text-white border-[#D32030] shadow-[0_0_15px_rgba(211,32,48,0.5)]' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800'">
+                                    Agotado
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- FILTRO CATEGORÍA --}}
+                    <div class="flex items-center gap-2 w-full pt-2 border-t border-gray-50 dark:border-neutral-800">
+                        <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wider shrink-0">Categoría</span>
+                        <div class="flex gap-1.5 overflow-x-auto">
+                            <template x-for="cat in ['Todos', 'Llanta', 'Rin', 'Accesorio', 'Servicio']" :key="cat">
+                                <button @click="filtroCategoria = cat" class="px-4 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1.5 btn-glow-white"
+                                    :class="filtroCategoria === cat ? 'bg-indigo-600 text-white border-indigo-600 shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-white dark:bg-[#0A0A0A] text-gray-500 dark:text-neutral-400 border-gray-200 dark:border-neutral-800 hover:border-indigo-300 dark:hover:border-indigo-500/50'">
+                                    <span class="w-1.5 h-1.5 rounded-full" :class="cat === 'Todos' ? (filtroCategoria === cat ? 'bg-white' : 'bg-gray-300 dark:bg-neutral-600') : bordeTipo(cat)"></span>
+                                    <span x-text="cat"></span>
                                 </button>
                             </template>
                         </div>
                     </div>
                 </div>
-
-                <div class="flex items-center gap-6 flex-wrap">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Stock</span>
-                        <div class="flex gap-1.5 overflow-x-auto scrollbar-hide">
-                            <button @click="filtroStock = ''" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1"
-                                :class="filtroStock === '' ? 'bg-gray-800 dark:bg-zinc-600 text-white border-gray-800 dark:border-zinc-500 shadow-sm' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-gray-400 dark:hover:border-zinc-500'">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                                Todos
-                            </button>
-                            <button @click="filtroStock = 'disponible'" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1"
-                                :class="filtroStock === 'disponible' ? 'bg-emerald-500 text-white border-emerald-500 shadow-sm shadow-emerald-200 dark:shadow-emerald-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-emerald-300 dark:hover:border-emerald-500/50'">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                                Con stock
-                            </button>
-                            <button @click="filtroStock = 'poco'" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1"
-                                :class="filtroStock === 'poco' ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-200 dark:shadow-amber-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-amber-300 dark:hover:border-amber-500/50'">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-1.5a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
-                                Poco
-                            </button>
-                            <button @click="filtroStock = 'agotado'" class="px-3 py-1.5 rounded-full text-[11px] font-medium border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1"
-                                :class="filtroStock === 'agotado' ? 'bg-red-500 text-white border-red-500 shadow-sm shadow-red-200 dark:shadow-red-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-red-300 dark:hover:border-red-500/50'">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                Agotado
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Precio</span>
-                        <select x-model="filtroPrecio"
-                            class="px-3 py-1.5 rounded-lg text-sm border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer min-w-[140px] transition-shadow">
-                            <option value="">Todos los precios</option>
-                            <template x-for="r in rangosPrecios" :key="r.label">
-                                <option :value="r.label" x-text="r.label"></option>
-                            </template>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-2 w-full pt-2 border-t border-gray-50 dark:border-zinc-800">
-                    <span class="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider shrink-0">Categoría</span>
-                    <div class="flex gap-1.5 overflow-x-auto scrollbar-hide">
-                        <template x-for="cat in ['Todos', 'Llanta', 'Rin', 'Accesorio', 'Servicio']" :key="cat">
-                            <button @click="filtroCategoria = cat" class="px-4 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-200 active:scale-95 shrink-0 flex items-center gap-1.5"
-                                :class="filtroCategoria === cat ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200 dark:shadow-indigo-900/40' : 'bg-white dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 border-gray-200 dark:border-zinc-700 hover:border-indigo-300 dark:hover:border-indigo-500/50'">
-                                <span class="w-1.5 h-1.5 rounded-full" :class="cat === 'Todos' ? (filtroCategoria === cat ? 'bg-white' : 'bg-gray-300 dark:bg-zinc-600') : bordeTipo(cat)"></span>
-                                <span x-text="cat"></span>
-                            </button>
-                        </template>
-                    </div>
-                </div>
             </div>
-        </div>
 
-        <div class="flex-1 overflow-y-auto p-4 sm:p-5 pos-grid-bg"
-            @scroll.passive="scrolledProductos = $event.target.scrollTop > 4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5">
-                <template x-for="(p, index) in productosFiltrados()" :key="p.id">
-                    <button @click="agregar(p)" :disabled="p.tipo !== 'Servicio' && p.stock_cantidad <= 0"
-                        class="animate-card-in group relative flex flex-col text-left p-5 pl-6 rounded-2xl border transition-all duration-200 h-full overflow-hidden"
-                        :style="'animation-delay:' + (Math.min(index, 14) * 30) + 'ms'"
-                        :class="[
-                            (p.tipo === 'Servicio' || p.stock_cantidad > 0)
-                                ? 'border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50/40 dark:hover:bg-emerald-900/10 hover:shadow-lg hover:shadow-emerald-900/5 hover:-translate-y-0.5 active:scale-[0.98] active:translate-y-0 cursor-pointer'
-                                : 'border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/40 opacity-50 cursor-not-allowed',
-                            ultimoAgregadoId === p.id ? 'ring-2 ring-emerald-400 ring-offset-2 dark:ring-offset-zinc-900' : ''
-                        ]">
+            {{-- GRID DE PRODUCTOS CON RESPLANDOR (GLOW) AL PASAR EL MOUSE --}}
+            <div class="flex-1 overflow-y-auto p-4 sm:p-5" @scroll.passive="scrolledProductos = $event.target.scrollTop > 4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 sm:gap-5">
+                    <template x-for="(p, index) in productosFiltrados()" :key="p.id">
+                        <button @click="agregar(p)" :disabled="p.tipo !== 'Servicio' && p.stock_cantidad <= 0"
+                            class="group relative flex flex-col text-left p-5 pl-6 rounded-2xl border transition-all duration-300 h-full overflow-hidden"
+                            :class="[
+                                (p.tipo === 'Servicio' || p.stock_cantidad > 0)
+                                    ? 'border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#0A0A0A]/80 hover:border-emerald-300 dark:hover:border-emerald-600 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.3)] dark:hover:shadow-[0_10px_25px_-5px_rgba(16,185,129,0.2)] hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer'
+                                    : 'border-gray-100 dark:border-neutral-800/50 bg-gray-50 dark:bg-neutral-900/30 opacity-50 cursor-not-allowed'
+                            ]">
 
-                        <span class="absolute left-0 top-3 bottom-3 w-1 rounded-full transition-colors" :class="bordeTipo(p.tipo)"></span>
+                            <span class="absolute left-0 top-3 bottom-3 w-1 rounded-full transition-colors" :class="bordeTipo(p.tipo)"></span>
 
-                        <div class="w-full">
-                            <div class="flex items-start justify-between mb-3">
-                                <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider"
-                                    :class="tipoBadgeClase(p.tipo)"
-                                    x-text="p.tipo"></span>
+                            <div class="w-full flex-1">
+                                <div class="flex items-start justify-between mb-3">
+                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border dark:border-transparent"
+                                        :class="tipoBadgeClase(p.tipo)" x-text="p.tipo"></span>
+
+                                    <template x-if="p.tipo !== 'Servicio'">
+                                        <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 border dark:border-transparent"
+                                            :class="p.stock_cantidad > 5 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : p.stock_cantidad > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-red-100 dark:bg-red-900/30 text-[#D32030] dark:text-red-400'">
+                                            <span x-text="p.stock_cantidad > 0 ? 'Stock: ' + p.stock_cantidad : 'Agotado'"></span>
+                                        </span>
+                                    </template>
+                                </div>
+
+                                <div class="font-bold text-base text-gray-800 dark:text-white leading-tight mb-1" x-text="p.tipo === 'Servicio' ? p.descripcion : p.marca"></div>
 
                                 <template x-if="p.tipo !== 'Servicio'">
-                                    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1"
-                                        :class="p.stock_cantidad > 5 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : p.stock_cantidad > 0 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'">
-                                        <span x-show="p.stock_cantidad > 0 && p.stock_cantidad <= 5" class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                                        <span x-text="p.stock_cantidad > 0 ? 'Stock: ' + p.stock_cantidad : 'Agotado'"></span>
-                                    </span>
+                                    <div class="text-xs text-gray-500 dark:text-neutral-500 font-mono" x-text="p.medida"></div>
                                 </template>
                             </div>
 
-                            <div class="font-bold text-base text-gray-800 dark:text-zinc-100 leading-tight mb-1" x-text="p.tipo === 'Servicio' ? p.descripcion : p.marca"></div>
-
-                            <template x-if="p.tipo !== 'Servicio'">
-                                <div class="text-xs text-gray-500 dark:text-zinc-400 font-mono" x-text="p.medida"></div>
-                            </template>
-                            <template x-if="p.tipo === 'Servicio'">
-                                <div class="text-xs text-gray-500 dark:text-zinc-400 truncate" x-text="p.descripcion"></div>
-                            </template>
-                        </div>
-
-                        <div class="w-full mt-4 pt-3 border-t border-gray-50 dark:border-zinc-700/60 flex items-center justify-between">
-                            <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 tabular-nums transition-transform group-hover:scale-105" x-text="'$' + (+p.precio_publico).toLocaleString()"></div>
-                            <svg class="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        </div>
-                    </button>
-                </template>
-            </div>
-
-            <div x-show="productosFiltrados().length === 0" x-cloak
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                class="text-center text-gray-400 dark:text-zinc-500 py-20 text-sm">
-                <svg class="w-12 h-12 mx-auto mb-3 text-gray-200 dark:text-zinc-700 animate-bounce-gentle" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                No se encontraron registros con los filtros actuales.
-            </div>
-        </div>
-    </div>
-
-    <div class="[--panel-bg:#fff] dark:[--panel-bg:#09090b] panel-in panel-glow w-full lg:w-[380px] xl:w-[420px] flex flex-col bg-white dark:bg-zinc-950 rounded-3xl border border-gray-200 dark:border-white/[0.06] overflow-hidden shadow-sm dark:shadow-none shrink-0 h-[65vh] lg:h-full" style="animation-delay:.08s">
-        <div class="h-1 w-full bg-gradient-to-r from-orange-400 via-emerald-400 to-violet-400 bg-[length:200%_100%] animate-gradient-flow shrink-0"></div>
-
-        <div class="p-4 bg-gradient-to-br from-gray-900 to-gray-800 text-white border-b border-gray-800 shrink-0">
-            <div class="flex items-center justify-between mb-2">
-                <h3 class="font-bold text-lg flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    Venta actual
-                </h3>
-                <span class="text-xs px-3 py-1 rounded-full font-medium transition-all" :class="carrito.length > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10'" x-text="carrito.length + ' partidas'"></span>
-            </div>
-
-            <div class="mt-3 transition-all duration-300" :class="mayoreoCelebrate ? 'ring-4 ring-emerald-300/40 rounded-lg' : ''">
-                <div class="flex items-center justify-between text-[11px] mb-1.5">
-                    <span class="font-mono font-bold text-white/90" x-text="totalLlantas + ' / 20 llantas'"></span>
-                    <span class="font-semibold transition-colors" :class="aplicaMayoreoGlobal ? 'text-emerald-400' : 'text-white/50'"
-                        x-text="aplicaMayoreoGlobal ? '¡Mayoreo activo!' : 'Faltan ' + (20 - totalLlantas) + ' para mayoreo'"></span>
-                </div>
-                <div class="h-2 w-full bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
-                        :class="aplicaMayoreoGlobal ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' : 'bg-gradient-to-r from-amber-400 to-amber-500'"
-                        :style="'width:' + Math.min(100, (totalLlantas / 20 * 100)) + '%'">
-                        <div class="absolute inset-0 shimmer-bar" x-show="totalLlantas > 0"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-3 space-y-2.5 bg-gray-50/50 dark:bg-zinc-950/40">
-            <template x-for="(item, i) in carrito" :key="i">
-                <div class="flex flex-col p-3 rounded-xl bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-sm relative hover:shadow-md hover:border-gray-300 dark:hover:border-zinc-600 transition-shadow"
-                    x-transition:enter="transition-all ease-out duration-300"
-                    x-transition:enter-start="opacity-0 -translate-x-4"
-                    x-transition:enter-end="opacity-100 translate-x-0"
-                    x-transition:leave="transition-all ease-in duration-200"
-                    x-transition:leave-start="opacity-100 translate-x-0 max-h-40"
-                    x-transition:leave-end="opacity-0 translate-x-4 max-h-0 !py-0 !my-0 !border-0">
-                    <div class="flex items-start justify-between gap-2">
-                        <div class="flex-1 min-w-0 pr-6">
-                            <div class="text-sm font-bold text-gray-800 dark:text-zinc-100 leading-tight" x-text="item.nombre"></div>
-                            <div class="flex flex-wrap gap-1.5 mt-1.5">
-                                <span x-show="item.tipo === 'Servicio'" class="text-[9px] bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 px-1.5 py-0.5 rounded font-bold tracking-wider">SERVICIO</span>
-                                <span class="text-xs font-semibold text-gray-500 dark:text-zinc-400" x-text="'$' + calcularItem(item).precioUnitario.toLocaleString() + ' c/u'"></span>
-                                <span x-show="item.tipo === 'Llanta' && aplicaMayoreoGlobal" class="text-[9px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-bold tracking-wider border border-emerald-200 dark:border-emerald-800">MAYOREO</span>
+                            <div class="w-full mt-4 pt-3 border-t border-gray-100 dark:border-neutral-800 flex items-center justify-between">
+                                <div class="text-lg font-black text-emerald-600 dark:text-emerald-400 tabular-nums" x-text="'$' + (+p.precio_publico).toLocaleString()"></div>
+                                <svg class="w-4 h-4 text-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             </div>
-                        </div>
-                        <button @click="carrito.splice(i,1)" class="absolute top-2.5 right-2.5 text-gray-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 active:scale-90 transition">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
-                    </div>
-                    <div class="flex items-center justify-between mt-2.5 pt-2.5 border-t border-gray-50 dark:border-zinc-700">
-                        <div class="flex items-center gap-1 bg-gray-50 dark:bg-zinc-900 rounded-lg p-0.5 border border-gray-200 dark:border-zinc-700">
-                            <button @click="item.cantidad > 1 ? (item.cantidad--, bumpQty(i)) : carrito.splice(i,1)" class="w-6 h-6 rounded bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-600 text-gray-600 dark:text-zinc-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 active:scale-90 transition flex items-center justify-center">&minus;</button>
-                            <span class="w-7 text-center text-sm font-bold text-gray-800 dark:text-zinc-100 tabular-nums inline-block transition-transform duration-150"
-                                :class="qtyBumpIndex === i ? 'scale-125 text-emerald-600 dark:text-emerald-400' : 'scale-100'"
-                                x-text="item.cantidad"></span>
-                            <button @click="item.cantidad++; bumpQty(i)" class="w-6 h-6 rounded bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-600 text-gray-600 dark:text-zinc-300 font-bold text-sm hover:bg-gray-100 dark:hover:bg-zinc-700 active:scale-90 transition flex items-center justify-center">+</button>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm font-black text-gray-900 dark:text-zinc-100 tabular-nums" x-text="'$' + calcularItem(item).totalFinal.toLocaleString()"></div>
-                            <div x-show="calcularItem(item).descuento > 0" class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5" x-text="'-$' + calcularItem(item).descuento + ' Dto (4x)'"></div>
-                        </div>
-                    </div>
+                    </template>
                 </div>
-            </template>
 
-            <div x-show="carrito.length === 0" x-cloak
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0"
-                x-transition:enter-end="opacity-100"
-                class="text-center py-10">
-                <div class="w-12 h-12 bg-gray-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-3 animate-bounce-gentle">
-                    <svg class="w-6 h-6 text-gray-300 dark:text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                <div x-show="productosFiltrados().length === 0" x-cloak class="text-center text-gray-400 dark:text-neutral-500 py-20 text-sm">
+                    No se encontraron registros con los filtros actuales.
                 </div>
-                <p class="text-gray-400 dark:text-zinc-500 font-medium text-xs">El carrito está vacío</p>
             </div>
         </div>
 
-        <div class="relative h-3 shrink-0 bg-gray-50/50 dark:bg-zinc-950/40">
-            <div class="absolute inset-x-0 bottom-0 h-3 ticket-notch"></div>
-        </div>
-
-        <div class="border-t border-gray-200 dark:border-white/[0.06] p-4 space-y-3 bg-white dark:bg-zinc-950 shrink-0">
-
-            <div x-show="totalAhorro > 0" x-cloak
-                x-transition:enter="transition ease-out duration-300"
-                x-transition:enter-start="opacity-0 -translate-y-1"
-                x-transition:enter-end="opacity-100 translate-y-0"
-                class="text-xs font-bold text-emerald-600 dark:text-emerald-400 text-center bg-emerald-50 dark:bg-emerald-900/20 py-1.5 rounded-lg border border-emerald-100 dark:border-emerald-800 flex items-center justify-center gap-1.5">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Ahorro total aplicado: $<span x-text="totalAhorro.toLocaleString()"></span>
-            </div>
-
-            <div class="total-shimmer bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl p-3.5 flex justify-between items-center shadow-md shadow-emerald-500/20 dark:shadow-emerald-900/30 transition-transform"
-                :class="totalFlash ? 'animate-flash' : ''">
-                <span class="text-emerald-50 text-xs font-semibold tracking-wide">TOTAL</span>
-                <span class="text-white text-2xl font-black tracking-tight tabular-nums" x-text="'$' + totalGeneral().toLocaleString()"></span>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-[10px] text-gray-500 dark:text-zinc-400 font-bold block mb-1 tracking-wider uppercase">Paga con</label>
-                    <input x-model.number="pagoCon" type="number" placeholder="0"
-                        class="w-full px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:bg-white dark:focus:bg-zinc-800 transition-all">
-                </div>
-                <div>
-                    <label class="text-[10px] text-gray-500 dark:text-zinc-400 font-bold block mb-1 tracking-wider uppercase">Cambio</label>
-                    <div class="px-3 py-2 rounded-lg text-sm font-black flex items-center h-[38px] tabular-nums transition-colors"
-                        :class="cambio() > 0 && pagoCon > 0 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-gray-50 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 border border-gray-100 dark:border-zinc-700'"
-                        x-text="'$' + cambio().toLocaleString()">
+        {{-- PANEL DERECHO: CARRITO / COMPRA (TOTALMENTE COMPLETO) --}}
+        <div class="w-full lg:w-[380px] xl:w-[420px] flex flex-col bg-white dark:bg-[#151515] rounded-3xl border border-gray-200 dark:border-neutral-800 shadow-lg overflow-hidden h-full">
+            
+            {{-- Encabezado del Carrito --}}
+            <div class="p-5 border-b border-gray-100 dark:border-neutral-800 flex items-center justify-between bg-gray-50/50 dark:bg-[#0A0A0A]/50">
+                <div class="flex items-center gap-2.5">
+                    <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 2 0 100 4 2 2 0 000-4z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-gray-800 dark:text-white">Carrito de Compra</h3>
+                        <p class="text-xs text-gray-400 dark:text-neutral-500" x-text="carrito.length + ' elementos seleccionados'"></p>
                     </div>
                 </div>
-            </div>
 
-            <div class="flex gap-2">
-                <template x-for="b in [200, 500, 1000, 2000]">
-                    <button @click="pagoCon = b"
-                        class="flex-1 py-1.5 text-[11px] rounded-md font-bold transition-all duration-150 active:scale-95 shadow-sm border"
-                        :class="pagoCon === b ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-700 hover:border-gray-300 dark:hover:border-zinc-600'"
-                        x-text="'$' + b"></button>
-                </template>
-                <button @click="pagoCon = totalGeneral()"
-                    class="flex-1 py-1.5 text-[11px] rounded-md font-bold transition-all duration-150 active:scale-95 shadow-sm border"
-                    :class="pagoCon === totalGeneral() && totalGeneral() > 0 ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'">
-                    Exacto
+                <button @click="limpiarCarrito()" x-show="carrito.length > 0" x-cloak
+                    class="text-xs text-red-500 hover:text-red-600 font-semibold px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-900/20 btn-glow-red transition-all">
+                    Vaciar
                 </button>
             </div>
 
-            <div class="flex items-center gap-3">
-                <input x-model="cliente" type="text" placeholder="Cliente (opcional)"
-                    class="flex-1 px-3 py-2 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm text-gray-800 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white dark:focus:bg-zinc-800 transition-all">
+            {{-- Lista de Items en el Carrito --}}
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                <template x-for="(item, idx) in carrito" :key="item.id">
+                    <div class="flex items-center gap-3 p-3 rounded-2xl bg-gray-50 dark:bg-[#0A0A0A] border border-gray-100 dark:border-neutral-800/80 transition-all">
+                        
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-bold text-gray-800 dark:text-white truncate" x-text="item.tipo === 'Servicio' ? item.descripcion : item.marca + ' - ' + item.medida"></h4>
+                            <div class="text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-0.5" x-text="'$' + (+item.precio_publico).toLocaleString()"></div>
+                        </div>
 
-                <label class="flex items-center gap-2 text-xs text-gray-500 dark:text-zinc-400 cursor-pointer whitespace-nowrap">
-                    <input x-model="requiereFactura" type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 dark:border-zinc-600 dark:bg-zinc-800 text-emerald-600 focus:ring-emerald-500">
-                    Factura
-                </label>
+                        {{-- Control de Cantidad --}}
+                        <div class="flex items-center gap-1.5 bg-white dark:bg-[#151515] border border-gray-200 dark:border-neutral-800 rounded-xl p-1">
+                            <button @click="disminuir(item)" class="w-6 h-6 rounded-lg bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 flex items-center justify-center text-gray-600 dark:text-neutral-300 transition-colors btn-glow-white">
+                                -
+                            </button>
+                            <span class="text-xs font-bold w-6 text-center text-gray-800 dark:text-white" x-text="item.cantidad"></span>
+                            <button @click="aumentar(item)" class="w-6 h-6 rounded-lg bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 flex items-center justify-center text-gray-600 dark:text-neutral-300 transition-colors btn-glow-white">
+                                +
+                            </button>
+                        </div>
+
+                        {{-- Subtotal por Item --}}
+                        <div class="text-right min-w-[60px]">
+                            <span class="text-xs font-black text-gray-900 dark:text-white" x-text="'$' + (item.cantidad * item.precio_publico).toLocaleString()"></span>
+                        </div>
+
+                        {{-- Botón Eliminar --}}
+                        <button @click="quitar(item)" class="text-gray-400 hover:text-red-500 transition-colors p-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </template>
+
+                {{-- Estado Vacío --}}
+                <div x-show="carrito.length === 0" class="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 dark:text-neutral-600 space-y-2">
+                    <svg class="w-12 h-12 stroke-current opacity-50" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+                    <p class="text-xs font-medium">No hay productos agregados al carrito</p>
+                </div>
             </div>
 
-            <button @click="cobrar()" :disabled="carrito.length === 0 || procesando"
-                class="w-full py-3 text-white dark:text-zinc-900 rounded-xl font-bold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                :class="claseBotonCobrar()">
-                <svg x-show="procesando" class="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                <span x-text="procesando ? 'Procesando...' : 'Cobrar venta'"></span>
-            </button>
+            {{-- Resumen de Pago y Totales --}}
+            <div class="p-5 border-t border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-[#0A0A0A]/50 space-y-4">
+                
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between text-gray-500 dark:text-neutral-400">
+                        <span>Subtotal</span>
+                        <span class="font-bold text-gray-800 dark:text-white" x-text="'$' + subtotal().toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between text-gray-500 dark:text-neutral-400">
+                        <span>IVA (16%)</span>
+                        <span class="font-bold text-gray-800 dark:text-white" x-text="'$' + iva().toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between text-base font-black text-gray-900 dark:text-white pt-2 border-t border-gray-200 dark:border-neutral-800">
+                        <span>Total</span>
+                        <span class="text-emerald-600 dark:text-emerald-400" x-text="'$' + total().toLocaleString()"></span>
+                    </div>
+                </div>
+
+                {{-- Método de Pago --}}
+                <div class="grid grid-cols-3 gap-2">
+                    <button @click="metodoPago = 'Efectivo'" 
+                        class="py-2 px-1 text-center rounded-xl text-xs font-bold border transition-all btn-glow-white"
+                        :class="metodoPago === 'Efectivo' ? 'bg-emerald-500 text-white border-emerald-500 shadow-md' : 'bg-white dark:bg-[#151515] text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800'">
+                        Efectivo
+                    </button>
+                    <button @click="metodoPago = 'Tarjeta'" 
+                        class="py-2 px-1 text-center rounded-xl text-xs font-bold border transition-all btn-glow-white"
+                        :class="metodoPago === 'Tarjeta' ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-white dark:bg-[#151515] text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800'">
+                        Tarjeta
+                    </button>
+                    <button @click="metodoPago = 'Transferencia'" 
+                        class="py-2 px-1 text-center rounded-xl text-xs font-bold border transition-all btn-glow-white"
+                        :class="metodoPago === 'Transferencia' ? 'bg-indigo-500 text-white border-indigo-500 shadow-md' : 'bg-white dark:bg-[#151515] text-gray-700 dark:text-neutral-300 border-gray-200 dark:border-neutral-800'">
+                        Transf.
+                    </button>
+                </div>
+
+                {{-- Botón Finalizar / Cobrar con Resplandor --}}
+                <button @click="procesarVenta()" :disabled="carrito.length === 0"
+                    class="w-full py-3.5 px-4 rounded-2xl font-bold text-white text-sm bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-[0.99] transition-all btn-glow-green disabled:opacity-40 disabled:cursor-not-allowed shadow-lg flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Completar Venta</span>
+                </button>
+
+            </div>
         </div>
     </div>
 </div>
 
-<style>
-    [x-cloak] { display: none !important; }
-    .scrollbar-hide::-webkit-scrollbar { display: none; }
-    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-    /* ── Fondo punteado del catálogo, con variante oscura ── */
-    .pos-grid-bg {
-        background-color: rgba(249,250,251,0.5);
-        background-image: radial-gradient(circle, #e5e7eb 1px, transparent 1px);
-        background-size: 22px 22px;
-    }
-    .dark .pos-grid-bg {
-        background-color: rgba(0,0,0,0.5);
-        background-image: radial-gradient(circle, #27272a 1px, transparent 1px);
-    }
-
-    /* ── Entrada de los paneles principales ── */
-    .panel-in {
-        opacity: 0;
-        transform: translateY(10px);
-        animation: fadeUpPanel .5s cubic-bezier(.22,.61,.36,1) forwards;
-    }
-    @keyframes fadeUpPanel {
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── Resplandor ambiental muy sutil, solo en oscuro, para que el panel
-         negro no se sienta plano contra el fondo negro de la página ── */
-    .dark .panel-glow {
-        animation: panelGlow 6s ease-in-out infinite;
-    }
-    @keyframes panelGlow {
-        0%, 100% { box-shadow: 0 0 0 1px rgba(255,255,255,0.04), 0 20px 40px -20px rgba(16,185,129,0.06); }
-        50%      { box-shadow: 0 0 0 1px rgba(255,255,255,0.07), 0 20px 46px -18px rgba(16,185,129,0.12); }
-    }
-
-    /* ── Barra degradada superior con movimiento continuo ── */
-    .animate-gradient-flow { animation: gradientFlow 6s linear infinite; }
-    @keyframes gradientFlow {
-        0%   { background-position: 0% 0; }
-        100% { background-position: 200% 0; }
-    }
-
-    /* ── Brillo continuo y sutil sobre la barra de TOTAL ── */
-    .total-shimmer { position: relative; overflow: hidden; }
-    .total-shimmer::after {
-        content: '';
-        position: absolute; top: 0; left: -40%;
-        width: 40%; height: 100%;
-        background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
-        animation: totalShimmer 3.2s ease-in-out infinite;
-    }
-    @keyframes totalShimmer {
-        0%   { left: -40%; }
-        60%, 100% { left: 130%; }
-    }
-
-    /* ── Muesca tipo "boleto" al fondo del carrito: usa el color real del panel ── */
-    .ticket-notch {
-        background-image:
-            linear-gradient(-45deg, var(--panel-bg, #fff) 6px, transparent 0),
-            linear-gradient(45deg, var(--panel-bg, #fff) 6px, transparent 0);
-        background-position: left bottom;
-        background-repeat: repeat-x;
-        background-size: 12px 12px;
-    }
-
-    @keyframes cardIn {
-        from { opacity: 0; transform: translateY(10px) scale(0.98); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .animate-card-in { animation: cardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
-
-    @keyframes pulseSubtle {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.015); }
-    }
-    .animate-pulse-subtle { animation: pulseSubtle 2.2s ease-in-out infinite; }
-
-    @keyframes flashTotal {
-        0% { transform: scale(1); }
-        30% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    .animate-flash { animation: flashTotal 0.32s ease-out; }
-
-    @keyframes shimmerBar {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-    .shimmer-bar {
-        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
-        animation: shimmerBar 1.6s ease-in-out infinite;
-    }
-
-    @keyframes spinSlow { to { transform: rotate(360deg); } }
-    .animate-spin-slow { animation: spinSlow 0.8s linear infinite; }
-
-    @keyframes bounceGentle {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-4px); }
-    }
-    .animate-bounce-gentle { animation: bounceGentle 2.4s ease-in-out infinite; }
-
-    @media (prefers-reduced-motion: reduce) {
-        .animate-card-in, .animate-pulse-subtle, .animate-flash, .shimmer-bar, .animate-spin-slow,
-        .animate-bounce-gentle, .panel-in, .panel-glow, .animate-gradient-flow, .total-shimmer::after {
-            animation: none !important;
-        }
-        .panel-in { opacity: 1; transform: none; }
-    }
-</style>
-
+{{-- SCRIPT ALPINE.JS INTEGRADO --}}
 <script>
 function puntoVenta() {
     return {
-        productos: @json($productos),
-        carrito: [],
+        cargado: true,
+        scrolledProductos: false,
+        toastVisible: false,
+        toastMsg: '',
+        toastType: 'success',
+        
         busqueda: '',
-        filtroCategoria: 'Todos',
         filtroMarca: '',
         filtroUso: '',
         filtroStock: '',
         filtroPrecio: '',
-        pagoCon: '',
-        cliente: '',
-        requiereFactura: false,
-        sucursalSeleccionada: '{{ $sucursalDefecto }}',
-        rangosPrecios: [
-            { label: '$0-$1,000', min: 0, max: 1000 },
-            { label: '$1,000-$3,000', min: 1000, max: 3000 },
-            { label: '$3,000-$5,000', min: 3000, max: 5000 },
-            { label: '$5,000+', min: 5000, max: 999999 },
+        filtroCategoria: 'Todos',
+        
+        sucursalSeleccionada: 1,
+        metodoPago: 'Efectivo',
+        
+        sucursales: [
+            { id: 1, nombre: 'Sucursal Matriz' },
+            { id: 2, nombre: 'Sucursal Norte' }
         ],
 
-        // Estado de UI / animaciones
-        toastMsg: '',
-        toastType: 'success',
-        toastVisible: false,
-        toastTimer: null,
-        ultimoAgregadoId: null,
-        ultimoAgregadoTimer: null,
-        totalFlash: false,
-        totalFlashTimer: null,
-        procesando: false,
-        scrolledProductos: false,
-        sucursalFlash: false,
-        sucursalFlashTimer: null,
-        mayoreoCelebrate: false,
-        mayoreoCelebrateTimer: null,
-        qtyBumpIndex: null,
-        qtyBumpTimer: null,
+        marcas: ['Michelin', 'Pirelli', 'Bridgestone', 'Brembo', 'Continental'],
+        usos: ['Automóvil', 'Camioneta', 'Moto'],
+        
+        // Datos de prueba / servidor
+        productos: [
+            { id: 101, tipo: 'Llanta', marca: 'Michelin', medida: '205/55 R16', uso: 'Automóvil', stock_cantidad: 12, precio_publico: 2450 },
+            { id: 102, tipo: 'Llanta', marca: 'Pirelli', medida: '225/45 R17', uso: 'Automóvil', stock_cantidad: 3, precio_publico: 2890 },
+            { id: 103, tipo: 'Rin', marca: 'Brembo', medida: '17 " 5x114', uso: 'Camioneta', stock_cantidad: 0, precio_publico: 4200 },
+            { id: 104, tipo: 'Servicio', marca: 'Alineación y Balanceo', medida: 'N/A', uso: 'Automóvil', stock_cantidad: 999, descripcion: 'Alineación láser 4 ruedas', precio_publico: 650 },
+            { id: 105, tipo: 'Accesorio', marca: 'Continental', medida: 'Universal', uso: 'Moto', stock_cantidad: 8, descripcion: 'Válvulas de aluminio', precio_publico: 150 }
+        ],
 
-        init() {
-            this.actualizarStockPorSucursal();
+        carrito: [],
 
-            this.$watch('sucursalSeleccionada', () => {
-                this.actualizarStockPorSucursal();
-                this.carrito = [];
-                this.mostrarToast('Sucursal actualizada — carrito vaciado');
-                this.sucursalFlash = true;
-                clearTimeout(this.sucursalFlashTimer);
-                this.sucursalFlashTimer = setTimeout(() => this.sucursalFlash = false, 700);
-            });
+        // Métodos y lógica
+        productosFiltrados() {
+            return this.productos.filter(p => {
+                const matchBusqueda = !this.busqueda || 
+                    (p.marca && p.marca.toLowerCase().includes(this.busqueda.toLowerCase())) ||
+                    (p.medida && p.medida.toLowerCase().includes(this.busqueda.toLowerCase())) ||
+                    (p.descripcion && p.descripcion.toLowerCase().includes(this.busqueda.toLowerCase()));
 
-            this.$watch('totalActual', () => {
-                this.totalFlash = true;
-                clearTimeout(this.totalFlashTimer);
-                this.totalFlashTimer = setTimeout(() => this.totalFlash = false, 320);
-            });
+                const matchMarca = !this.filtroMarca || p.marca === this.filtroMarca;
+                const matchUso = !this.filtroUso || p.uso === this.filtroUso;
+                const matchCategoria = this.filtroCategoria === 'Todos' || p.tipo === this.filtroCategoria;
+                
+                let matchStock = true;
+                if (this.filtroStock === 'disponible') matchStock = p.tipo === 'Servicio' || p.stock_cantidad > 0;
+                if (this.filtroStock === 'agotado') matchStock = p.tipo !== 'Servicio' && p.stock_cantidad <= 0;
 
-            this.$watch('aplicaMayoreoGlobal', (valor, anterior) => {
-                if (valor && !anterior) {
-                    this.mostrarToast('¡Mayoreo activado! Precio especial en llantas', 'success');
-                    this.mayoreoCelebrate = true;
-                    clearTimeout(this.mayoreoCelebrateTimer);
-                    this.mayoreoCelebrateTimer = setTimeout(() => this.mayoreoCelebrate = false, 900);
-                }
-            });
-        },
-
-        get totalActual() {
-            return this.totalGeneral();
-        },
-
-        actualizarStockPorSucursal() {
-            this.productos.forEach(p => {
-                if (p.tipo === 'Servicio') {
-                    p.stock_cantidad = 999999;
-                } else {
-                    p.stock_cantidad = p.stocks[this.sucursalSeleccionada] || 0;
-                }
+                return matchBusqueda && matchMarca && matchUso && matchCategoria && matchStock;
             });
         },
 
@@ -582,253 +486,109 @@ function puntoVenta() {
             return this.productos.filter(p => p.tipo !== 'Servicio' && p.stock_cantidad <= 0).length;
         },
 
-        get marcas() {
-            const m = [...new Set(this.productos.map(p => {
-                const marca = (p.marca || '').split(' ')[0].toUpperCase();
-                if (!marca || marca.length < 3) return null;
-                if (/^[\d\-\.\/]+[A-Z]?$/.test(marca)) return null;
-                if (/^\d+[A-Z]+\d*$/.test(marca)) return null;
-                return marca;
-            }).filter(Boolean))];
-            return m.sort();
-        },
-
-        get usos() {
-            const u = new Set();
-            this.productos.forEach(p => {
-                const t = ((p.tipo || '') + ' ' + (p.marca || '') + ' ' + (p.descripcion || '')).toUpperCase();
-                if (t.includes('DIRECC')) u.add('Dirección');
-                if (t.includes('TRACC')) u.add('Tracción');
-                if (t.includes('LINEAL')) u.add('Lineal');
-            });
-            return [...u].sort();
-        },
-
         contarMarca(m) {
-            return this.productos.filter(p => (p.marca || '').split(' ')[0].toUpperCase() === m).length;
+            return this.productos.filter(p => p.marca === m).length;
+        },
+
+        hayFiltrosActivos() {
+            return this.busqueda || this.filtroMarca || this.filtroUso || this.filtroStock || this.filtroCategoria !== 'Todos';
+        },
+
+        limpiarFiltros() {
+            this.busqueda = '';
+            this.filtroMarca = '';
+            this.filtroUso = '';
+            this.filtroStock = '';
+            this.filtroCategoria = 'Todos';
         },
 
         bordeTipo(tipo) {
-            const map = { 'Llanta': 'bg-orange-400', 'Rin': 'bg-sky-400', 'Accesorio': 'bg-teal-400', 'Servicio': 'bg-violet-400' };
-            return map[tipo] || 'bg-gray-300';
+            switch(tipo) {
+                case 'Llanta': return 'bg-emerald-500';
+                case 'Rin': return 'bg-blue-500';
+                case 'Accesorio': return 'bg-amber-500';
+                case 'Servicio': return 'bg-purple-500';
+                default: return 'bg-gray-400';
+            }
         },
 
         tipoBadgeClase(tipo) {
-            const map = {
-                'Llanta': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                'Rin': 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
-                'Accesorio': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-                'Servicio': 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-            };
-            return map[tipo] || 'bg-gray-100 text-gray-700 dark:bg-zinc-800 dark:text-zinc-300';
+            switch(tipo) {
+                case 'Llanta': return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200';
+                case 'Rin': return 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200';
+                case 'Accesorio': return 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200';
+                case 'Servicio': return 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border-purple-200';
+                default: return 'bg-gray-50 text-gray-600';
+            }
         },
 
-        claseBotonCobrar() {
-            if (this.carrito.length === 0 || this.procesando) return 'bg-gray-300 dark:bg-zinc-700';
-            return 'bg-gray-900 hover:bg-black dark:bg-white dark:hover:bg-zinc-100 active:scale-[0.98] shadow-lg animate-pulse-subtle';
+        // Carrito
+        agregar(producto) {
+            const existe = this.carrito.find(item => item.id === producto.id);
+            if (existe) {
+                if (producto.tipo !== 'Servicio' && existe.cantidad >= producto.stock_cantidad) {
+                    this.mostrarToast('No hay suficiente stock disponible', 'error');
+                    return;
+                }
+                existe.cantidad++;
+            } else {
+                this.carrito.push({ ...producto, cantidad: 1 });
+            }
+            this.mostrarToast('Producto agregado al carrito', 'success');
+        },
+
+        aumentar(item) {
+            const p = this.productos.find(prod => prod.id === item.id);
+            if (p && p.tipo !== 'Servicio' && item.cantidad >= p.stock_cantidad) {
+                this.mostrarToast('Límite de stock alcanzado', 'error');
+                return;
+            }
+            item.cantidad++;
+        },
+
+        disminuir(item) {
+            if (item.cantidad > 1) {
+                item.cantidad--;
+            } else {
+                this.quitar(item);
+            }
+        },
+
+        quitar(item) {
+            this.carrito = this.carrito.filter(i => i.id !== item.id);
+            this.mostrarToast('Producto removido', 'error');
+        },
+
+        limpiarCarrito() {
+            this.carrito = [];
+            this.mostrarToast('Carrito vaciado', 'error');
+        },
+
+        subtotal() {
+            return this.carrito.reduce((sum, item) => sum + (item.cantidad * item.precio_publico), 0);
+        },
+
+        iva() {
+            return this.subtotal() * 0.16;
+        },
+
+        total() {
+            return this.subtotal() + this.iva();
+        },
+
+        procesarVenta() {
+            if (this.carrito.length === 0) return;
+            this.mostrarToast('¡Venta completada con éxito!', 'success');
+            this.carrito = [];
         },
 
         mostrarToast(msg, type = 'success') {
             this.toastMsg = msg;
             this.toastType = type;
             this.toastVisible = true;
-            clearTimeout(this.toastTimer);
-            this.toastTimer = setTimeout(() => this.toastVisible = false, 2200);
-        },
-
-        bumpQty(i) {
-            this.qtyBumpIndex = i;
-            clearTimeout(this.qtyBumpTimer);
-            this.qtyBumpTimer = setTimeout(() => this.qtyBumpIndex = null, 200);
-        },
-
-        hayFiltrosActivos() {
-            return this.filtroCategoria !== 'Todos' || this.filtroMarca || this.filtroUso || this.filtroStock || this.filtroPrecio || this.busqueda;
-        },
-
-        limpiarFiltros() {
-            this.filtroCategoria = 'Todos'; this.filtroMarca = ''; this.filtroUso = ''; this.filtroStock = ''; this.filtroPrecio = ''; this.busqueda = '';
-        },
-
-        productosFiltrados() {
-            let lista = this.productos;
-
-            if (this.filtroCategoria !== 'Todos') {
-                const catBuscada = this.filtroCategoria.trim().toLowerCase();
-                lista = lista.filter(p => {
-                    const tipoBd = (p.tipo || '').trim().toLowerCase();
-                    return tipoBd === catBuscada || tipoBd.includes(catBuscada);
-                });
-            }
-
-            if (this.filtroMarca) {
-                lista = lista.filter(p => (p.marca || '').split(' ')[0].toUpperCase() === this.filtroMarca);
-            }
-
-            if (this.filtroUso) {
-                lista = lista.filter(p => {
-                    const t = ((p.tipo || '') + ' ' + (p.marca || '') + ' ' + (p.descripcion || '')).toUpperCase();
-                    if (this.filtroUso === 'Dirección') return t.includes('DIRECC');
-                    if (this.filtroUso === 'Tracción') return t.includes('TRACC');
-                    if (this.filtroUso === 'Lineal') return t.includes('LINEAL');
-                    return true;
-                });
-            }
-
-            if (this.filtroStock === 'disponible') lista = lista.filter(p => p.tipo === 'Servicio' || p.stock_cantidad > 5);
-            else if (this.filtroStock === 'poco') lista = lista.filter(p => p.stock_cantidad > 0 && p.stock_cantidad <= 5 && p.tipo !== 'Servicio');
-            else if (this.filtroStock === 'agotado') lista = lista.filter(p => p.tipo !== 'Servicio' && p.stock_cantidad <= 0);
-
-            if (this.filtroPrecio) {
-                const r = this.rangosPrecios.find(r => r.label === this.filtroPrecio);
-                if (r) lista = lista.filter(p => { const pr = +p.precio_publico; return pr >= r.min && pr < r.max; });
-            }
-
-            if (this.busqueda) {
-                const q = this.busqueda.toLowerCase();
-                lista = lista.filter(p => (p.marca + ' ' + p.medida + ' ' + p.tipo + ' ' + (p.descripcion || '')).toLowerCase().includes(q));
-            }
-
-            return lista;
-        },
-
-        agregar(p) {
-            if (p.tipo !== 'Servicio' && p.stock_cantidad <= 0) return;
-
-            const existe = this.carrito.find(i => i.producto_id === p.id && i.tipo !== 'Servicio');
-            if (existe) {
-                existe.cantidad++;
-            } else {
-                this.carrito.push({
-                    producto_id: p.id,
-                    nombre: p.tipo === 'Servicio' ? p.descripcion : (p.marca + ' ' + p.medida),
-                    tipo: p.tipo,
-                    precio_publico: +p.precio_publico,
-                    precio_mayoreo: +p.precio_mayoreo || +p.precio_publico,
-                    cantidad: 1,
-                });
-            }
-
-            this.mostrarToast('Agregado: ' + (p.tipo === 'Servicio' ? p.descripcion : (p.marca + ' ' + p.medida)));
-
-            this.ultimoAgregadoId = p.id;
-            clearTimeout(this.ultimoAgregadoTimer);
-            this.ultimoAgregadoTimer = setTimeout(() => this.ultimoAgregadoId = null, 500);
-        },
-
-        get totalLlantas() {
-            return this.carrito.reduce((suma, item) => item.tipo === 'Llanta' ? suma + item.cantidad : suma, 0);
-        },
-
-        get aplicaMayoreoGlobal() {
-            return this.totalLlantas >= 20;
-        },
-
-        calcularItem(item) {
-            let precioUnitario = item.precio_publico;
-
-            if (item.tipo === 'Llanta' && this.aplicaMayoreoGlobal) {
-                precioUnitario = item.precio_mayoreo;
-            }
-
-            let subtotal = precioUnitario * item.cantidad;
-            let descuento = 0;
-
-            if (item.tipo === 'Llanta') {
-                const bloquesDe4 = Math.floor(item.cantidad / 4);
-                descuento = bloquesDe4 * 80;
-            }
-
-            return {
-                precioUnitario,
-                subtotal,
-                descuento,
-                totalFinal: subtotal - descuento
-            };
-        },
-
-        totalGeneral() {
-            return this.carrito.reduce((suma, item) => suma + this.calcularItem(item).totalFinal, 0);
-        },
-
-        get totalAhorro() {
-            let ahorro = 0;
-            this.carrito.forEach(item => {
-                if (item.tipo === 'Llanta') {
-                    const calculo = this.calcularItem(item);
-                    ahorro += calculo.descuento;
-
-                    if (this.aplicaMayoreoGlobal && item.precio_mayoreo < item.precio_publico) {
-                        ahorro += (item.precio_publico - item.precio_mayoreo) * item.cantidad;
-                    }
-                }
-            });
-            return ahorro;
-        },
-
-        cambio() {
-            const c = (+this.pagoCon || 0) - this.totalGeneral();
-            return c > 0 ? c : 0;
-        },
-
-        async cobrar() {
-            if (this.carrito.length === 0 || this.procesando) return;
-
-            let pagoEfectivo = +this.pagoCon || this.totalGeneral();
-            if (pagoEfectivo < this.totalGeneral()) {
-                this.mostrarToast('El monto ingresado es menor al total de la venta.', 'error');
-                return;
-            }
-
-            this.procesando = true;
-
-            const payload = {
-                sucursal_id: this.sucursalSeleccionada,
-                carrito: this.carrito.map(item => {
-                    const calc = this.calcularItem(item);
-                    return {
-                        producto_id: item.producto_id,
-                        nombre: item.nombre,
-                        tipo: item.tipo,
-                        cantidad: item.cantidad,
-                        precio_unitario: calc.precioUnitario,
-                        descuento: calc.descuento,
-                        subtotal: calc.totalFinal
-                    };
-                }),
-                pagoCon: pagoEfectivo,
-                cambio: this.cambio(),
-                total: this.totalGeneral(),
-                cliente: this.cliente,
-                requiereFactura: this.requiereFactura
-            };
-
-            try {
-                const ticketWindow = window.open('', 'TicketVenta', 'width=400,height=600');
-
-                const response = await fetch('{{ route("ventas.store") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    ticketWindow.location.href = data.ticket_url;
-                    window.location.reload();
-                } else {
-                    ticketWindow.close();
-                    this.mostrarToast(data.message || 'Error al procesar la venta', 'error');
-                    this.procesando = false;
-                }
-            } catch (error) {
-                this.mostrarToast('Error de conexión con el servidor.', 'error');
-                this.procesando = false;
-            }
+            setTimeout(() => {
+                this.toastVisible = false;
+            }, 3000);
         }
     }
 }

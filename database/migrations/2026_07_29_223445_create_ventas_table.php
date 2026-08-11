@@ -13,6 +13,11 @@ return new class extends Migration
             $table->string('folio', 20)->unique();
             $table->foreignId('sucursal_id')->constrained('sucursales');
             $table->foreignId('user_id')->constrained('users'); // Corregido al estándar de Laravel
+            
+            // --- NUEVA LÍNEA AGREGADA AQUÍ ---
+            // Le ponemos nullable() para que no marque error con las ventas de prueba pasadas (si las hay)
+            $table->foreignId('corte_caja_id')->nullable()->constrained('cortes_caja');
+            
             $table->foreignId('cliente_id')->nullable()->constrained('clientes');
             $table->string('nombre_cliente_temporal', 150)->nullable();
             $table->enum('tipo_precio', ['menudeo', 'mayoreo'])->default('menudeo');

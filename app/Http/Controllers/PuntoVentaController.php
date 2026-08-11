@@ -2,34 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\ResuelveContextoSucursal;
+use App\Models\MovimientoInventario;
 use App\Models\Producto;
+use App\Models\StockSucursal;
+use App\Models\Sucursal;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
-use App\Models\StockSucursal;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PuntoVentaController extends Controller
 {
+    use ResuelveContextoSucursal;
+
     public function index()
     {
-        $empleado = DB::table('users')->where('id', Auth::id())->first();
+        $esAdmin = $this->usuarioEsAdmin();
+        $sucursales = $this->sucursalesDisponibles();
+        $sucursalDefecto = $esAdmin
+            ? ($sucursales->first()->id ?? null)
+            : $this->sucursalDelUsuario();
 
-        // Usamos '??' para evitar el error si la propiedad 'rol' no existe en $empleado
-        $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
-
-        // Lo mismo para 'sucursal_id', con valor por defecto 1 si no existe la columna
-        $sucursalDefecto = $empleado->sucursal_id ?? 1;
-
-        $sucursales = DB::table('sucursales')->where('activa', 1)->get();
-        
-        $productos = Producto::where('estado', true)->get()->map(function ($producto) {
-            $producto->stocks = StockSucursal::where('producto_id', $producto->id)
-                ->pluck('cantidad', 'sucursal_id')
-                ->toArray();
-            return $producto;
-        });
+        $productos = Producto::where('estado', true)
+            ->with('stock')
+            ->get()
+            ->map(function ($producto) {
+                $producto->stocks = $producto->stock->pluck('cantidad', 'sucursal_id')->toArray();
+                return $producto;
+            });
 
         return view('ventas.index', compact('productos', 'sucursales', 'esAdmin', 'sucursalDefecto'));
     }
@@ -40,34 +42,27 @@ class PuntoVentaController extends Controller
             return response()->json(['success' => false, 'message' => 'El carrito está vacío.']);
         }
 
-        try {
-            DB::beginTransaction();
+        DB::beginTransaction();
 
-            // CORRECCIÓN: Se cambió 'usuarios' por 'users'
-            $empleado = DB::table('users')->where('id', Auth::id())->first();
-            
-            $sucursal_id = $request->sucursal_id ?: ($empleado ? $empleado->sucursal_id : 1);
+        try {
+            $sucursal_id = $this->sucursalSeleccionada($request);
 
             $venta = new Venta();
             $venta->folio = 'VNT-' . date('Ymd') . '-' . rand(1000, 9999);
             $venta->sucursal_id = $sucursal_id;
-            
-            $venta->user_id = Auth::id(); 
-            
-            $nombre_cliente = $request->cliente ?: 'Público General';
-            $venta->nombre_cliente_temporal = $nombre_cliente;
-            
+            $venta->user_id = Auth::id();
+            $venta->nombre_cliente_temporal = $request->cliente ?: 'Público General';
             $venta->total = $request->total;
             $venta->pago_con = $request->pagoCon;
             $venta->cambio = $request->cambio;
-            $venta->requiere_factura = $request->requiereFactura;
+            $venta->requiere_factura = (bool) $request->requiereFactura;
             $venta->fecha = now();
             $venta->save();
 
             foreach ($request->carrito as $item) {
                 $detalle = new VentaDetalle();
                 $detalle->venta_id = $venta->id;
-                $detalle->producto_id = $item['producto_id'];
+                $detalle->producto_id = $item['producto_id'] ?? null;
                 $detalle->nombre_producto = $item['nombre'];
                 $detalle->cantidad = $item['cantidad'];
                 $detalle->precio_unitario = $item['precio_unitario'];
@@ -75,27 +70,43 @@ class PuntoVentaController extends Controller
                 $detalle->subtotal = $item['subtotal'];
                 $detalle->save();
 
-                if ($item['tipo'] !== 'Servicio' && !empty($item['producto_id'])) {
+                // Procesar deducción de stock si no es un servicio puro
+                if (($item['tipo'] ?? '') !== 'Servicio' && !empty($item['producto_id'])) {
                     $stock = StockSucursal::where('producto_id', $item['producto_id'])
                         ->where('sucursal_id', $sucursal_id)
+                        ->lockForUpdate()
                         ->first();
 
                     if (!$stock) {
+                        DB::rollBack();
                         return response()->json([
-                            'success' => false, 
+                            'success' => false,
                             'message' => 'No existe registro de inventario para ' . $item['nombre'] . ' en la sucursal procesada.'
                         ]);
                     }
 
                     if ($stock->cantidad < $item['cantidad']) {
+                        DB::rollBack();
                         return response()->json([
-                            'success' => false, 
+                            'success' => false,
                             'message' => 'Inventario insuficiente para ' . $item['nombre'] . '. Disponibles en esta sucursal: ' . $stock->cantidad
                         ]);
                     }
 
+                    // Actualizar Stock
                     $stock->cantidad -= $item['cantidad'];
                     $stock->save();
+
+                    // Registrar Historial en Movimiento de Inventario
+                    MovimientoInventario::create([
+                        'producto_id'          => $item['producto_id'],
+                        'sucursal_origen_id'   => $sucursal_id,
+                        'sucursal_destino_id'  => null,
+                        'user_id'              => Auth::id(),
+                        'tipo'                 => 'salida',
+                        'cantidad'             => $item['cantidad'],
+                        'motivo'               => 'Venta ' . $venta->folio,
+                    ]);
                 }
             }
 
@@ -108,19 +119,17 @@ class PuntoVentaController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Error de servidor: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la venta: ' . $e->getMessage()
+            ]);
         }
     }
 
     public function historial(Request $request)
     {
-        // CORRECCIÓN: Se cambió 'usuarios' por 'users'
-        $empleado = DB::table('users')->where('id', Auth::id())->first();
-        
-        // CORRECCIÓN: Se agregó el safe operator ?? null igual que en tu index
-        $esAdmin = ($empleado && ($empleado->rol ?? null) === 'admin') || Auth::id() === 1;
-        
-        $sucursalUsuario = $empleado ? $empleado->sucursal_id : 1;
+        $esAdmin = $this->usuarioEsAdmin();
+        $sucursalUsuario = $this->sucursalDelUsuario();
 
         $query = Venta::with(['detalles']);
 
@@ -136,14 +145,13 @@ class PuntoVentaController extends Controller
 
         if ($request->filled('fecha_inicio') && $request->filled('fecha_fin')) {
             $query->whereBetween('fecha', [
-                $request->fecha_inicio . ' 00:00:00', 
+                $request->fecha_inicio . ' 00:00:00',
                 $request->fecha_fin . ' 23:59:59'
             ]);
         }
 
         $ventas = $query->orderBy('fecha', 'desc')->paginate(15)->withQueryString();
-        
-        $sucursales = $esAdmin ? DB::table('sucursales')->where('activa', 1)->get() : [];
+        $sucursales = $esAdmin ? $this->sucursalesDisponibles() : [];
 
         return view('ventas.historial', compact('ventas', 'sucursales', 'esAdmin'));
     }
