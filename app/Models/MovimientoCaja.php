@@ -9,8 +9,11 @@ class MovimientoCaja extends Model
 {
     use HasFactory;
 
-    // Con esta línea forzamos a Laravel a buscar el nombre correcto
     protected $table = 'movimientos_caja';
-    
     protected $guarded = ['id'];
+
+    public function corteCaja()
+    {
+        return $this->belongsTo(CorteCaja::class, 'corte_caja_id');
+    }
 }

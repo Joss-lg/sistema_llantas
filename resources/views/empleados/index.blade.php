@@ -52,7 +52,7 @@
                     Gestión de Roles
                 </a>
 
-                <a href="{{ route('empleados.create') }}" class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#D32030] text-white rounded-xl text-sm font-bold hover:bg-[#E82536] active:scale-95 transition-all duration-300 shadow-[0_4px_14px_rgba(211,32,48,0.25)] dark:shadow-[0_0_15px_rgba(211,32,48,0.3)] hover:shadow-[0_6px_20px_rgba(211,32,48,0.4)] dark:hover:shadow-[0_0_25px_rgba(211,32,48,0.5)] hover:-translate-y-1">
+                <a href="{{ route('empleados.create') }}" class="group inline-flex items-center gap-2.5 px-5 py-2.5 bg-[#818CF8] text-white rounded-xl text-sm font-bold hover:bg-[#6366F1] active:scale-95 transition-all duration-300 shadow-[0_4px_14px_rgba(129,140,248,0.25)] dark:shadow-[0_0_15px_rgba(129,140,248,0.3)] hover:shadow-[0_6px_20px_rgba(129,140,248,0.4)] dark:hover:shadow-[0_0_25px_rgba(129,140,248,0.5)] hover:-translate-y-1">
                     <svg class="w-4 h-4 transition-transform duration-500 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -104,7 +104,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-neutral-800/30">
                         @forelse($empleados as $empleado)
-                            <tr class="group hover:bg-gray-50/50 dark:hover:bg-[#151515] transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-[inset_3px_0_0_0_#D32030] hover:z-10 relative"
+                            <tr class="group hover:bg-gray-50/50 dark:hover:bg-[#151515] transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-[inset_3px_0_0_0_#818CF8] hover:z-10 relative"
                                 :class="cargado ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'"
                                 style="transition-delay: {{ ($loop->index * 60) + 400 }}ms">
 
@@ -114,7 +114,7 @@
                                             {{ strtoupper(substr($empleado->name, 0, 1)) }}
                                         </div>
                                         <div class="flex flex-col justify-center">
-                                            <p class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-[#D32030] dark:group-hover:text-[#D32030] transition-colors duration-300">{{ $empleado->name }}</p>
+                                            <p class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-[#818CF8] dark:group-hover:text-[#818CF8] transition-colors duration-300">{{ $empleado->name }}</p>
                                             <p class="text-xs font-semibold text-gray-500 dark:text-neutral-500 mt-0.5">{{ $empleado->email }}</p>
                                         </div>
                                     </div>
@@ -153,7 +153,7 @@
                                 <td class="px-6 py-4">
                                     <button type="button"
                                             @click="abrirModalPermisos({{ $empleado->id }}, '{{ addslashes($empleado->name) }}', {{ $empleado->permisos->pluck('id')->values()->toJson() }})"
-                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition-all duration-200 cursor-pointer">
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/30 hover:bg-[#818CF8]/20 hover:border-[#818CF8]/50 transition-all duration-200 cursor-pointer">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                                         </svg>
@@ -168,7 +168,7 @@
                                         {{-- Editar --}}
                                         <a href="{{ route('empleados.edit', $empleado->id) }}"
                                            title="Editar"
-                                           class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/40 transition-all duration-200">
+                                           class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-[#818CF8]/10 text-[#818CF8] border border-[#818CF8]/30 hover:bg-[#818CF8]/20 hover:border-[#818CF8]/50 transition-all duration-200">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
@@ -184,7 +184,7 @@
                                                   @submit.prevent="on = !on; setTimeout(() => $el.submit(), 250)">
                                                 @csrf
                                                 @method('PATCH')
-                                                <button type="submit" class="relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer" :class="on ? 'bg-[#D32030]' : 'bg-gray-200 dark:bg-neutral-700'">
+                                                <button type="submit" class="relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer" :class="on ? 'bg-[#818CF8]' : 'bg-gray-200 dark:bg-neutral-700'">
                                                     <span class="inline-block w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200" :class="on ? 'translate-x-5' : 'translate-x-0.5'"></span>
                                                 </button>
                                             </form>
@@ -249,7 +249,7 @@
                 <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-neutral-800 shrink-0">
                     <div>
                         <h2 class="font-bold text-lg text-gray-900 dark:text-white">Configurar Permisos</h2>
-                        <p class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">Empleado: <span class="font-semibold text-[#D32030]" x-text="empleadoNombre"></span></p>
+                        <p class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">Empleado: <span class="font-semibold text-[#818CF8]" x-text="empleadoNombre"></span></p>
                     </div>
                     <button type="button" @click="cerrarModalPermisos()" class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -261,17 +261,50 @@
                 {{-- Cuerpo: Lista de Permisos --}}
                 <div class="px-6 py-5 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
                     @foreach(\App\Models\Permiso::all()->groupBy('modulo') as $modulo => $permisos)
-                        <div class="bg-gray-50/50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl p-4">
-                            <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-500 mb-3 border-b border-gray-200 dark:border-neutral-800 pb-2">
-                                {{ $modulo }}
-                            </h3>
+                        <div x-data="{
+                                moduloIds: {{ $permisos->pluck('id')->toJson() }},
+                                get todosSeleccionados() {
+                                    return this.moduloIds.length > 0 && this.moduloIds.every(id => permisosEmpleado.includes(id));
+                                },
+                                toggleTodos() {
+                                    if (this.todosSeleccionados) {
+                                        // Desmarcar todos los de este módulo
+                                        permisosEmpleado = permisosEmpleado.filter(id => !this.moduloIds.includes(id));
+                                    } else {
+                                        // Marcar todos los de este módulo
+                                        let nuevos = this.moduloIds.filter(id => !permisosEmpleado.includes(id));
+                                        permisosEmpleado = [...permisosEmpleado, ...nuevos];
+                                    }
+                                }
+                            }" 
+                            class="bg-gray-50/50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl p-4">
+                            
+                            {{-- Título y Switch "Todos" --}}
+                            <div class="flex items-center justify-between mb-3 border-b border-gray-200 dark:border-neutral-800 pb-2">
+                                <h3 class="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-500">
+                                    {{ $modulo }}
+                                </h3>
+                                <label class="flex items-center gap-1.5 cursor-pointer group">
+                                    <span class="text-[9px] font-bold uppercase tracking-wider text-gray-400 dark:text-neutral-500 group-hover:text-[#818CF8] transition-colors select-none">Todos</span>
+                                    <div class="relative flex items-center">
+                                        <input type="checkbox"
+                                               @change="toggleTodos()"
+                                               :checked="todosSeleccionados"
+                                               class="peer appearance-none w-3.5 h-3.5 border-2 border-gray-300 dark:border-neutral-600 rounded-sm bg-white dark:bg-[#151515] checked:bg-[#818CF8] checked:border-[#818CF8] focus:outline-none transition-all cursor-pointer">
+                                        <svg class="absolute inset-0 w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                </label>
+                            </div>
+
                             <div class="space-y-2.5">
                                 @foreach($permisos as $permiso)
                                     <label class="flex items-start gap-2.5 cursor-pointer group">
                                         <div class="relative flex items-center mt-0.5">
                                             <input type="checkbox" name="permisos[]" value="{{ $permiso->id }}"
-                                                   :checked="permisosEmpleado.includes({{ $permiso->id }})"
-                                                   class="peer appearance-none w-4 h-4 border-2 border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-[#151515] checked:bg-[#D32030] checked:border-[#D32030] focus:outline-none focus:ring-2 focus:ring-red-500/30 transition-all cursor-pointer">
+                                                   x-model.number="permisosEmpleado"
+                                                   class="peer appearance-none w-4 h-4 border-2 border-gray-300 dark:border-neutral-600 rounded bg-white dark:bg-[#151515] checked:bg-[#818CF8] checked:border-[#818CF8] focus:outline-none focus:ring-2 focus:ring-[#818CF8]/30 transition-all cursor-pointer">
                                             <svg class="absolute inset-0 w-4 h-4 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                                             </svg>
@@ -291,7 +324,7 @@
                     <button type="button" @click="cerrarModalPermisos()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-[#151515] border border-gray-300 dark:border-neutral-800 rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-800 transition-all duration-200">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-[#D32030] rounded-xl shadow-lg shadow-red-500/20 hover:bg-[#B91C2C] transition-all duration-200">
+                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-[#818CF8] hover:bg-[#6366F1] rounded-xl shadow-lg shadow-[#818CF8]/20 transition-all duration-200">
                         Guardar Permisos
                     </button>
                 </div>

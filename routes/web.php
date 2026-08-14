@@ -40,8 +40,6 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     })->name('dashboard');
 
     // Módulo de Empleados y Roles
-    // IMPORTANTE: estas rutas específicas van ANTES del Route::resource
-    // para que no choquen con la ruta "show" (empleados/{empleado}) que genera el resource.
     Route::get('/empleados/inactivos', [EmpleadoController::class, 'inactivos'])->name('empleados.inactivos');
     Route::put('/empleados/{empleado}/permisos', [EmpleadoController::class, 'updatePermisos'])->name('empleados.permisos.update');
     Route::patch('/empleados/{empleado}/toggle', [EmpleadoController::class, 'toggleStatus'])->name('empleados.toggle');
@@ -54,12 +52,14 @@ Route::middleware(['auth', 'permiso'])->group(function () {
 
     // Módulo de Inventario
     Route::get('/inventario', [ProductoController::class, 'index'])->name('inventario.index');
-    Route::post('/inventario/producto', [ProductoController::class, 'store'])->name('inventario.producto.store');
+    
+    // Rutas conectadas a los modales de la vista de inventario:
+    Route::post('/inventario/producto', [ProductoController::class, 'store'])->name('inventario.storeProducto');
+    Route::post('/inventario/entrada', [MovimientoInventarioController::class, 'storeEntrada'])->name('inventario.storeEntrada');
 
     Route::get('/inventario/importar', [ImportacionInventarioController::class, 'form'])->name('inventario.importar');
     Route::post('/inventario/importar', [ImportacionInventarioController::class, 'procesar'])->name('inventario.procesar');
 
-    Route::post('/inventario/entrada', [MovimientoInventarioController::class, 'storeEntrada'])->name('inventario.entrada.store');
     Route::post('/inventario/salida', [MovimientoInventarioController::class, 'storeSalida'])->name('inventario.salida.store');
     Route::post('/inventario/traspaso', [MovimientoInventarioController::class, 'traspasarStock'])->name('inventario.traspaso.store');
     Route::get('/inventario/historial', [MovimientoInventarioController::class, 'historial'])->name('inventario.historial');
@@ -79,13 +79,11 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     // ==========================================
     // MÓDULO DE PUNTO DE VENTA
     // ==========================================
-    // 1. Rutas ENCANDADADAS (Obligatorio tener caja abierta para vender)
     Route::middleware(['caja.abierta'])->group(function () {
         Route::get('/ventas', [PuntoVentaController::class, 'index'])->name('ventas.index');
         Route::post('/ventas/cobrar', [PuntoVentaController::class, 'store'])->name('ventas.store');
     });
 
-    // 2. Rutas LIBRES (Para consultar aunque la caja esté cerrada)
     Route::get('/ventas/ticket/{id}', [PuntoVentaController::class, 'ticket'])->name('ventas.ticket');
     Route::get('/historial-ventas', [PuntoVentaController::class, 'historial'])->name('ventas.historial');
 

@@ -58,7 +58,7 @@
                 <button @click="periodo = 'semana'" :class="periodo === 'semana' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="px-4 py-1.5 rounded-md text-sm font-semibold transition">Semana</button>
                 <button @click="periodo = 'mes'" :class="periodo === 'mes' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'" class="px-4 py-1.5 rounded-md text-sm font-semibold transition">Mes</button>
             </div>
-            <button onclick="openModal('modal-gasto')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#D32030] text-white rounded-lg text-sm font-semibold hover:bg-[#B91C2C] transition shadow-sm">
+            <button onclick="openModal('modal-gasto')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#818CF8] text-white rounded-lg text-sm font-semibold hover:bg-[#6366F1] transition shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                 Registrar gasto
             </button>
@@ -69,7 +69,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {{-- Venta total (grande, negra) --}}
         <div class="lg:col-span-2 bg-gradient-to-br from-[#0F0F0F] to-[#1f1f1f] rounded-2xl p-6 text-white relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-40 h-40 bg-[#D32030]/10 rounded-full -mr-16 -mt-16"></div>
+            <div class="absolute top-0 right-0 w-40 h-40 bg-[#818CF8]/10 rounded-full -mr-16 -mt-16"></div>
             <div class="relative">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Venta total del día</p>
                 <p class="text-4xl font-bold mb-4">${{ number_format($ventaTotal, 2) }}</p>
@@ -84,7 +84,7 @@
                     </div>
                     <div>
                         <p class="text-gray-400 text-xs">Gastos</p>
-                        <p class="font-bold text-[#D32030]">-${{ number_format($totalGastos, 2) }}</p>
+                        <p class="font-bold text-[#818CF8]">-${{ number_format($totalGastos, 2) }}</p>
                     </div>
                 </div>
             </div>
@@ -166,13 +166,13 @@
         <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div class="flex items-center justify-between p-5 border-b border-gray-100">
                 <h3 class="text-base font-bold text-gray-900">Gastos del día</h3>
-                <span class="text-sm font-bold text-[#D32030]">-${{ number_format($totalGastos, 2) }}</span>
+                <span class="text-sm font-bold text-[#818CF8]">-${{ number_format($totalGastos, 2) }}</span>
             </div>
             <div class="divide-y divide-gray-50">
                 @foreach($gastos as $g)
                     <div class="flex items-center justify-between px-5 py-3 hover:bg-gray-50/60 transition">
                         <div class="flex items-center gap-3">
-                            <span class="w-9 h-9 rounded-lg bg-red-50 text-[#D32030] flex items-center justify-center shrink-0">
+                            <span class="w-9 h-9 rounded-lg bg-[#818CF8]/10 text-[#818CF8] flex items-center justify-center shrink-0">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
                             </span>
                             <div>
@@ -255,7 +255,7 @@
             </div>
             <div class="flex justify-end gap-2 pt-4">
                 <button type="button" onclick="closeModal('modal-gasto')" class="px-4 py-2 border border-gray-300 rounded-lg text-sm">Cancelar</button>
-                <button type="button" class="px-4 py-2 bg-[#D32030] text-white rounded-lg text-sm">Guardar gasto</button>
+                <button type="button" class="px-4 py-2 bg-[#818CF8] hover:bg-[#6366F1] text-white rounded-lg text-sm transition">Guardar gasto</button>
             </div>
         </div>
     </div>

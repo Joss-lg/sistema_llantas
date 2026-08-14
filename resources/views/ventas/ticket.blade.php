@@ -251,7 +251,7 @@
         </div>
         <div class="row">
             <span class="lbl">ATENDIÓ:</span>
-            <span class="val">Cajero #{{ $venta->usuario_id }}</span>
+            <span class="val">Cajero #{{ $venta->usuario_id ?? $venta->user_id }}</span>
         </div>
 
         <hr class="dash">
@@ -305,11 +305,11 @@
             <div class="box-title">PAGO</div>
             <div class="row">
                 <span class="lbl">RECIBIDO:</span>
-                <span class="val">${{ number_format($venta->pago_con, 2) }}</span>
+                <span class="val">${{ number_format((float)($venta->pago_con ?? 0), 2) }}</span>
             </div>
             <div class="row">
                 <span class="lbl">CAMBIO:</span>
-                <span class="val">${{ number_format($venta->cambio, 2) }}</span>
+                <span class="val">${{ number_format((float)($venta->cambio ?? 0), 2) }}</span>
             </div>
         </div>
 
@@ -337,7 +337,6 @@
     </div>
 
     <script>
-        // QR que abre WhatsApp con mensaje de facturación pre-armado
         window.onload = function () {
             var folio = "{{ $venta->folio }}";
             var total = "{{ number_format($venta->total, 2) }}";

@@ -22,7 +22,6 @@ class InventarioController extends Controller
         $sucursalUsuario = $usuario->sucursal_id ?? 1;
         $sucursalFiltro = $esAdmin ? $request->input('sucursal_id') : $sucursalUsuario;
 
-        // IDs de productos que tuvieron una ENTRADA HOY (para la etiqueta "NUEVO" y el filtro)
         $productosNuevosHoy = MovimientoInventario::where('tipo', 'entrada')
             ->whereDate('fecha', today())
             ->pluck('producto_id')
@@ -50,12 +49,11 @@ class InventarioController extends Controller
             ]);
         }
 
-        // FILTRO: solo los que llegaron hoy
         if ($request->filled('solo_nuevos') && $request->solo_nuevos == '1') {
             if (count($productosNuevosHoy) > 0) {
                 $query->whereIn('id', $productosNuevosHoy);
             } else {
-                $query->whereRaw('1 = 0'); // Nada llegó hoy: lista vacía
+                $query->whereRaw('1 = 0');
             }
         }
 
@@ -200,7 +198,13 @@ class InventarioController extends Controller
 
     public function storeEntrada(Request $request)
     {
-        $request->validate(['producto_id' => 'required|exists:productos,id', 'cantidad' => 'required|integer|min:1', 'costo_unitario' => 'required|numeric|min:0']);
+        $request->validate([
+            'producto_id'    => 'required|exists:productos,id', 
+            'cantidad'       => 'required|integer|min:1', 
+            'costo_unitario' => 'required|numeric|min:0',
+            'precio_publico' => 'nullable|numeric|min:0',
+            'precio_mayoreo' => 'nullable|numeric|min:0',
+        ]);
 
         try {
             DB::beginTransaction();
@@ -210,7 +214,12 @@ class InventarioController extends Controller
             $sucursal_destino = $request->input('sucursal_id', $sucursalUsuario);
 
             $producto = Producto::findOrFail($request->producto_id);
-            $producto->update(['costo' => $request->costo_unitario]);
+            
+            $producto->update([
+                'costo'          => $request->costo_unitario,
+                'precio_publico' => $request->filled('precio_publico') ? $request->precio_publico : $producto->precio_publico,
+                'precio_mayoreo' => $request->filled('precio_mayoreo') ? $request->precio_mayoreo : $producto->precio_mayoreo,
+            ]);
 
             $stock = StockSucursal::firstOrCreate(
                 ['producto_id' => $producto->id, 'sucursal_id' => $sucursal_destino],
@@ -230,7 +239,7 @@ class InventarioController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('inventario.index')->with('success', "Entrada registrada en tu bodega exitosamente.");
+            return redirect()->route('inventario.index')->with('success', "Entrada registrada y precios actualizados con éxito.");
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
@@ -406,7 +415,6 @@ class InventarioController extends Controller
             $producto = Producto::findOrFail($request->producto_id);
             $cantidadATraspasar = $request->cantidad;
 
-            // 1. Buscar y descontar de la sucursal origen
             $stockOrigen = StockSucursal::where('producto_id', $producto->id)
                 ->where('sucursal_id', $request->sucursal_origen)
                 ->first();
@@ -419,7 +427,6 @@ class InventarioController extends Controller
 
             $stockOrigen->decrement('cantidad', $cantidadATraspasar);
 
-            // Registrar movimiento de SALIDA en sucursal origen
             MovimientoInventario::create([
                 'producto_id'   => $producto->id,
                 'sucursal_id'   => $request->sucursal_origen,
@@ -431,7 +438,6 @@ class InventarioController extends Controller
                 'fecha'         => now(),
             ]);
 
-            // 2. Sumar a la sucursal destino (o crear el registro si no existe)
             $stockDestino = StockSucursal::firstOrCreate(
                 ['producto_id' => $producto->id, 'sucursal_id' => $request->sucursal_destino],
                 ['cantidad' => 0, 'stock_minimo' => 5]
@@ -439,7 +445,6 @@ class InventarioController extends Controller
 
             $stockDestino->increment('cantidad', $cantidadATraspasar);
 
-            // Registrar movimiento de ENTRADA en sucursal destino
             MovimientoInventario::create([
                 'producto_id'    => $producto->id,
                 'sucursal_id'    => $request->sucursal_destino,
@@ -467,8 +472,6 @@ class InventarioController extends Controller
         $esAdmin = $usuario->id === 1 || $usuario->tieneRol('Administrador General');
         $sucursalUsuario = $usuario->sucursal_id ?? 1;
 
-        // El admin puede estar viendo el filtro "Todas" o una sucursal específica.
-        // El empleado normal siempre consulta desde la suya.
         $sucursalActual = $esAdmin
             ? $request->input('sucursal_id', $sucursalUsuario)
             : $sucursalUsuario;

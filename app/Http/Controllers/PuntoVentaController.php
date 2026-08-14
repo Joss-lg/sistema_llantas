@@ -9,6 +9,7 @@ use App\Models\StockSucursal;
 use App\Models\Sucursal;
 use App\Models\Venta;
 use App\Models\VentaDetalle;
+use App\Models\CorteCaja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -17,21 +18,39 @@ class PuntoVentaController extends Controller
 {
     use ResuelveContextoSucursal;
 
-    public function index()
+    public function index(Request $request)
     {
         $esAdmin = $this->usuarioEsAdmin();
         $sucursales = $this->sucursalesDisponibles();
+        
         $sucursalDefecto = $esAdmin
-            ? ($sucursales->first()->id ?? null)
+            ? ($request->input('sucursal_id') ?? ($sucursales->first()->id ?? 1))
             : $this->sucursalDelUsuario();
 
-        $productos = Producto::where('estado', true)
-            ->with('stock')
-            ->get()
-            ->map(function ($producto) {
-                $producto->stocks = $producto->stock->pluck('cantidad', 'sucursal_id')->toArray();
-                return $producto;
-            });
+        // IDs de productos con entrada de inventario registrada hoy
+        $productosNuevosHoy = MovimientoInventario::where('tipo', 'entrada')
+            ->whereDate('fecha', today())
+            ->pluck('producto_id')
+            ->unique()
+            ->toArray();
+
+        $query = Producto::where('estado', true);
+
+        if ($sucursalDefecto) {
+            $query->withSum(['stock as stock_cantidad' => function($q) use ($sucursalDefecto) {
+                $q->where('sucursal_id', $sucursalDefecto);
+            }], 'cantidad');
+        } else {
+            $query->withSum('stock as stock_cantidad', 'cantidad');
+        }
+
+        $productos = $query->with('stock')->get()->map(function ($producto) use ($productosNuevosHoy) {
+            $producto->stocks = $producto->stock->pluck('cantidad', 'sucursal_id')->toArray();
+            $producto->stock_cantidad = (int) ($producto->stock_cantidad ?? 0);
+            // Marca si el producto tuvo entrada de inventario hoy
+            $producto->es_nuevo = in_array($producto->id, $productosNuevosHoy);
+            return $producto;
+        });
 
         return view('ventas.index', compact('productos', 'sucursales', 'esAdmin', 'sucursalDefecto'));
     }
@@ -40,6 +59,17 @@ class PuntoVentaController extends Controller
     {
         if (empty($request->carrito)) {
             return response()->json(['success' => false, 'message' => 'El carrito está vacío.']);
+        }
+
+        $corteActual = CorteCaja::where('user_id', Auth::id())
+                                ->where('estado', 'abierta')
+                                ->first();
+
+        if (!$corteActual) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'No tienes un turno abierto. Por favor, ve al módulo de Flujo de Caja y realiza la apertura de turno antes de cobrar.'
+            ]);
         }
 
         DB::beginTransaction();
@@ -51,6 +81,7 @@ class PuntoVentaController extends Controller
             $venta->folio = 'VNT-' . date('Ymd') . '-' . rand(1000, 9999);
             $venta->sucursal_id = $sucursal_id;
             $venta->user_id = Auth::id();
+            $venta->corte_caja_id = $corteActual->id;
             $venta->nombre_cliente_temporal = $request->cliente ?: 'Público General';
             $venta->total = $request->total;
             $venta->pago_con = $request->pagoCon;
@@ -70,7 +101,6 @@ class PuntoVentaController extends Controller
                 $detalle->subtotal = $item['subtotal'];
                 $detalle->save();
 
-                // Procesar deducción de stock si no es un servicio puro
                 if (($item['tipo'] ?? '') !== 'Servicio' && !empty($item['producto_id'])) {
                     $stock = StockSucursal::where('producto_id', $item['producto_id'])
                         ->where('sucursal_id', $sucursal_id)
@@ -93,19 +123,17 @@ class PuntoVentaController extends Controller
                         ]);
                     }
 
-                    // Actualizar Stock
                     $stock->cantidad -= $item['cantidad'];
                     $stock->save();
 
-                    // Registrar Historial en Movimiento de Inventario
                     MovimientoInventario::create([
-                        'producto_id'          => $item['producto_id'],
-                        'sucursal_origen_id'   => $sucursal_id,
-                        'sucursal_destino_id'  => null,
-                        'user_id'              => Auth::id(),
-                        'tipo'                 => 'salida',
-                        'cantidad'             => $item['cantidad'],
-                        'motivo'               => 'Venta ' . $venta->folio,
+                        'producto_id' => $item['producto_id'],
+                        'sucursal_id' => $sucursal_id,
+                        'usuario_id'  => Auth::id(),
+                        'tipo'        => 'salida',
+                        'cantidad'    => $item['cantidad'],
+                        'motivo'      => 'Venta ' . $venta->folio,
+                        'fecha'       => now(),
                     ]);
                 }
             }

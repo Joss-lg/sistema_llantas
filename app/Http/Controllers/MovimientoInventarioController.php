@@ -17,9 +17,11 @@ class MovimientoInventarioController extends Controller
     public function storeEntrada(Request $request)
     {
         $request->validate([
-            'producto_id' => 'required|exists:productos,id',
-            'cantidad' => 'required|integer|min:1',
+            'producto_id'    => 'required|exists:productos,id',
+            'cantidad'       => 'required|integer|min:1',
             'costo_unitario' => 'required|numeric|min:0',
+            'precio_publico' => 'nullable|numeric|min:0',
+            'precio_mayoreo' => 'nullable|numeric|min:0',
         ]);
 
         try {
@@ -28,7 +30,19 @@ class MovimientoInventarioController extends Controller
             $sucursalDestino = $request->input('sucursal_id', $this->sucursalDelUsuario());
 
             $producto = Producto::findOrFail($request->producto_id);
-            $producto->update(['costo' => $request->costo_unitario]);
+
+            // CORRECCIÓN: ahora sí se actualizan precio_publico y precio_mayoreo
+            // si el usuario los capturó en el formulario de "Registrar entrada".
+            // Si no los captura, se conserva el precio que ya tenía el producto.
+            $producto->update([
+                'costo'          => $request->costo_unitario,
+                'precio_publico' => $request->filled('precio_publico')
+                    ? $request->precio_publico
+                    : $producto->precio_publico,
+                'precio_mayoreo' => $request->filled('precio_mayoreo')
+                    ? $request->precio_mayoreo
+                    : $producto->precio_mayoreo,
+            ]);
 
             $stock = StockSucursal::firstOrCreate(
                 ['producto_id' => $producto->id, 'sucursal_id' => $sucursalDestino],
@@ -48,7 +62,7 @@ class MovimientoInventarioController extends Controller
             ]);
 
             DB::commit();
-            return redirect()->route('inventario.index')->with('success', 'Entrada registrada en tu bodega exitosamente.');
+            return redirect()->route('inventario.index')->with('success', 'Entrada registrada y precios actualizados con éxito.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error: ' . $e->getMessage());

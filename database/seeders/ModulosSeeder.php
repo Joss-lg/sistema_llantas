@@ -17,9 +17,6 @@ class ModulosSeeder extends Seeder
         Role::firstOrCreate(['nombre' => 'Cajero']);
 
         // 2. Permisos alineados EXACTAMENTE con los nombres de ruta reales
-        //    definidos en routes/web.php. La clave del array interno es el
-        //    "ruta" (debe ser idéntico al name() de la ruta) y el valor es
-        //    el nombre legible que se muestra en la UI de checkboxes.
         $permisosPorModulo = [
 
             'Empleados' => [
@@ -29,6 +26,9 @@ class ModulosSeeder extends Seeder
                 'empleados.edit'    => 'Ver Formulario de Edición de Empleado',
                 'empleados.update'  => 'Actualizar Empleado',
                 'empleados.destroy' => 'Eliminar Empleado',
+                'empleados.inactivos' => 'Ver Empleados Inactivos',
+                'empleados.toggle'  => 'Activar/Desactivar Empleado',
+                'empleados.permisos.update' => 'Actualizar Permisos de Empleado',
             ],
 
             'Roles y Permisos' => [
@@ -54,6 +54,12 @@ class ModulosSeeder extends Seeder
                 'inventario.disponibilidad'  => 'Ver Disponibilidad de Producto',
             ],
 
+            'Caja' => [
+                'caja.index'  => 'Ver Módulo de Caja',
+                'caja.abrir'  => 'Abrir Caja',
+                'caja.cerrar' => 'Cerrar Caja',
+            ],
+
             'Ventas' => [
                 'ventas.index'    => 'Ver Punto de Venta',
                 'ventas.store'    => 'Cobrar Venta',
@@ -66,7 +72,13 @@ class ModulosSeeder extends Seeder
             ],
 
             'Clientes' => [
-                'clientes.index' => 'Ver Clientes',
+                'clientes.index'   => 'Ver Listado de Clientes',
+                'clientes.create'  => 'Ver Formulario de Nuevo Cliente',
+                'clientes.store'   => 'Registrar Cliente',
+                'clientes.show'    => 'Ver Detalles del Cliente',
+                'clientes.edit'    => 'Ver Formulario de Edición de Cliente',
+                'clientes.update'  => 'Actualizar Cliente',
+                'clientes.destroy' => 'Eliminar Cliente',
             ],
 
             'Reportes' => [

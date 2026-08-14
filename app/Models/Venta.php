@@ -29,9 +29,15 @@ class Venta extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
-    // Nueva relación con el cliente
+    // Relación con el cliente
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'cliente_id');
+    }
+
+    // Nueva relación con el Flujo de Caja (El Turno)
+    public function corteCaja()
+    {
+        return $this->belongsTo(CorteCaja::class, 'corte_caja_id');
     }
 }

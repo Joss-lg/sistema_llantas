@@ -85,18 +85,21 @@ class EmpleadoController extends Controller
     }
 
     /**
-     * Muestra el formulario de edición de un empleado (solo datos básicos).
+     * Muestra el formulario de edición de un empleado.
      */
     public function edit(User $empleado)
     {
         $roles = Role::all();
         $sucursales = Sucursal::where('activa', true)->get();
+        
+        // Cargar los permisos agrupados para mostrarlos en la vista de edición
+        $permisosGrouped = Permiso::all()->groupBy('modulo');
 
-        return view('empleados.edit', compact('empleado', 'roles', 'sucursales'));
+        return view('empleados.edit', compact('empleado', 'roles', 'sucursales', 'permisosGrouped'));
     }
 
     /**
-     * Actualiza SOLO los datos básicos de un empleado.
+     * Actualiza los datos de un empleado y sus permisos.
      */
     public function update(Request $request, User $empleado)
     {
@@ -106,6 +109,8 @@ class EmpleadoController extends Controller
             'password'    => 'nullable|string|min:8',
             'sucursal_id' => 'required|exists:sucursales,id',
             'rol_id'      => 'required|exists:roles,id',
+            'permisos'    => 'nullable|array',
+            'permisos.*'  => 'exists:permisos,id',
         ]);
 
         $empleado->name        = $request->name;
@@ -119,6 +124,9 @@ class EmpleadoController extends Controller
         }
 
         $empleado->save();
+
+        // Guardar/Actualizar los permisos seleccionados
+        $empleado->permisos()->sync($request->permisos ?? []);
 
         return redirect()->route('empleados.index')->with('success', 'Empleado actualizado correctamente.');
     }

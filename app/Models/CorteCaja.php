@@ -16,4 +16,14 @@ class CorteCaja extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function ventas()
+    {
+        return $this->hasMany(Venta::class, 'corte_caja_id');
+    }
+
+    public function movimientos()
+    {
+        return $this->hasMany(MovimientoCaja::class, 'corte_caja_id');
+    }
 }

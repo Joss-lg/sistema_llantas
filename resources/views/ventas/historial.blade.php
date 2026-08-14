@@ -5,195 +5,321 @@
 @section('content')
 
 <style>
-    @keyframes rowIn {
-        from { opacity: 0; transform: translateX(-6px); }
-        to { opacity: 1; transform: translateX(0); }
+    /* =========================================================
+       OCULTAR BARRAS DE DESPLAZAMIENTO (Opcional)
+       ========================================================= */
+    .no-scrollbar::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
     }
-    @keyframes pulseRing {
-        0% { transform: scale(1); opacity: 0.8; }
-        100% { transform: scale(2.5); opacity: 0; }
-    }
-    @keyframes popIn {
-        0% { opacity: 0; transform: scale(0.85); }
-        60% { opacity: 1; transform: scale(1.04); }
-        100% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes shineSweep {
-        0% { transform: translateX(-120%) skewX(-20deg); }
-        100% { transform: translateX(220%) skewX(-20deg); }
-    }
-    @keyframes iconBreathe {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.12); }
+    .no-scrollbar {
+        -ms-overflow-style: none !important;  /* IE y Edge */
+        scrollbar-width: none !important;  /* Firefox */
     }
 
-    .row-anim { animation: rowIn 0.35s ease-out both; opacity: 0; }
-    .pulse-dot::before {
-        content: ''; position: absolute; inset: 0; border-radius: 999px;
-        background: currentColor; opacity: 0.5;
-        animation: pulseRing 1.8s ease-out infinite;
-    }
-    .stat-number { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    /* =========================================================
+       ANIMACIONES Y EFECTOS VISUALES 3D
+       ========================================================= */
+    @media (prefers-reduced-motion: no-preference) {
+        .dash-rise { 
+            animation: dash-fade-up 0.65s cubic-bezier(0.16, 1, 0.3, 1) both; 
+        }
+        .dash-icon-pop { 
+            animation: icon-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; 
+        }
+        .dash-icon { 
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        }
+        .tilt-card:hover .dash-icon { 
+            transform: scale(1.15) rotate(-6deg); 
+        }
+        .dash-row { 
+            transition: background-color 0.2s ease, transform 0.2s ease; 
+        }
+        .dash-row:hover { 
+            transform: translateX(4px); 
+        }
+        .dash-dot { 
+            animation: dash-pulse-dot 2s ease-in-out infinite; 
+        }
+        .dash-empty-icon { 
+            animation: empty-float 3.5s ease-in-out infinite; 
+        }
 
-    /* Botón principal con brillo diagonal en hover */
-    .btn-shine { position: relative; overflow: hidden; }
-    .btn-shine::after {
-        content: '';
-        position: absolute;
-        top: 0; left: 0;
-        width: 40%; height: 100%;
-        background: linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent);
-        transform: translateX(-120%) skewX(-20deg);
-        pointer-events: none;
-    }
-    .btn-shine:hover::after { animation: shineSweep 0.9s ease forwards; }
-
-    .icon-breathe-hover:hover svg { animation: iconBreathe 1s ease-in-out infinite; }
-
-    @media (prefers-reduced-motion: reduce) {
-        .row-anim, .pulse-dot::before, .stat-number, .btn-shine::after, .icon-breathe-hover:hover svg {
-            animation: none !important; opacity: 1 !important;
+        /* Tarjeta 3D interactiva con Spotlight */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+            will-change: transform, box-shadow;
+        }
+        .tilt-card:hover { 
+            box-shadow: 0 20px 40px -10px rgba(129, 140, 248, 0.22); 
+        }
+        .tilt-spotlight {
+            position: absolute; 
+            inset: 0; 
+            border-radius: inherit; 
+            pointer-events: none;
+            opacity: 0; 
+            transition: opacity 0.4s ease;
+            background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgba(129, 140, 248, 0.15), transparent 65%);
+        }
+        .tilt-card:hover .tilt-spotlight { 
+            opacity: 1; 
+        }
+        .tilt-border {
+            position: absolute; 
+            inset: 0; 
+            border-radius: inherit; 
+            pointer-events: none;
+            opacity: 0; 
+            transition: opacity 0.4s ease; 
+            padding: 1px;
+            background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%), rgba(129, 140, 248, 0.7), transparent 70%);
+            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor; 
+            mask-composite: exclude;
+        }
+        .tilt-card:hover .tilt-border { 
+            opacity: 1; 
         }
     }
-
-    /* ── Scrollbar personalizado (apunta directo a html/body, no solo "*") ── */
-    html::-webkit-scrollbar,
-    body::-webkit-scrollbar,
-    *::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+    
+    @keyframes dash-fade-up {
+        from { opacity: 0; transform: translateY(16px); filter: blur(3px); }
+        to   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+    }
+    @keyframes icon-pop {
+        0%   { opacity: 0; transform: scale(.3) rotate(-15deg); }
+        60%  { opacity: 1; transform: scale(1.12) rotate(4deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0); }
+    }
+    @keyframes dash-pulse-dot { 
+        0%, 100% { opacity: 1; transform: scale(1); } 
+        50% { opacity: .4; transform: scale(.7); } 
+    }
+    @keyframes empty-float { 
+        0%, 100% { transform: translateY(0); } 
+        50% { transform: translateY(-6px); } 
     }
 
-    html::-webkit-scrollbar-track,
-    body::-webkit-scrollbar-track,
-    *::-webkit-scrollbar-track {
-        background: transparent;
+    .dash-counter { 
+        font-variant-numeric: tabular-nums; 
+    }
+    .dash-dot-grid {
+        background-image: radial-gradient(currentColor 1px, transparent 1px);
+        background-size: 20px 20px;
     }
 
-    html::-webkit-scrollbar-thumb,
-    body::-webkit-scrollbar-thumb,
-    *::-webkit-scrollbar-thumb {
-        background-color: #d1d5db;
-        border-radius: 9999px;
-        border: 2px solid transparent;
-        background-clip: padding-box;
-        transition: background-color 0.2s ease;
+    /* =========================================================
+       BOTONES Y EFECTO SHEEN (BARRIDO DE LUZ)
+       ========================================================= */
+    .btn-glow-base {
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        will-change: transform, box-shadow;
+    }
+    .btn-glow-base:hover {
+        transform: translateY(-2px) scale(1.01);
+    }
+    .btn-glow-base:active {
+        transform: translateY(0) scale(0.98);
+    }
+    .btn-sheen {
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-sheen::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -60%;
+        width: 50%;
+        height: 200%;
+        background: linear-gradient(60deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+        transform: rotate(30deg);
+        transition: opacity 0.3s;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .btn-sheen:hover::after {
+        opacity: 1;
+        animation: btn-sheen-slide 0.85s ease-in-out forwards;
+    }
+    @keyframes btn-sheen-slide {
+        0%   { left: -60%; }
+        100% { left: 140%; }
     }
 
-    html::-webkit-scrollbar-thumb:hover,
-    body::-webkit-scrollbar-thumb:hover,
-    *::-webkit-scrollbar-thumb:hover {
-        background-color: #D32030;
-    }
-
-    html::-webkit-scrollbar-button,
-    body::-webkit-scrollbar-button,
-    *::-webkit-scrollbar-button {
-        display: none;
-        width: 0;
-        height: 0;
-    }
-
-    html.dark ::-webkit-scrollbar-thumb { background-color: #3f3f46; }
-    html.dark ::-webkit-scrollbar-thumb:hover { background-color: #D32030; }
-
-    html, body, * {
-        scrollbar-width: thin;
-        scrollbar-color: #d1d5db transparent;
-    }
-    html.dark, html.dark body, html.dark * {
-        scrollbar-color: #3f3f46 transparent;
-    }
+    .color-scheme-dark { color-scheme: light; }
+    html.dark .color-scheme-dark { color-scheme: dark; }
 </style>
 
-<!-- Contenedor principal con el estado de carga y contexto relativo para el fondo -->
-<div class="max-w-7xl mx-auto transition-colors duration-300 relative px-4 py-6 sm:px-0 sm:py-0" x-data="{ cargado: false }" x-init="setTimeout(() => cargado = true, 50)">
+<div class="relative min-h-screen pb-12">
 
-    {{-- Fondo animado tipo Aurora --}}
-    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0 opacity-20 dark:opacity-10 transition-opacity duration-500" aria-hidden="true">
-        <div class="absolute -top-[160px] -left-[80px] w-[420px] h-[420px] rounded-full bg-[#D32030] blur-[90px] animate-[pulse_16s_ease-in-out_infinite]"></div>
-        <div class="absolute top-[40px] -right-[140px] w-[420px] h-[420px] rounded-full bg-blue-500 blur-[90px] animate-[pulse_20s_ease-in-out_infinite]" style="animation-delay: -6s;"></div>
+    {{-- Fondo de Red de Puntos en Modo Oscuro --}}
+    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden hidden dark:block" aria-hidden="true">
+        <div class="absolute inset-0 dash-dot-grid text-white/[0.025]"></div>
     </div>
 
-    <!-- Contenido principal que va por encima del fondo (z-10) -->
-    <div class="relative z-10 space-y-6">
+    <div class="max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8 py-6">
 
-        {{-- ── Encabezado ── --}}
-        <div class="flex items-center justify-between flex-wrap gap-3 transform transition-all duration-700 ease-out"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'">
+        {{-- Encabezado --}}
+        <div class="dash-rise flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <p class="text-[11px] font-bold tracking-[3px] text-[#D32030] dark:text-red-500 uppercase">Llantas Económicas · Chalco</p>
-                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">Historial de Ventas</h1>
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2 h-2 rounded-full bg-[#818CF8] dark:bg-[#818CF8]"></span>
+                    <p class="text-[11px] font-bold tracking-[2.5px] text-[#818CF8] dark:text-[#818CF8] uppercase">
+                        Llantas Económicas · Chalco
+                    </p>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight mt-1">
+                    Historial de Ventas
+                </h1>
+            </div>
+
+            {{-- Indicador de estado rápido --}}
+            <div class="flex items-center gap-2 self-start sm:self-auto bg-white dark:bg-[#121212] px-3.5 py-1.5 rounded-full border border-gray-200 dark:border-neutral-800 shadow-sm text-xs font-semibold text-gray-600 dark:text-neutral-300">
+                <svg class="w-4 h-4 text-[#818CF8] dark:text-[#818CF8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Consulta en tiempo real</span>
             </div>
         </div>
 
-        {{-- ── Estadísticas rápidas (Animación en Cascada) ── --}}
+        {{-- CÁLCULOS DE MÉTRICAS --}}
         @php
             $sumaPagina = $ventas->sum('total');
-            $piezasPagina = $ventas->sum(fn($v) => $v->detalles->sum('cantidad'));
+            $piezasPagina = $ventas->sum(fn($v) => $v->detalles ? $v->detalles->sum('cantidad') : 0);
         @endphp
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            <!-- Stat 1 -->
-            <div class="bg-[#0F0F0F] dark:bg-[#0A0A0A] border border-transparent dark:border-neutral-800 rounded-2xl p-6 text-white shadow-lg transform transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-red-500/10 delay-100"
-                 :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-neutral-500">Ventas encontradas</p>
-                <p class="text-3xl font-bold mt-2 stat-number" style="animation-delay: 0.35s">{{ $ventas->total() }}</p>
+
+        {{-- TARJETAS DE ESTADÍSTICAS (KPIs) --}}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            
+            {{-- Stat 1: Ventas Encontradas --}}
+            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-[#0A1F3F] rounded-2xl p-5 border border-gray-200 dark:border-[#818CF8]/40 shadow-sm" style="animation-delay:.05s">
+                <div class="tilt-spotlight"></div>
+                <div class="tilt-border"></div>
+                <div class="relative flex items-center justify-between mb-3">
+                    <div class="dash-icon dash-icon-pop w-10 h-10 rounded-xl bg-[#818CF8]/10 dark:bg-[#818CF8]/30 text-[#818CF8] dark:text-[#818CF8] flex items-center justify-center shadow-inner" style="animation-delay:.15s">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-[10px] font-extrabold text-[#818CF8] dark:text-[#818CF8] uppercase tracking-widest bg-[#818CF8]/10 dark:bg-[#818CF8]/40 px-2.5 py-0.5 rounded-full border border-[#818CF8]/30 dark:border-[#818CF8]/20">
+                        Filtro
+                    </span>
+                </div>
+                <p class="relative text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-[#818CF8]/80">Ventas Encontradas</p>
+                <p class="relative text-3xl font-extrabold mt-1 text-gray-900 dark:text-white tracking-tight">
+                    <span class="dash-counter" data-counter data-value="{{ $ventas->total() }}">0</span>
+                </p>
             </div>
 
-            <!-- Stat 2 -->
-            <div class="bg-white dark:bg-[#151515] rounded-2xl p-6 border border-gray-200 dark:border-neutral-800 shadow-sm transform transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/40 delay-150"
-                 :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-neutral-500">En esta página</p>
-                <p class="text-3xl font-bold mt-2 text-gray-900 dark:text-white transition-colors stat-number" style="animation-delay: 0.4s">{{ $ventas->count() }}</p>
+            {{-- Stat 2: En esta página --}}
+            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-[#151515] rounded-2xl p-5 border border-gray-200 dark:border-neutral-800 shadow-sm" style="animation-delay:.12s">
+                <div class="tilt-spotlight"></div>
+                <div class="tilt-border"></div>
+                <div class="relative flex items-center justify-between mb-3">
+                    <div class="dash-icon dash-icon-pop w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 flex items-center justify-center" style="animation-delay:.22s">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="relative text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-400">En esta página</p>
+                <p class="relative text-3xl font-extrabold mt-1 text-gray-900 dark:text-white tracking-tight">
+                    <span class="dash-counter" data-counter data-value="{{ $ventas->count() }}">0</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-neutral-500 ml-1">reg.</span>
+                </p>
             </div>
 
-            <!-- Stat 3 -->
-            <div class="bg-white dark:bg-[#151515] rounded-2xl p-6 border border-gray-200 dark:border-neutral-800 shadow-sm transform transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-black/40 delay-200"
-                 :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-gray-400 dark:text-neutral-500">Piezas (pág.)</p>
-                <p class="text-3xl font-bold mt-2 text-gray-900 dark:text-white transition-colors stat-number" style="animation-delay: 0.45s">{{ $piezasPagina }}</p>
+            {{-- Stat 3: Piezas --}}
+            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-[#151515] rounded-2xl p-5 border border-gray-200 dark:border-neutral-800 shadow-sm" style="animation-delay:.19s">
+                <div class="tilt-spotlight"></div>
+                <div class="tilt-border"></div>
+                <div class="relative flex items-center justify-between mb-3">
+                    <div class="dash-icon dash-icon-pop w-10 h-10 rounded-xl bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 flex items-center justify-center" style="animation-delay:.29s">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="relative text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-neutral-400">Piezas (pág.)</p>
+                <p class="relative text-3xl font-extrabold mt-1 text-gray-900 dark:text-white tracking-tight">
+                    <span class="dash-counter" data-counter data-value="{{ $piezasPagina }}">0</span>
+                    <span class="text-xs font-normal text-gray-400 dark:text-neutral-500 ml-1">pzas</span>
+                </p>
             </div>
 
-            <!-- Stat 4 -->
-            <div class="bg-emerald-600 dark:bg-emerald-600 rounded-2xl p-6 text-white shadow-md transform transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-emerald-500/20 delay-300"
-                 :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-                <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-100 dark:text-emerald-200">Total (pág.)</p>
-                <p class="text-3xl font-bold mt-2 stat-number" style="animation-delay: 0.5s">${{ number_format($sumaPagina, 2) }}</p>
+            {{-- Stat 4: Total ($) --}}
+            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-emerald-700 dark:bg-emerald-900/80 rounded-2xl p-5 border border-emerald-600 dark:border-emerald-700 text-white shadow-md" style="animation-delay:.26s">
+                <div class="tilt-spotlight"></div>
+                <div class="tilt-border"></div>
+                <div class="relative flex items-center justify-between mb-3">
+                    <div class="dash-icon dash-icon-pop w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center backdrop-blur-sm" style="animation-delay:.36s">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="relative text-[11px] font-bold uppercase tracking-wider text-emerald-100 dark:text-emerald-200">Total (pág.)</p>
+                <p class="relative text-3xl font-extrabold mt-1 text-white tracking-tight">
+                    <span class="dash-counter" data-counter data-value="{{ $sumaPagina }}" data-prefix="$" data-decimals="2">$0.00</span>
+                </p>
             </div>
         </div>
 
-        {{-- ── Filtros ── --}}
-        <div class="bg-white dark:bg-[#151515] rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-800 p-5 sm:p-6 transform transition-all duration-700 ease-out delay-400"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
+        {{-- FORMULARIO DE FILTROS --}}
+        <div class="dash-rise bg-white dark:bg-[#151515] rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-800 p-5 sm:p-6" style="animation-delay:.32s">
             <div class="flex items-center gap-2 mb-5 group/filterhead">
-                <svg class="w-4 h-4 text-[#D32030] dark:text-red-500 transition-transform duration-500 group-hover/filterhead:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
-                <p class="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-neutral-400 transition-colors">Filtrar resultados</p>
+                <div class="p-1.5 rounded-lg bg-[#818CF8]/10 dark:bg-[#818CF8]/20 text-[#818CF8] dark:text-[#818CF8]">
+                    <svg class="w-4 h-4 transition-transform duration-500 group-hover/filterhead:rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                </div>
+                <p class="text-xs font-bold uppercase tracking-widest text-gray-600 dark:text-neutral-300">
+                    Filtrar resultados
+                </p>
             </div>
 
             <form method="GET" action="{{ route('ventas.historial') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
+                
+                {{-- Folio --}}
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Folio del Ticket</label>
-                    <input type="text" name="folio" value="{{ request('folio') }}" placeholder="Ej. VNT-2026..."
-                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-neutral-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#D32030] focus:border-transparent focus:scale-[1.01] hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm">
+                    <label for="filter_folio" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                        Folio del Ticket
+                    </label>
+                    <input type="text" id="filter_folio" name="folio" value="{{ request('folio') }}" placeholder="Ej. VNT-2026..."
+                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-neutral-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm">
                 </div>
 
+                {{-- Fecha Inicio --}}
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Fecha Inicio</label>
-                    <input type="date" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#D32030] focus:border-transparent focus:scale-[1.01] hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
+                    <label for="filter_fecha_inicio" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                        Fecha Inicio
+                    </label>
+                    <input type="date" id="filter_fecha_inicio" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
                 </div>
 
+                {{-- Fecha Fin --}}
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Fecha Fin</label>
-                    <input type="date" name="fecha_fin" value="{{ request('fecha_fin') }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#D32030] focus:border-transparent focus:scale-[1.01] hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
+                    <label for="filter_fecha_fin" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                        Fecha Fin
+                    </label>
+                    <input type="date" id="filter_fecha_fin" name="fecha_fin" value="{{ request('fecha_fin') }}"
+                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
                 </div>
 
-                @if($esAdmin)
+                {{-- Sucursal (Sólo Administradores) --}}
+                @if(isset($esAdmin) && $esAdmin)
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-2">Sucursal</label>
+                    <label for="filter_sucursal" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                        Sucursal
+                    </label>
                     <div class="relative">
-                        <select name="sucursal_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#D32030] focus:border-transparent focus:scale-[1.01] hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm appearance-none cursor-pointer">
+                        <select id="filter_sucursal" name="sucursal_id" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm appearance-none cursor-pointer pr-10">
                             <option value="">Todas las sucursales</option>
                             @foreach($sucursales as $sucursal)
                                 <option value="{{ $sucursal->id }}" {{ request('sucursal_id') == $sucursal->id ? 'selected' : '' }}>
@@ -201,89 +327,125 @@
                                 </option>
                             @endforeach
                         </select>
-                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/>
+                        </svg>
                     </div>
                 </div>
                 @endif
 
+                {{-- Acciones del Filtro --}}
                 <div class="flex gap-3 lg:col-span-4 justify-end mt-2">
-                    <a href="{{ route('ventas.historial') }}" class="px-5 py-2.5 bg-white dark:bg-[#151515] border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-gray-300 font-semibold text-sm rounded-xl transition-all duration-200 hover:bg-gray-50 dark:hover:bg-neutral-800 hover:-translate-y-0.5 shadow-sm">
+                    <a href="{{ route('ventas.historial') }}" class="btn-glow-base px-5 py-2.5 bg-white dark:bg-[#151515] border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-gray-300 font-semibold text-sm rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-neutral-800">
                         Limpiar
                     </a>
-                    <button type="submit" class="btn-shine icon-breathe-hover group inline-flex items-center gap-2 px-6 py-2.5 bg-[#D32030] text-white font-semibold text-sm rounded-xl shadow-lg shadow-red-500/20 transition-all duration-200 hover:bg-[#B91C2C] hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5 active:scale-95">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
-                        Buscar Ventas
+                    
+                    <button type="submit" class="btn-glow-base btn-sheen group inline-flex items-center gap-2 px-6 py-2.5 bg-[#818CF8] hover:bg-[#6366F1] dark:bg-[#818CF8] dark:hover:bg-[#6366F1] text-white font-semibold text-sm rounded-xl shadow-md transition duration-300">
+                        <svg class="w-4 h-4 text-white transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/>
+                        </svg>
+                        <span>Buscar Ventas</span>
                     </button>
                 </div>
             </form>
         </div>
 
-        {{-- ── Tabla de resultados ── --}}
-        <div class="bg-white dark:bg-[#151515] rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden transform transition-all duration-700 ease-out delay-500" 
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'">
+        {{-- TABLA DE RESULTADOS --}}
+        <div class="dash-rise bg-white dark:bg-[#151515] rounded-2xl shadow-sm border border-gray-200 dark:border-neutral-800 overflow-hidden" style="animation-delay:.38s">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-50/50 dark:bg-[#0A0A0A] border-b border-gray-100 dark:border-neutral-800 transition-colors">
-                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Folio / Fecha</th>
-                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Cliente</th>
-                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Sucursal / Cajero</th>
-                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Artículos</th>
-                            <th class="p-4 text-right text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Total</th>
-                            <th class="p-4 text-center text-[11px] font-bold text-gray-500 dark:text-neutral-500 uppercase tracking-wider">Acciones</th>
+                        <tr class="bg-gray-50/70 dark:bg-[#0A0A0A] border-b border-gray-100 dark:border-neutral-800">
+                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Folio / Fecha</th>
+                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Cliente</th>
+                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Sucursal / Cajero</th>
+                            <th class="p-4 text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Artículos</th>
+                            <th class="p-4 text-right text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Total</th>
+                            <th class="p-4 text-center text-[11px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-neutral-800">
+                    <tbody class="divide-y divide-gray-100 dark:divide-neutral-800/60">
                         @forelse($ventas as $venta)
-                        @php
-                            $delayFila = $loop->index * 0.05; // Cascadas dinámicas
-                        @endphp
-                        <tr class="group hover:bg-gray-50/70 dark:hover:bg-neutral-800/40 transition-colors duration-200 relative row-anim" style="animation-delay: {{ $delayFila + 0.6 }}s">
+                        <tr class="dash-row group hover:bg-gray-50/80 dark:hover:bg-white/[0.02] relative">
                             
-                            {{-- Borde lateral rojo en hover --}}
-                            <span class="absolute left-0 top-0 h-full w-0.5 bg-[#D32030] scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-200"></span>
-
+                            {{-- Folio / Fecha --}}
                             <td class="p-4">
-                                <div class="font-bold text-gray-900 dark:text-gray-100 transition-colors group-hover:translate-x-0.5">{{ $venta->folio }}</div>
-                                <div class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5 transition-colors">{{ \Carbon\Carbon::parse($venta->fecha)->format('d M, Y - H:i') }}</div>
+                                <div class="font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                                    {{ $venta->folio }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <span>{{ \Carbon\Carbon::parse($venta->fecha)->format('d M, Y - H:i') }}</span>
+                                </div>
                             </td>
+
+                            {{-- Cliente --}}
                             <td class="p-4">
-                                <div class="text-sm text-gray-800 dark:text-gray-200 font-medium transition-colors">{{ $venta->nombre_cliente_temporal ?: 'Público General' }}</div>
+                                <div class="text-sm text-gray-800 dark:text-gray-200 font-medium">
+                                    {{ $venta->nombre_cliente_temporal ?: 'Público General' }}
+                                </div>
                                 @if($venta->requiere_factura)
-                                    <span class="inline-flex items-center gap-1.5 mt-1.5 text-[10px] bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                                        <span class="pulse-dot relative w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-500"></span>
+                                    <span class="inline-flex items-center gap-1.5 mt-1 text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                                        <span class="dash-dot relative w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></span>
                                         Req. Factura
                                     </span>
                                 @endif
                             </td>
+
+                            {{-- Sucursal / Cajero --}}
                             <td class="p-4">
-                                <div class="text-sm font-medium text-gray-800 dark:text-gray-200 transition-colors">Sucursal {{ $venta->sucursal_id }}</div>
-                                <div class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5 transition-colors">Cajero ID: {{ $venta->user_id }}</div>
+                                <div class="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                    {{ $venta->sucursal->nombre ?? 'Sucursal ' . $venta->sucursal_id }}
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
+                                    {{ $venta->user->name ?? 'Cajero ID: ' . $venta->user_id }}
+                                </div>
                             </td>
+
+                            {{-- Artículos --}}
                             <td class="p-4">
                                 <div class="flex items-center gap-1.5">
-                                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors">{{ $venta->detalles->sum('cantidad') }}</span>
+                                    <span class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                                        {{ $venta->detalles ? $venta->detalles->sum('cantidad') : 0 }}
+                                    </span>
                                     <span class="text-xs text-gray-400 dark:text-neutral-500">pzas</span>
                                 </div>
                             </td>
+
+                            {{-- Total --}}
                             <td class="p-4 text-right">
-                                <div class="text-lg font-bold text-emerald-600 dark:text-emerald-500 transition-colors group-hover:scale-105 origin-right">${{ number_format($venta->total, 2) }}</div>
+                                <div class="text-base sm:text-lg font-extrabold text-emerald-600 dark:text-emerald-400">
+                                    ${{ number_format($venta->total, 2) }}
+                                </div>
                             </td>
+
+                            {{-- Acciones --}}
                             <td class="p-4 text-center">
                                 <button onclick="window.open('{{ route('ventas.ticket', $venta->id) }}', 'Ticket', 'width=400,height=600')"
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 dark:bg-[#0A0A0A] text-gray-600 dark:text-neutral-400 transition-all duration-200 hover:bg-[#D32030] dark:hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/30 active:scale-90 group/print" title="Reimprimir Ticket">
-                                    <svg class="w-4 h-4 transition-transform duration-300 group-hover/print:-rotate-12 group-hover/print:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                        class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 dark:bg-[#0A0A0A] text-gray-600 dark:text-neutral-400 transition-all duration-200 hover:bg-[#D32030] dark:hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/20 active:scale-95 group/print"
+                                        title="Reimprimir Ticket">
+                                    <svg class="w-4 h-4 transition-transform duration-300 group-hover/print:-rotate-12 group-hover/print:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                    </svg>
                                 </button>
                             </td>
                         </tr>
                         @empty
                         <tr>
                             <td colspan="6" class="p-16 text-center">
-                                <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/10 mb-4 ring-4 ring-red-50 dark:ring-red-900/5 transition-colors">
-                                    <svg class="w-7 h-7 text-[#D32030] dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                <div class="dash-empty-icon inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#818CF8]/10 dark:bg-[#818CF8]/20 text-[#818CF8] dark:text-[#818CF8] mb-4 shadow-inner">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
                                 </div>
-                                <p class="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wide transition-colors">Sin resultados</p>
-                                <p class="text-gray-500 dark:text-neutral-500 text-sm mt-1 transition-colors">No se encontraron ventas con los filtros actuales.</p>
+                                <p class="text-base font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
+                                    Sin resultados
+                                </p>
+                                <p class="text-gray-500 dark:text-neutral-400 text-sm mt-1 max-w-sm mx-auto">
+                                    No se encontraron ventas con los filtros seleccionados. Intenta modificar los criterios de búsqueda.
+                                </p>
                             </td>
                         </tr>
                         @endforelse
@@ -291,8 +453,9 @@
                 </table>
             </div>
 
-            @if($ventas->hasPages())
-            <div class="p-4 border-t border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-[#151515] transition-colors [&_a]:transition-all [&_a]:duration-200 [&_a]:rounded-lg [&_a:hover]:scale-110 [&_a:hover]:shadow-sm">
+            {{-- Paginación --}}
+            @if(method_exists($ventas, 'hasPages') && $ventas->hasPages())
+            <div class="p-4 border-t border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-[#151515]">
                 {{ $ventas->links() }}
             </div>
             @endif
@@ -300,9 +463,85 @@
     </div>
 </div>
 
-<style>
-    /* CSS adicional si el navegador usa dark mode para forzar el selector de fecha a verse oscuro */
-    .color-scheme-dark { color-scheme: light; }
-    html.dark .color-scheme-dark { color-scheme: dark; }
-</style>
+{{-- Scripts de Animación Vanilla JS --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // -------------------------------------------------------------
+        // 1. Animación de Conteo Ascendente (Metrics Counter)
+        // -------------------------------------------------------------
+        var counters = document.querySelectorAll('[data-counter]');
+        var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        counters.forEach(function (el) {
+            var target = parseFloat(el.getAttribute('data-value')) || 0;
+            var decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
+            var prefix = el.getAttribute('data-prefix') || '';
+
+            if (reduceMotion) {
+                el.textContent = prefix + formatNumber(target, decimals);
+                return;
+            }
+
+            var duration = 1200;
+            var startTime = null;
+
+            function formatNumber(n, dec) {
+                return dec > 0
+                    ? n.toLocaleString('es-MX', { minimumFractionDigits: dec, maximumFractionDigits: dec })
+                    : Math.round(n).toLocaleString('es-MX');
+            }
+
+            function step(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var progress = Math.min((timestamp - startTime) / duration, 1);
+                // Easing cubic suave
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var current = eased * target;
+                el.textContent = prefix + formatNumber(current, decimals);
+
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                }
+            }
+            requestAnimationFrame(step);
+        });
+
+        // -------------------------------------------------------------
+        // 2. Interactive Spotlight & Perspective 3D
+        // -------------------------------------------------------------
+        var isFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+        if (!reduceMotion && isFinePointer) {
+            document.querySelectorAll('.js-tilt').forEach(function (card) {
+                var ticking = false;
+
+                card.addEventListener('mousemove', function (e) {
+                    if (!ticking) {
+                        requestAnimationFrame(function () {
+                            var rect = card.getBoundingClientRect();
+                            var x = e.clientX - rect.left;
+                            var y = e.clientY - rect.top;
+
+                            card.style.setProperty('--mx', x + 'px');
+                            card.style.setProperty('--my', y + 'px');
+
+                            var midX = rect.width / 2;
+                            var midY = rect.height / 2;
+                            var rotateY = ((x - midX) / midX) * 4;
+                            var rotateX = -((y - midY) / midY) * 4;
+
+                            card.style.transform = 'perspective(700px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px)';
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    card.style.transform = 'perspective(700px) rotateX(0) rotateY(0) translateY(0)';
+                });
+            });
+        }
+    });
+</script>
 @endsection

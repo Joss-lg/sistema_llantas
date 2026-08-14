@@ -19,6 +19,13 @@ class Producto extends Model
         'estado'
     ];
 
+    protected $casts = [
+        'costo' => 'float',
+        'precio_publico' => 'float',
+        'precio_mayoreo' => 'float',
+        'estado' => 'boolean',
+    ];
+
     // Relación con la tabla pivote de stock
     public function stock()
     {
