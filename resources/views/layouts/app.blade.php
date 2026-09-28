@@ -25,6 +25,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- Evita el doble scroll (página completa + contenedores internos) que provocaba el corte visual al desplazarse -->
+    <style>
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        /* Oculta visualmente las barras de scroll pero conserva el desplazamiento */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE y Edge */
+            scrollbar-width: none;     /* Firefox */
+        }
+    </style>
+
     <!-- Alpine.js: requerido por los x-data de ventas/inventario/gastos/reportes -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
@@ -33,7 +49,7 @@
 </head>
 <body class="h-full font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
     <div id="app"
-         class="min-h-screen flex"
+         class="h-screen flex overflow-hidden"
          x-data="{ sidebarOpen: localStorage.getItem('sidebarOpen') !== 'false' }"
          x-init="$watch('sidebarOpen', value => localStorage.setItem('sidebarOpen', value))">
 
@@ -96,9 +112,10 @@
                         $puedeInventario         = Auth::user()->tienePermiso('inventario.index');
                         $mostrarSeccionInventario = $puedeInventario;
 
-                        $puedeEmpleados     = Auth::user()->tienePermiso('empleados.index');
-                        $puedeReportes      = Auth::user()->tienePermiso('reportes.index');
-                        $mostrarSeccionAdmin = $puedeEmpleados || $puedeReportes;
+                        $puedeEmpleados      = Auth::user()->tienePermiso('empleados.index');
+                        $puedeReportes       = Auth::user()->tienePermiso('reportes.index');
+                        $puedeCajaHistorial  = Auth::user()->tienePermiso('caja.historial');
+                        $mostrarSeccionAdmin = $puedeEmpleados || $puedeReportes || $puedeCajaHistorial;
                     @endphp
 
                     <div class="px-4 pb-4 pt-2 transition-all duration-300"
@@ -124,7 +141,7 @@
                         </div>
                     </div>
 
-                    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto overflow-x-hidden">
+                    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto overflow-x-hidden no-scrollbar">
 
                         {{-- ============ GENERAL ============ --}}
                         {{-- Dashboard siempre visible: es ruta exenta en CheckPermiso --}}
@@ -146,7 +163,7 @@
                             @if($puedeCaja)
                                 <a href="{{ route('caja.index') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
-                                   {{ request()->routeIs('caja.*') ? 'bg-gradient-to-r from-[#818CF8]/10 to-transparent text-[#818CF8] font-semibold shadow-[inset_3px_0_0_0_#818CF8]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                                   {{ request()->routeIs('caja.index') ? 'bg-gradient-to-r from-[#818CF8]/10 to-transparent text-[#818CF8] font-semibold shadow-[inset_3px_0_0_0_#818CF8]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
                                    :class="sidebarOpen ? '' : 'justify-center px-0'">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                                     <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Flujo de Caja</span>
@@ -227,6 +244,16 @@
                                 </a>
                             @endif
 
+                            @if($puedeCajaHistorial)
+                                <a href="{{ route('caja.historial') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                   {{ request()->routeIs('caja.historial') ? 'bg-gradient-to-r from-[#818CF8]/10 to-transparent text-[#818CF8] font-semibold shadow-[inset_3px_0_0_0_#818CF8]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                                   :class="sidebarOpen ? '' : 'justify-center px-0'">
+                                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Historial de Cajas</span>
+                                </a>
+                            @endif
+
                             @if($puedeReportes)
                                 <a href="{{ route('reportes.index') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
@@ -278,32 +305,10 @@
                 @endguest
             </header>
 
-            <main class="flex-1 overflow-y-auto py-8 px-4 sm:px-6 lg:px-8">
+            <main class="flex-1 overflow-y-auto py-8 px-4 sm:px-6 lg:px-8 no-scrollbar">
                 @yield('content')
             </main>
         </div>
     </div>
-<!-- Detección de retroceso en el historial para destruir sesión -->
-    <script>
-        (function() {
-            // Se inserta un estado extra en el historial al cargar la vista
-            history.pushState(null, null, location.href);
-
-            window.addEventListener('popstate', function (event) {
-                // Al presionar la flecha 'Atrás', enviamos una petición para matar la sesión
-                fetch("{{ route('logout.back') }}", {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    }
-                }).finally(function() {
-                    // Sin importar la respuesta, redirigimos inmediatamente al login
-                    window.location.href = "{{ route('login') }}";
-                });
-            });
-        })();
-    </script>
 </body>
 </html>

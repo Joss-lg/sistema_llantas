@@ -4,6 +4,11 @@
 
 @section('content')
 
+<!-- Flatpickr: selector de calendario para rango de fechas -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.js"></script>
+
 <style>
     /* =========================================================
        OCULTAR BARRAS DE DESPLAZAMIENTO (Opcional)
@@ -153,6 +158,38 @@
 
     .color-scheme-dark { color-scheme: light; }
     html.dark .color-scheme-dark { color-scheme: dark; }
+
+    /* =========================================================
+       FLATPICKR — estilo de marca + soporte modo oscuro
+       ========================================================= */
+    .flatpickr-calendar {
+        border-radius: 16px;
+        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.18);
+        border: 1px solid #e5e7eb;
+        font-family: inherit;
+    }
+    .flatpickr-day.selected,
+    .flatpickr-day.startRange,
+    .flatpickr-day.endRange { background: #818CF8 !important; border-color: #818CF8 !important; }
+    .flatpickr-day.inRange {
+        background: rgba(129, 140, 248, 0.15) !important;
+        border-color: rgba(129, 140, 248, 0.15) !important;
+        box-shadow: -5px 0 0 rgba(129, 140, 248, 0.15), 5px 0 0 rgba(129, 140, 248, 0.15);
+    }
+    .flatpickr-day:hover { background: #e0e7ff; }
+    html.dark .flatpickr-calendar { background: #151515; border-color: #2e2e2e; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
+    html.dark .flatpickr-day { color: #d4d4d4; }
+    html.dark .flatpickr-day.flatpickr-disabled,
+    html.dark .flatpickr-day.prevMonthDay,
+    html.dark .flatpickr-day.nextMonthDay { color: #525252; }
+    html.dark .flatpickr-day:hover { background: #27272a; }
+    html.dark .flatpickr-months,
+    html.dark .flatpickr-weekdays,
+    html.dark span.flatpickr-weekday { background: #151515; color: #e5e5e5; }
+    html.dark .flatpickr-current-month .cur-month,
+    html.dark .flatpickr-current-month input.cur-year { color: #e5e5e5; }
+    html.dark .flatpickr-prev-month svg,
+    html.dark .flatpickr-next-month svg { fill: #a3a3a3; }
 </style>
 
 <div class="relative min-h-screen pb-12">
@@ -294,22 +331,20 @@
                            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-neutral-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm">
                 </div>
 
-                {{-- Fecha Inicio --}}
-                <div>
-                    <label for="filter_fecha_inicio" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                        Fecha Inicio
+                {{-- Rango de Fechas (calendario) --}}
+                <div class="sm:col-span-2 lg:col-span-2">
+                    <label for="rango_fechas_ventas" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
+                        Rango de Fechas
                     </label>
-                    <input type="date" id="filter_fecha_inicio" name="fecha_inicio" value="{{ request('fecha_inicio') }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
-                </div>
-
-                {{-- Fecha Fin --}}
-                <div>
-                    <label for="filter_fecha_fin" class="block text-xs font-bold text-gray-600 dark:text-neutral-400 uppercase tracking-wider mb-2">
-                        Fecha Fin
-                    </label>
-                    <input type="date" id="filter_fecha_fin" name="fecha_fin" value="{{ request('fecha_fin') }}"
-                           class="w-full px-4 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm color-scheme-dark">
+                    <div class="relative">
+                        <input type="text" id="rango_fechas_ventas" placeholder="Selecciona un rango de fechas" readonly
+                               class="w-full pl-4 pr-10 py-2.5 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-neutral-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:border-transparent hover:border-gray-300 dark:hover:border-neutral-700 shadow-sm cursor-pointer">
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <input type="hidden" name="fecha_inicio" id="hidden_fecha_inicio_ventas" value="{{ request('fecha_inicio') }}">
+                    <input type="hidden" name="fecha_fin" id="hidden_fecha_fin_ventas" value="{{ request('fecha_fin') }}">
                 </div>
 
                 {{-- Sucursal (Sólo Administradores) --}}
@@ -542,6 +577,28 @@
                 });
             });
         }
+
+        // -------------------------------------------------------------
+        // 3. Calendario de rango de fechas (Flatpickr)
+        // -------------------------------------------------------------
+        var fechaInicioActual = "{{ request('fecha_inicio') }}";
+        var fechaFinActual = "{{ request('fecha_fin') }}";
+        var defaultDates = [fechaInicioActual, fechaFinActual].filter(Boolean);
+
+        flatpickr("#rango_fechas_ventas", {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d M Y",
+            locale: "es",
+            defaultDate: defaultDates,
+            onChange: function (selectedDates, dateStr, instance) {
+                if (selectedDates.length === 2) {
+                    document.getElementById('hidden_fecha_inicio_ventas').value = instance.formatDate(selectedDates[0], "Y-m-d");
+                    document.getElementById('hidden_fecha_fin_ventas').value = instance.formatDate(selectedDates[1], "Y-m-d");
+                }
+            }
+        });
     });
 </script>
 @endsection

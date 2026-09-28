@@ -55,9 +55,10 @@ class ModulosSeeder extends Seeder
             ],
 
             'Caja' => [
-                'caja.index'  => 'Ver Módulo de Caja',
-                'caja.abrir'  => 'Abrir Caja',
-                'caja.cerrar' => 'Cerrar Caja',
+                'caja.index'     => 'Ver Módulo de Caja',
+                'caja.abrir'     => 'Abrir Caja',
+                'caja.cerrar'    => 'Cerrar Caja',
+                'caja.historial' => 'Ver Historial de Cajas',
             ],
 
             'Ventas' => [
@@ -82,7 +83,8 @@ class ModulosSeeder extends Seeder
             ],
 
             'Reportes' => [
-                'reportes.index' => 'Ver Reportes',
+                'reportes.index'         => 'Ver Reportes',
+                'reportes.exportar.pdf'  => 'Exportar Reportes a PDF',
             ],
         ];
 

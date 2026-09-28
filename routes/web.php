@@ -15,8 +15,11 @@ use App\Http\Controllers\MovimientoInventarioController;
 use App\Http\Controllers\ExportInventarioController;
 use App\Http\Controllers\DisponibilidadController;
 
-// --- NUEVO CONTROLLER DE CAJA ---
-use App\Http\Controllers\CajaController; 
+// --- CONTROLLER DE CAJA ---
+use App\Http\Controllers\CajaController;
+
+// --- CONTROLLER DE REPORTES ---
+use App\Http\Controllers\ReportesController;
 
 // Rutas Públicas
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -75,6 +78,7 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     Route::get('/caja', [CajaController::class, 'index'])->name('caja.index');
     Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
     Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
+    Route::get('/caja/historial', [CajaController::class, 'historial'])->name('caja.historial');
 
     // ==========================================
     // MÓDULO DE PUNTO DE VENTA
@@ -90,8 +94,11 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     // Módulo de Gastos
     Route::get('/gastos', function() { return view('gastos.index'); })->name('gastos.index');
 
-    // Módulos en construcción
-    Route::get('/reportes', function() { return view('reportes.index'); })->name('reportes.index');
+    // ==========================================
+    // MÓDULO DE REPORTES
+    // ==========================================
+    Route::get('/reportes', [ReportesController::class, 'index'])->name('reportes.index');
+    Route::get('/reportes/exportar/pdf', [ReportesController::class, 'exportarPdf'])->name('reportes.exportar.pdf');
 });
 
 Auth::routes();

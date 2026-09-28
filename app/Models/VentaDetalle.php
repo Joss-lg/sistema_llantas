@@ -15,11 +15,11 @@ class VentaDetalle extends Model
 
     public function venta()
     {
-        return $this->belongsTo(Venta::class, 'venta_id', 'id');
+        return $this->belongsTo(Venta::class, 'venta_id');
     }
 
     public function producto()
     {
-        return $this->belongsTo(Producto::class, 'producto_id', 'id');
+        return $this->belongsTo(Producto::class, 'producto_id');
     }
 }

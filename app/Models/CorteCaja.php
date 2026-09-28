@@ -17,6 +17,11 @@ class CorteCaja extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function sucursal()
+    {
+        return $this->belongsTo(Sucursal::class, 'sucursal_id');
+    }
+
     public function ventas()
     {
         return $this->hasMany(Venta::class, 'corte_caja_id');

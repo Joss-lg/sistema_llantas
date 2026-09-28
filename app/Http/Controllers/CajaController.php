@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\CorteCaja;
 use App\Models\Venta;
 use App\Models\MovimientoCaja;
+use App\Models\Sucursal;
+use App\Models\User;
 
 class CajaController extends Controller
 {
@@ -105,14 +107,59 @@ class CajaController extends Controller
         $saldoEstimado = ($corteActual->saldo_inicial + $totalVentasEfectivo + $totalAnticipos) - $totalGastos;
         
         // Actualizamos el registro para cerrarlo y construir el historial
+        // CORRECCIÓN: ahora sí se guarda el saldo_final, necesario para el Historial de Cajas
         $corteActual->update([
-            'estado' => 'cerrada',
-            'fecha_cierre' => now(),
-            // Si en tu migración agregaste estas columnas, puedes descomentarlas:
-            // 'total_ventas' => Venta::where('corte_caja_id', $corteActual->id)->sum('total'),
-            // 'saldo_final' => $saldoEstimado,
+            'estado'      => 'cerrada',
+            'fecha_cierre'=> now(),
+            'saldo_final' => $saldoEstimado,
         ]);
 
         return redirect()->route('caja.index')->with('success', 'Corte de caja realizado correctamente. Turno finalizado.');
+    }
+
+    /**
+     * Historial de Cajas — solo accesible con el permiso 'caja.historial'
+     * (por defecto, solo el Administrador General lo tiene vía bypass).
+     */
+    public function historial(Request $request)
+    {
+        $query = CorteCaja::with(['user', 'sucursal'])
+            ->withSum(['ventas as total_ventas_efectivo' => function ($q) {
+                $q->where('pago_con', 'Efectivo');
+            }], 'total')
+            ->withSum('ventas as total_ventas', 'total')
+            ->withCount('ventas as total_transacciones');
+
+        if ($request->filled('sucursal_id')) {
+            $query->where('sucursal_id', $request->sucursal_id);
+        }
+
+        if ($request->filled('estado') && in_array($request->estado, ['abierta', 'cerrada'])) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_apertura', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_apertura', '<=', $request->fecha_hasta);
+        }
+
+        // Las cajas abiertas siempre aparecen primero, luego por fecha de apertura descendente
+        $cortes = $query->orderByRaw("estado = 'abierta' DESC")
+                         ->orderBy('fecha_apertura', 'desc')
+                         ->paginate(15)
+                         ->withQueryString();
+
+        $sucursales = Sucursal::all();
+        $cajeros = User::orderBy('name')->get();
+        $totalCajasAbiertas = CorteCaja::where('estado', 'abierta')->count();
+
+        return view('caja.historial', compact('cortes', 'sucursales', 'cajeros', 'totalCajasAbiertas'));
     }
 }
