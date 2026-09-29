@@ -45,6 +45,24 @@ trait ResuelveContextoSucursal
         return $this->sucursalDelUsuario();
     }
 
+    /**
+     * Sucursal donde se va a REGISTRAR un movimiento (entrada, salida, venta, etc.):
+     * - Admin: la que eligió en el formulario; si no eligió ninguna, la suya asignada
+     * - No admin: SIEMPRE la suya asignada (aunque manipulen el formulario)
+     */
+    protected function sucursalParaOperar(Request $request, string $campo = 'sucursal_id'): ?int
+    {
+        if ($this->usuarioEsAdmin()) {
+            $val = $request->input($campo);
+
+            if (is_numeric($val) && Sucursal::where('id', $val)->where('activa', true)->exists()) {
+                return (int) $val;
+            }
+        }
+
+        return $this->sucursalDelUsuario();
+    }
+
     protected function sucursalesDisponibles(): Collection
     {
         return $this->usuarioEsAdmin()

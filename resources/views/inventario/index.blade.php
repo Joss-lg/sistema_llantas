@@ -114,9 +114,9 @@
     {{-- MODAL: NUEVO PRODUCTO --}}
     {{-- ================================================== --}}
     <div x-show="modalProducto" x-cloak 
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay-anim">
+         class="fixed inset-0 !mt-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay-anim">
         <div @click.away="modalProducto = false" 
-             class="bg-white dark:bg-[#151515] rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-gray-100 dark:border-neutral-800 modal-pop">
+             class="bg-white dark:bg-[#151515] rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-gray-100 dark:border-neutral-800 modal-pop">
             
             <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-neutral-800 mb-6">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">Registrar Nuevo Producto</h3>
@@ -157,9 +157,9 @@
     {{-- MODAL: REGISTRAR ENTRADA (CON PRECIOS) --}}
     {{-- ================================================== --}}
     <div x-show="modalEntrada" x-cloak 
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay-anim">
+         class="fixed inset-0 !mt-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm modal-overlay-anim">
         <div @click.away="modalEntrada = false" 
-             class="bg-white dark:bg-[#151515] rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl border border-gray-100 dark:border-neutral-800 modal-pop">
+             class="bg-white dark:bg-[#151515] rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl border border-gray-100 dark:border-neutral-800 modal-pop">
             
             <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-neutral-800 mb-6">
                 <h3 class="text-xl font-bold text-gray-900 dark:text-white">Registrar Entrada de Stock</h3>
@@ -170,6 +170,18 @@
 
             <form action="{{ route('inventario.storeEntrada') }}" method="POST" class="space-y-4">
                 @csrf
+
+                {{-- Selector de sucursal: solo aparece si el usuario puede elegir (admin). Un empleado siempre usa la suya. --}}
+                @if(isset($sucursales) && count($sucursales) > 1)
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Sucursal que recibe</label>
+                        <select name="sucursal_id" required class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-[#818CF8]">
+                            @foreach($sucursales as $suc)
+                                <option value="{{ $suc->id }}" {{ (request('sucursal_id') ?? auth()->user()->sucursal_id) == $suc->id ? 'selected' : '' }}>{{ $suc->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div>
                     <label class="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Seleccionar Producto</label>
                     <select name="producto_id" required class="w-full px-4 py-3 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-[#818CF8]">

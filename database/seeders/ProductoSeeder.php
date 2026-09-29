@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Producto;
+use App\Models\StockSucursal;
+use App\Models\Sucursal;
 use Illuminate\Database\Seeder;
 
 class ProductoSeeder extends Seeder
@@ -602,8 +604,23 @@ class ProductoSeeder extends Seeder
             ['tipo' => 'LLANTA 24', 'marca' => 'HAIDA HD 869 10 CAPAS', 'medida' => '33X12.50/R24', 'descripcion' => '33X12.50/R24 HAIDA HD 869 10 capas', 'costo' => 2500.00, 'precio_publico' => 2650.00, 'precio_mayoreo' => 2500.00, 'estado' => 1],
         ];
 
-        foreach ($productos as $producto) {
-            Producto::create($producto);
+        $sucursales = Sucursal::pluck('id');
+
+        foreach ($productos as $datos) {
+            // firstOrCreate: si el producto ya existe (misma marca y medida) NO se duplica
+            $producto = Producto::firstOrCreate(
+                ['marca' => $datos['marca'], 'medida' => $datos['medida']],
+                $datos
+            );
+
+            // Registro de stock en TODAS las sucursales (en 0).
+            // Si ya existe, NO se toca la cantidad que tenga.
+            foreach ($sucursales as $sucursalId) {
+                StockSucursal::firstOrCreate(
+                    ['producto_id' => $producto->id, 'sucursal_id' => $sucursalId],
+                    ['cantidad' => 0, 'stock_minimo' => 5]
+                );
+            }
         }
     }
 }

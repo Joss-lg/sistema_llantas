@@ -21,10 +21,16 @@ use App\Http\Controllers\CajaController;
 // --- CONTROLLER DE REPORTES ---
 use App\Http\Controllers\ReportesController;
 
-// Rutas Públicas
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// ==========================================
+// LOGIN / LOGOUT (usa nuestro AuthController)
+// ==========================================
+// 'guest' = solo para quien NO ha iniciado sesión
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Rutas Protegidas por Autenticación Y Permisos
 Route::middleware(['auth', 'permiso'])->group(function () {
@@ -100,7 +106,3 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     Route::get('/reportes', [ReportesController::class, 'index'])->name('reportes.index');
     Route::get('/reportes/exportar/pdf', [ReportesController::class, 'exportarPdf'])->name('reportes.exportar.pdf');
 });
-
-Auth::routes();
-
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

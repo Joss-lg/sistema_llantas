@@ -52,11 +52,12 @@ class ExcelInventarioImporter
             if ($v === null || trim((string) $v) === '') {
                 continue;
             }
-            $valStr = strtolower(preg_replace(
+            // mb_strtolower primero para que también funcione con acentos en MAYÚSCULA (ej. "PÚBLICO")
+            $valStr = preg_replace(
                 '/[\s\r\n]+/',
                 '',
-                str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], trim((string) $v))
-            ));
+                str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], mb_strtolower(trim((string) $v)))
+            );
 
             if (str_contains($valStr, 'marca')) $tempIndices['marca'] = $k;
             elseif (str_contains($valStr, 'medida')) $tempIndices['medida'] = $k;
@@ -127,19 +128,21 @@ class ExcelInventarioImporter
             ]
         );
 
-        // 4. Inicializar en todas las sucursales y actualizar la sucursal destino
-        foreach ($sucursalesTotales as $sucursalId) {
-            $cantidadAsignar = ($sucursalId === $sucursalDestino) ? $stock : 0;
+        // 4. Sucursal destino: se pone el stock que trae el archivo
+        StockSucursal::updateOrCreate(
+            ['producto_id' => $producto->id, 'sucursal_id' => $sucursalDestino],
+            ['cantidad' => $stock]
+        );
 
-            StockSucursal::updateOrCreate(
-                [
-                    'producto_id' => $producto->id,
-                    'sucursal_id' => $sucursalId,
-                ],
-                [
-                    'cantidad'     => DB::raw("CASE WHEN sucursal_id = {$sucursalDestino} THEN {$cantidadAsignar} ELSE cantidad END"),
-                    'stock_minimo' => 5,
-                ]
+        // 5. Las demás sucursales: si no tienen registro se crea en 0; si ya tienen, NO se toca su stock
+        foreach ($sucursalesTotales as $sucursalId) {
+            if ((int) $sucursalId === (int) $sucursalDestino) {
+                continue;
+            }
+
+            StockSucursal::firstOrCreate(
+                ['producto_id' => $producto->id, 'sucursal_id' => $sucursalId],
+                ['cantidad' => 0, 'stock_minimo' => 5]
             );
         }
 

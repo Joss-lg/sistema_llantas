@@ -30,7 +30,7 @@ class CajaController extends Controller
         
         // Sumamos el total de las ventas ligadas a este turno, PERO SOLO EN EFECTIVO
         $totalVentas = Venta::where('corte_caja_id', $corteActual->id)
-                            ->where('pago_con', 'Efectivo') // Ajusta la palabra exacta que usas en tu formulario
+                            ->where('metodo_pago', 'Efectivo')
                             ->sum('total');
         
         // Sumamos los Gastos y Salidas (Egresos en efectivo)
@@ -100,7 +100,7 @@ class CajaController extends Controller
         }
 
         // Calculamos los totales finales para el historial
-        $totalVentasEfectivo = Venta::where('corte_caja_id', $corteActual->id)->where('pago_con', 'Efectivo')->sum('total');
+        $totalVentasEfectivo = Venta::where('corte_caja_id', $corteActual->id)->where('metodo_pago', 'Efectivo')->sum('total');
         $totalGastos = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'egreso')->sum('monto');
         $totalAnticipos = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'ingreso')->sum('monto');
         
@@ -125,7 +125,7 @@ class CajaController extends Controller
     {
         $query = CorteCaja::with(['user', 'sucursal'])
             ->withSum(['ventas as total_ventas_efectivo' => function ($q) {
-                $q->where('pago_con', 'Efectivo');
+                $q->where('metodo_pago', 'Efectivo');
             }], 'total')
             ->withSum('ventas as total_ventas', 'total')
             ->withCount('ventas as total_transacciones');

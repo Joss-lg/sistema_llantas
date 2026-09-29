@@ -22,12 +22,17 @@ class MovimientoInventarioController extends Controller
             'costo_unitario' => 'required|numeric|min:0',
             'precio_publico' => 'nullable|numeric|min:0',
             'precio_mayoreo' => 'nullable|numeric|min:0',
+            'sucursal_id'    => 'nullable|exists:sucursales,id',
         ]);
+
+        // Admin: la sucursal que eligió. Empleado: SIEMPRE la suya.
+        $sucursalDestino = $this->sucursalParaOperar($request);
+        if (!$sucursalDestino) {
+            return redirect()->back()->with('error', 'Tu usuario no tiene una sucursal asignada.');
+        }
 
         try {
             DB::beginTransaction();
-
-            $sucursalDestino = $request->input('sucursal_id', $this->sucursalDelUsuario());
 
             $producto = Producto::findOrFail($request->producto_id);
 
@@ -75,15 +80,21 @@ class MovimientoInventarioController extends Controller
             'producto_id' => 'required|exists:productos,id',
             'cantidad'    => 'required|integer|min:1',
             'motivo'      => 'required|string|max:100',
+            'sucursal_id' => 'nullable|exists:sucursales,id',
         ]);
+
+        // Admin: la sucursal que eligió. Empleado: SIEMPRE la suya.
+        $sucursalDestino = $this->sucursalParaOperar($request);
+        if (!$sucursalDestino) {
+            return redirect()->back()->with('error', 'Tu usuario no tiene una sucursal asignada.');
+        }
 
         try {
             DB::beginTransaction();
 
-            $sucursalDestino = $request->input('sucursal_id', $this->sucursalDelUsuario());
-
             $stock = StockSucursal::where('producto_id', $request->producto_id)
                 ->where('sucursal_id', $sucursalDestino)
+                ->lockForUpdate()
                 ->first();
 
             if (!$stock || $stock->cantidad < $request->cantidad) {
@@ -122,6 +133,11 @@ class MovimientoInventarioController extends Controller
             'cantidad'         => 'required|integer|min:1',
         ]);
 
+        // Un empleado (no admin) solo puede enviar llantas DESDE su propia sucursal
+        if (!$this->usuarioEsAdmin() && (int) $request->sucursal_origen !== (int) $this->sucursalDelUsuario()) {
+            return redirect()->back()->with('error', 'Solo puedes traspasar stock desde tu propia sucursal.');
+        }
+
         try {
             DB::beginTransaction();
 
@@ -130,6 +146,7 @@ class MovimientoInventarioController extends Controller
 
             $stockOrigen = StockSucursal::where('producto_id', $producto->id)
                 ->where('sucursal_id', $request->sucursal_origen)
+                ->lockForUpdate()
                 ->first();
 
             if (!$stockOrigen || $stockOrigen->cantidad < $cantidadATraspasar) {

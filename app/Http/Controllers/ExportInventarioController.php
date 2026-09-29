@@ -25,8 +25,9 @@ class ExportInventarioController extends Controller
     {
         $sucursalFiltro = $this->sucursalSeleccionada($request);
 
+        // Sin groupBy: el stock ya viene sumado en una subconsulta (withSum),
+        // y el groupBy causaba error en MySQL/MariaDB (ONLY_FULL_GROUP_BY).
         return $this->inventarioQuery->query($request, $sucursalFiltro)
-            ->groupBy('productos.id')
             ->orderBy('marca')
             ->orderBy('medida')
             ->get();

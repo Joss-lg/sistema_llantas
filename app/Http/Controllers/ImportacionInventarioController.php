@@ -29,10 +29,15 @@ class ImportacionInventarioController extends Controller
             'sucursal_id'   => 'nullable|exists:sucursales,id',
         ]);
 
-        try {
-            // Resolvemos la sucursal respetando el rol del usuario
-            $sucursalDestino = $this->sucursalSeleccionada($request);
+        // Resolvemos la sucursal respetando el rol del usuario
+        $sucursalDestino = $this->sucursalSeleccionada($request);
 
+        // Sin sucursal no sabemos a dónde cargar el stock
+        if (!$sucursalDestino) {
+            return back()->with('error', 'Selecciona la sucursal a la que se cargará el inventario.');
+        }
+
+        try {
             $path = $request->file('archivo_excel')->path();
             $productosProcesados = $this->importer->importarDesdeArchivo($path, $sucursalDestino);
 

@@ -101,7 +101,7 @@
                                         x-transition:leave-end="opacity-0 scale-95"
                                         class="absolute top-full left-0 mt-2 w-52 bg-white dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl shadow-xl z-50 p-1 space-y-0.5">
                                         <template x-for="suc in sucursales" :key="suc.id">
-                                            <button @click="sucursalSeleccionada = suc.id; openSucursal = false" type="button"
+                                            <button @click="cambiarSucursal(suc.id); openSucursal = false" type="button"
                                                 class="w-full text-left px-3 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-between"
                                                 :class="sucursalSeleccionada == suc.id ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800'">
                                                 <span x-text="suc.nombre"></span>
@@ -512,6 +512,13 @@
                     case 'Servicio': return 'bg-[#818CF8]/10 text-[#818CF8] dark:bg-[#818CF8]/20';
                     default: return 'bg-gray-50 text-gray-700 dark:bg-neutral-800 dark:text-neutral-300';
                 }
+            },
+
+            // Al cambiar de sucursal se recarga la página para mostrar el stock de ESA sucursal
+            cambiarSucursal(id) {
+                if (id == this.sucursalSeleccionada) return;
+                if (this.carrito.length > 0 && !confirm('Al cambiar de sucursal se vaciará el carrito. ¿Continuar?')) return;
+                window.location = '{{ route('ventas.index') }}?sucursal_id=' + id;
             },
 
             agregar(producto) {

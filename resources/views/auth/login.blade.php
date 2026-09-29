@@ -243,6 +243,13 @@
                 </p>
             </div>
 
+            {{-- Mensajes de error (contraseña incorrecta, cuenta inactiva, demasiados intentos, etc.) --}}
+            @if ($errors->any() || session('error'))
+                <div class="mt-6 rounded-lg border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                    {{ session('error') ?? $errors->first() }}
+                </div>
+            @endif
+
             <form class="mt-8 space-y-5" method="POST" action="{{ route('login') }}">
                 @csrf
                 <div class="anim-rise" style="animation-delay:.12s">
@@ -251,7 +258,7 @@
                         <svg class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9A9EA6] transition-colors duration-200 peer-focus:text-[#818CF8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="2" y="4" width="20" height="16" rx="2.5"/><path d="M2 6.5 12 13l10-6.5"/>
                         </svg>
-                        <input id="email" name="email" type="email" required placeholder="tucorreo@empresa.com" class="peer block w-full rounded-lg border bg-white dark:bg-[#15161A] pl-10 pr-3.5 py-2.5 text-sm text-[#16171A] dark:text-[#ECEBE7] border-[#DEDCD6] dark:border-[#2A2C31] focus:ring-[#818CF8] focus:border-transparent">
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" required autofocus placeholder="tucorreo@empresa.com" class="peer block w-full rounded-lg border bg-white dark:bg-[#15161A] pl-10 pr-3.5 py-2.5 text-sm text-[#16171A] dark:text-[#ECEBE7] border-[#DEDCD6] dark:border-[#2A2C31] focus:ring-[#818CF8] focus:border-transparent">
                     </div>
                 </div>
 

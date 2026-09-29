@@ -12,9 +12,13 @@ class PreventBackHistory
     {
         $response = $next($request);
 
-        // Agrega encabezados HTTP para impedir almacenar las vistas en la caché del navegador
-        return $response->header('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate')
-                        ->header('Pragma', 'no-cache')
-                        ->header('Expires', 'Sun, 02 Jan 1990 00:00:00 GMT');
+        // Agrega encabezados HTTP para impedir almacenar las vistas en la caché del navegador.
+        // Se usa $response->headers->set() porque funciona con TODAS las respuestas,
+        // incluidas las descargas de archivos (Excel), que no tienen el método ->header().
+        $response->headers->set('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', 'Sun, 02 Jan 1990 00:00:00 GMT');
+
+        return $response;
     }
 }

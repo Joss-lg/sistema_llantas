@@ -42,10 +42,10 @@ class ModulosSeeder extends Seeder
 
             'Inventario' => [
                 'inventario.index'           => 'Ver Inventario',
-                'inventario.producto.store'  => 'Agregar Producto',
+                'inventario.storeProducto'   => 'Agregar Producto',
                 'inventario.importar'        => 'Ver Formulario de Importación',
                 'inventario.procesar'        => 'Procesar Importación de Inventario',
-                'inventario.entrada.store'   => 'Registrar Entrada de Stock',
+                'inventario.storeEntrada'    => 'Registrar Entrada de Stock',
                 'inventario.salida.store'    => 'Registrar Salida de Stock',
                 'inventario.traspaso.store'  => 'Traspasar Stock entre Sucursales',
                 'inventario.historial'       => 'Ver Historial de Inventario',
@@ -88,7 +88,32 @@ class ModulosSeeder extends Seeder
             ],
         ];
 
-        // 3. Crear/actualizar cada permiso respetando el nombre real de ruta
+        // 3. Corregir permisos viejos que tenían un nombre distinto al de la ruta real.
+        //    Se RENOMBRAN (no se borran) para que los empleados que ya los tenían asignados los conserven.
+        $renombrar = [
+            'inventario.producto.store' => 'inventario.storeProducto',
+            'inventario.entrada.store'  => 'inventario.storeEntrada',
+        ];
+
+        foreach ($renombrar as $viejo => $nuevo) {
+            $permisoViejo = Permiso::where('ruta', $viejo)->first();
+            if (!$permisoViejo) {
+                continue;
+            }
+
+            if (Permiso::where('ruta', $nuevo)->exists()) {
+                // Si ya existe el correcto, pasamos las asignaciones al correcto y borramos el viejo
+                $permisoNuevo = Permiso::where('ruta', $nuevo)->first();
+                $usuarios = $permisoViejo->usuarios()->pluck('users.id');
+                $permisoNuevo->usuarios()->syncWithoutDetaching($usuarios);
+                $permisoViejo->usuarios()->detach();
+                $permisoViejo->delete();
+            } else {
+                $permisoViejo->update(['ruta' => $nuevo]);
+            }
+        }
+
+        // 4. Crear/actualizar cada permiso respetando el nombre real de ruta
         foreach ($permisosPorModulo as $modulo => $rutas) {
             foreach ($rutas as $ruta => $nombre) {
                 Permiso::updateOrCreate(

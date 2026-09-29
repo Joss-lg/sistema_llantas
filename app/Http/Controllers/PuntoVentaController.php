@@ -23,9 +23,8 @@ class PuntoVentaController extends Controller
         $esAdmin = $this->usuarioEsAdmin();
         $sucursales = $this->sucursalesDisponibles();
         
-        $sucursalDefecto = $esAdmin
-            ? ($request->input('sucursal_id') ?? ($sucursales->first()->id ?? 1))
-            : $this->sucursalDelUsuario();
+        // Admin: la sucursal elegida en el selector (o la suya). Empleado: siempre la suya.
+        $sucursalDefecto = $this->sucursalParaOperar($request) ?? ($sucursales->first()->id ?? null);
 
         // IDs de productos con entrada de inventario registrada hoy
         $productosNuevosHoy = MovimientoInventario::where('tipo', 'entrada')
@@ -52,12 +51,15 @@ class PuntoVentaController extends Controller
             return $producto;
         });
 
-        return view('ventas.index', compact('productos', 'sucursales', 'esAdmin', 'sucursalDefecto'));
+        // La vista usa $sucursalSeleccionada para saber qué sucursal mostrar marcada
+        $sucursalSeleccionada = $sucursalDefecto;
+
+        return view('ventas.index', compact('productos', 'sucursales', 'esAdmin', 'sucursalDefecto', 'sucursalSeleccionada'));
     }
 
     public function store(Request $request)
     {
-        if (empty($request->carrito)) {
+        if (empty($request->carrito) || !is_array($request->carrito)) {
             return response()->json(['success' => false, 'message' => 'El carrito está vacío.']);
         }
 
@@ -67,75 +69,143 @@ class PuntoVentaController extends Controller
 
         if (!$corteActual) {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'No tienes un turno abierto. Por favor, ve al módulo de Flujo de Caja y realiza la apertura de turno antes de cobrar.'
             ]);
         }
 
+        // Método de pago: la vista lo manda en 'pagoCon' ('Efectivo', 'Tarjeta' o 'Transferencia')
+        $metodosValidos = ['Efectivo', 'Tarjeta', 'Transferencia'];
+        $metodoPago = ucfirst(strtolower(trim((string) $request->pagoCon)));
+
+        if (!in_array($metodoPago, $metodosValidos, true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Método de pago no válido. Usa Efectivo, Tarjeta o Transferencia.'
+            ]);
+        }
+
+        // Sucursal de la venta: admin = la elegida; empleado = SIEMPRE la suya
+        $sucursal_id = $this->sucursalParaOperar($request);
+
+        if (!$sucursal_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selecciona la sucursal desde la que vas a vender.'
+            ]);
+        }
+
+        // ============================================================
+        // PRECIOS CALCULADOS EN EL SERVIDOR
+        // Del navegador solo tomamos QUÉ producto y CUÁNTOS.
+        // El precio, el nombre y el tipo salen de la base de datos,
+        // así nadie puede cambiar el precio desde el navegador.
+        // ============================================================
+        $partidas = [];
+        $subtotalVenta = 0;
+
+        foreach ($request->carrito as $item) {
+            $productoId = $item['producto_id'] ?? null;
+            $cantidad = $item['cantidad'] ?? null;
+
+            if (!is_numeric($cantidad) || (int) $cantidad != $cantidad || (int) $cantidad < 1) {
+                return response()->json(['success' => false, 'message' => 'Hay una cantidad no válida en el carrito.']);
+            }
+
+            $producto = Producto::where('id', $productoId)->where('estado', true)->first();
+
+            if (!$producto) {
+                return response()->json(['success' => false, 'message' => 'Un producto del carrito ya no existe o está desactivado. Recarga la página.']);
+            }
+
+            $cantidad = (int) $cantidad;
+            $precio = (float) $producto->precio_publico;
+            $subtotal = round($precio * $cantidad, 2);
+            $subtotalVenta += $subtotal;
+
+            $partidas[] = [
+                'producto'  => $producto,
+                'nombre'    => $producto->tipo === 'Servicio'
+                                ? ($producto->descripcion ?: $producto->marca)
+                                : trim($producto->marca . ' ' . $producto->medida),
+                'cantidad'  => $cantidad,
+                'precio'    => $precio,
+                'subtotal'  => $subtotal,
+            ];
+        }
+
+        $requiereFactura = (bool) $request->requiereFactura;
+        $iva = $requiereFactura ? round($subtotalVenta * 0.16, 2) : 0; // mismo 16% que muestra la vista
+        $totalVenta = round($subtotalVenta + $iva, 2);
+
         DB::beginTransaction();
 
         try {
-            $sucursal_id = $this->sucursalSeleccionada($request);
-
             $venta = new Venta();
-            $venta->folio = 'VNT-' . date('Ymd') . '-' . rand(1000, 9999);
+            $venta->folio = $this->generarFolio();
             $venta->sucursal_id = $sucursal_id;
             $venta->user_id = Auth::id();
             $venta->corte_caja_id = $corteActual->id;
             $venta->nombre_cliente_temporal = $request->cliente ?: 'Público General';
-            $venta->total = $request->total;
-            $venta->pago_con = $request->pagoCon;
-            $venta->cambio = $request->cambio;
-            $venta->requiere_factura = (bool) $request->requiereFactura;
+            $venta->total = $totalVenta;
+            $venta->metodo_pago = $metodoPago;
+            // pago_con = dinero que entregó el cliente. Si no viene (o es menor), es el total exacto.
+            $montoRecibido = is_numeric($request->montoRecibido) ? (float) $request->montoRecibido : $totalVenta;
+            $venta->pago_con = max($montoRecibido, $totalVenta);
+            $venta->cambio = round($venta->pago_con - $totalVenta, 2);
+            $venta->requiere_factura = $requiereFactura;
             $venta->fecha = now();
             $venta->save();
 
-            foreach ($request->carrito as $item) {
+            foreach ($partidas as $p) {
                 $detalle = new VentaDetalle();
                 $detalle->venta_id = $venta->id;
-                $detalle->producto_id = $item['producto_id'] ?? null;
-                $detalle->nombre_producto = $item['nombre'];
-                $detalle->cantidad = $item['cantidad'];
-                $detalle->precio_unitario = $item['precio_unitario'];
-                $detalle->descuento = $item['descuento'] ?? 0;
-                $detalle->subtotal = $item['subtotal'];
+                $detalle->producto_id = $p['producto']->id;
+                $detalle->nombre_producto = mb_substr($p['nombre'], 0, 150);
+                $detalle->cantidad = $p['cantidad'];
+                $detalle->precio_unitario = $p['precio'];
+                $detalle->descuento = 0;
+                $detalle->subtotal = $p['subtotal'];
                 $detalle->save();
 
-                if (($item['tipo'] ?? '') !== 'Servicio' && !empty($item['producto_id'])) {
-                    $stock = StockSucursal::where('producto_id', $item['producto_id'])
-                        ->where('sucursal_id', $sucursal_id)
-                        ->lockForUpdate()
-                        ->first();
+                // Los servicios no descuentan inventario
+                if ($p['producto']->tipo === 'Servicio') {
+                    continue;
+                }
 
-                    if (!$stock) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'No existe registro de inventario para ' . $item['nombre'] . ' en la sucursal procesada.'
-                        ]);
-                    }
+                $stock = StockSucursal::where('producto_id', $p['producto']->id)
+                    ->where('sucursal_id', $sucursal_id)
+                    ->lockForUpdate()
+                    ->first();
 
-                    if ($stock->cantidad < $item['cantidad']) {
-                        DB::rollBack();
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Inventario insuficiente para ' . $item['nombre'] . '. Disponibles en esta sucursal: ' . $stock->cantidad
-                        ]);
-                    }
-
-                    $stock->cantidad -= $item['cantidad'];
-                    $stock->save();
-
-                    MovimientoInventario::create([
-                        'producto_id' => $item['producto_id'],
-                        'sucursal_id' => $sucursal_id,
-                        'usuario_id'  => Auth::id(),
-                        'tipo'        => 'salida',
-                        'cantidad'    => $item['cantidad'],
-                        'motivo'      => 'Venta ' . $venta->folio,
-                        'fecha'       => now(),
+                if (!$stock) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No existe registro de inventario para ' . $p['nombre'] . ' en la sucursal procesada.'
                     ]);
                 }
+
+                if ($stock->cantidad < $p['cantidad']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Inventario insuficiente para ' . $p['nombre'] . '. Disponibles en esta sucursal: ' . $stock->cantidad
+                    ]);
+                }
+
+                $stock->cantidad -= $p['cantidad'];
+                $stock->save();
+
+                MovimientoInventario::create([
+                    'producto_id' => $p['producto']->id,
+                    'sucursal_id' => $sucursal_id,
+                    'usuario_id'  => Auth::id(),
+                    'tipo'        => 'salida',
+                    'cantidad'    => $p['cantidad'],
+                    'motivo'      => 'Venta ' . $venta->folio,
+                    'fecha'       => now(),
+                ]);
             }
 
             DB::commit();
@@ -152,6 +222,18 @@ class PuntoVentaController extends Controller
                 'message' => 'Error al procesar la venta: ' . $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Genera un folio único, ej. VNT-20260929-4821 (revisa que no exista ya).
+     */
+    private function generarFolio(): string
+    {
+        do {
+            $folio = 'VNT-' . date('Ymd') . '-' . random_int(1000, 9999);
+        } while (Venta::where('folio', $folio)->exists());
+
+        return $folio;
     }
 
     public function historial(Request $request)
