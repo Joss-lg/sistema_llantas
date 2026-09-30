@@ -268,7 +268,7 @@ class PuntoVentaController extends Controller
 
     public function ticket($id)
     {
-        $venta = Venta::with(['detalles'])->findOrFail($id);
+        $venta = Venta::with(['detalles', 'sucursal', 'user', 'cliente'])->findOrFail($id);
         return view('ventas.ticket', compact('venta'));
     }
 }

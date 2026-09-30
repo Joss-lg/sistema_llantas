@@ -626,7 +626,7 @@
                         this.showToast('Venta realizada con éxito', 'success');
                         this.limpiarCarrito();
                         if (data.ticket_url) {
-                            window.open(data.ticket_url, 'Ticket', 'width=400,height=600');
+                            imprimirTicket(data.ticket_url);
                         }
                     } else {
                         this.showToast(data.message || 'Error al procesar la venta', 'error');

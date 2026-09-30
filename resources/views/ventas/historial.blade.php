@@ -458,7 +458,7 @@
 
                             {{-- Acciones --}}
                             <td class="p-4 text-center">
-                                <button onclick="window.open('{{ route('ventas.ticket', $venta->id) }}', 'Ticket', 'width=400,height=600')"
+                                <button onclick="imprimirTicket('{{ route('ventas.ticket', $venta->id) }}')"
                                         class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 dark:bg-[#0A0A0A] text-gray-600 dark:text-neutral-400 transition-all duration-200 hover:bg-[#D32030] dark:hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/20 active:scale-95 group/print"
                                         title="Reimprimir Ticket">
                                     <svg class="w-4 h-4 transition-transform duration-300 group-hover/print:-rotate-12 group-hover/print:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">

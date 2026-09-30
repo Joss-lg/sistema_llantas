@@ -222,15 +222,15 @@
 
         {{-- Logo --}}
         <div class="logo-wrap">
-            <img src="{{ asset('img/logo-llantas.png') }}" alt="Logo">
+            <img src="{{ asset('img/logo-llantas.webp') }}" alt="Logo">
         </div>
 
         {{-- Nombre del negocio --}}
         <div class="brand">LLANTAS ECONÓMICAS</div>
-        <div class="brand-sub">CHALCO</div>
+        <div class="brand-sub">{{ mb_strtoupper($venta->sucursal->nombre ?? 'SUCURSAL') }}</div>
 
         <div class="direccion">
-            Sucursal {{ $venta->sucursal_id }}<br>
+            Sucursal {{ $venta->sucursal->nombre ?? $venta->sucursal_id }}<br>
             Tel: 55-0000-0000
         </div>
 
@@ -247,11 +247,11 @@
         {{-- Cliente --}}
         <div class="row">
             <span class="lbl">CLIENTE:</span>
-            <span class="val">{{ $venta->cliente->nombre ?? 'PÚBLICO GENERAL' }}</span>
+            <span class="val">{{ $venta->cliente->nombre ?? $venta->nombre_cliente_temporal ?? 'PÚBLICO GENERAL' }}</span>
         </div>
         <div class="row">
             <span class="lbl">ATENDIÓ:</span>
-            <span class="val">Cajero #{{ $venta->usuario_id ?? $venta->user_id }}</span>
+            <span class="val">{{ $venta->user->name ?? 'Usuario #' . $venta->user_id }}</span>
         </div>
 
         <hr class="dash">
@@ -280,8 +280,10 @@
 
         {{-- Totales --}}
         @php
+            // Subtotal = suma de los productos (sin IVA). El IVA es lo que falta para llegar al total.
             $descuentoTotal = $venta->detalles->sum('descuento');
-            $subtotal = $venta->total + $descuentoTotal;
+            $subtotal = $venta->detalles->sum('subtotal');
+            $iva = $venta->requiere_factura ? round($venta->total - $subtotal, 2) : 0;
         @endphp
 
         <div class="tot-row">
@@ -295,6 +297,13 @@
             </div>
         @endif
 
+        @if($venta->requiere_factura)
+            <div class="tot-row">
+                <span>IVA (16%):</span>
+                <span>${{ number_format($iva, 2) }}</span>
+            </div>
+        @endif
+
         <div class="total-bar">
             <span class="t-lbl">TOTAL:</span>
             <span class="t-val">${{ number_format($venta->total, 2) }}</span>
@@ -304,13 +313,19 @@
         <div class="box">
             <div class="box-title">PAGO</div>
             <div class="row">
+                <span class="lbl">MÉTODO:</span>
+                <span class="val">{{ mb_strtoupper($venta->metodo_pago ?? 'Efectivo') }}</span>
+            </div>
+            <div class="row">
                 <span class="lbl">RECIBIDO:</span>
                 <span class="val">${{ number_format((float)($venta->pago_con ?? 0), 2) }}</span>
             </div>
+            @if(($venta->metodo_pago ?? 'Efectivo') === 'Efectivo')
             <div class="row">
                 <span class="lbl">CAMBIO:</span>
                 <span class="val">${{ number_format((float)($venta->cambio ?? 0), 2) }}</span>
             </div>
+            @endif
         </div>
 
         {{-- QR de facturación por WhatsApp --}}

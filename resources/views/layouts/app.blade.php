@@ -46,6 +46,36 @@
 
     <!-- Scripts y Estilos (Vite + Tailwind CSS) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Imprimir tickets en la misma página (sin abrir otra ventana) -->
+    <script>
+        window.imprimirTicket = function (url) {
+            // Si quedó un ticket anterior, lo quitamos
+            var anterior = document.getElementById('iframe-ticket');
+            if (anterior) anterior.remove();
+
+            // Cargamos el ticket en un marco invisible dentro de esta misma página
+            var iframe = document.createElement('iframe');
+            iframe.id = 'iframe-ticket';
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+
+            // Cuando termina de cargar (logo y QR incluidos), abrimos el diálogo de impresión
+            iframe.onload = function () {
+                setTimeout(function () {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                }, 400);
+            };
+
+            iframe.src = url;
+            document.body.appendChild(iframe);
+        };
+    </script>
 </head>
 <body class="h-full font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
     <div id="app"
@@ -73,7 +103,12 @@
                        x-transition:leave="transition ease-in duration-75"
                        x-transition:leave-start="opacity-100"
                        x-transition:leave-end="opacity-0">
-                        <img src="{{ asset('img/logo-llantas.webp') }}" alt="{{ config('app.name', 'Panel') }}" class="h-8 w-auto object-contain">
+                        <img src="{{ asset('img/logo-llantas.webp') }}" alt="Llantas Económicas" class="h-8 w-auto object-contain rounded-md shrink-0">
+                        <!-- Nombre del sistema junto al logo -->
+                        <div class="flex flex-col leading-tight whitespace-nowrap">
+                            <span class="text-[15px] font-extrabold tracking-tight text-gray-900 dark:text-white">Llantas</span>
+                            <span class="text-[15px] font-extrabold tracking-tight text-[#D32030]">Económicas</span>
+                        </div>
                     </a>
 
                     <!-- Botón hamburguesa (siempre 3 líneas) -->

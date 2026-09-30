@@ -1,6 +1,11 @@
 @extends('layouts.app')
 
+@section('header_title', 'Flujo de Caja')
+
 @section('content')
+{{-- Íconos de Font Awesome (esta vista los usa y el layout no los carga) --}}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
 
 {{-- Oculta visualmente todas las barras de desplazamiento y define la suite completa de animaciones custom --}}
 <style>
@@ -221,13 +226,22 @@
                                     <tr class="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 hover:scale-[1.002] transition-all duration-200">
                                         <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i') }}</td>
                                         <td class="px-6 py-4 font-bold text-gray-800 dark:text-white">${{ number_format($venta->total, 2) }}</td>
+                                        @php
+                                            // Color e icono según el método de pago real de la venta
+                                            $metodo = $venta->metodo_pago ?? 'Efectivo';
+                                            $estiloMetodo = match ($metodo) {
+                                                'Tarjeta' => ['bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50', 'fa-credit-card'],
+                                                'Transferencia' => ['bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50', 'fa-exchange-alt'],
+                                                default => ['bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50', 'fa-money-bill-wave'],
+                                            };
+                                        @endphp
                                         <td class="px-6 py-4">
-                                            <span class="inline-flex items-center bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-800/50 px-3 py-1 rounded-full text-xs font-bold transition-transform duration-200 hover:scale-110">
-                                                <i class="fas fa-money-bill-wave mr-1.5 animate-pulse"></i> Efectivo
+                                            <span class="inline-flex items-center {{ $estiloMetodo[0] }} border px-3 py-1 rounded-full text-xs font-bold transition-transform duration-200 hover:scale-110">
+                                                <i class="fas {{ $estiloMetodo[1] }} mr-1.5"></i> {{ $metodo }}
                                             </span>
                                         </td>
                                         <td class="px-6 py-4">
-                                            <a href="{{ route('ventas.ticket', $venta->id) }}" target="_blank" class="inline-flex items-center justify-center w-9 h-9 rounded-full text-[#818CF8] hover:bg-[#818CF8] hover:text-white dark:hover:bg-[#818CF8] transition-all duration-300 hover:scale-125 hover:rotate-12 active:scale-90 shadow-none hover:shadow-md" title="Reimprimir Ticket">
+                                            <a href="{{ route('ventas.ticket', $venta->id) }}" onclick="event.preventDefault(); imprimirTicket(this.href);" class="inline-flex items-center justify-center w-9 h-9 rounded-full text-[#818CF8] hover:bg-[#818CF8] hover:text-white dark:hover:bg-[#818CF8] transition-all duration-300 hover:scale-125 hover:rotate-12 active:scale-90 shadow-none hover:shadow-md" title="Reimprimir Ticket">
                                                 <i class="fas fa-print"></i>
                                             </a>
                                         </td>
