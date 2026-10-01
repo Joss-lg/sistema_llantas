@@ -31,7 +31,6 @@ class ProductoController extends Controller
 
         $query = $this->inventarioQuery->query($request, $sucursalFiltro, conStockMinimo: true);
 
-        // CORRECCIÓN: Agrupar por todas las columnas de la tabla productos para ser compatible con ONLY_FULL_GROUP_BY
         $query->groupBy([
             'productos.id',
             'productos.tipo',
@@ -73,23 +72,45 @@ class ProductoController extends Controller
         // Ordenamiento por precios
         if ($request->filled('ordenar_precio')) {
             switch ($request->ordenar_precio) {
-                case 'costo_mayor': $query->orderBy('costo', 'desc'); break;
-                case 'costo_menor': $query->orderBy('costo', 'asc'); break;
+                case 'costo_mayor':   $query->orderBy('costo', 'desc'); break;
+                case 'costo_menor':   $query->orderBy('costo', 'asc');  break;
                 case 'publico_mayor': $query->orderBy('precio_publico', 'desc'); break;
-                case 'publico_menor': $query->orderBy('precio_publico', 'asc'); break;
+                case 'publico_menor': $query->orderBy('precio_publico', 'asc');  break;
                 case 'mayoreo_mayor': $query->orderBy('precio_mayoreo', 'desc'); break;
-                case 'mayoreo_menor': $query->orderBy('precio_mayoreo', 'asc'); break;
+                case 'mayoreo_menor': $query->orderBy('precio_mayoreo', 'asc');  break;
                 default: $query->orderBy('marca')->orderBy('medida'); break;
             }
         } else {
             $query->orderBy('marca')->orderBy('medida');
         }
 
-        $productos = $query->paginate(10)->withQueryString();
-        $sucursales = $this->sucursalesDisponibles();
-        $marcasDisponibles = $this->inventarioQuery->marcasDisponibles();
+        $productos          = $query->paginate(10)->withQueryString();
+        $sucursales         = $this->sucursalesDisponibles();
+        $marcasDisponibles  = $this->inventarioQuery->marcasDisponibles();
 
-        return view('inventario.index', compact('productos', 'sucursales', 'marcasDisponibles', 'productosNuevosHoy'));
+        // ── Contadores para tarjetas de resumen ──────────────────────────
+        $queryContadores = $this->inventarioQuery->query($request, $sucursalFiltro, conStockMinimo: true)
+            ->groupBy([
+                'productos.id', 'productos.tipo', 'productos.marca',
+                'productos.medida', 'productos.descripcion', 'productos.costo',
+                'productos.precio_mayoreo', 'productos.precio_publico',
+                'productos.estado', 'productos.created_at', 'productos.updated_at',
+            ])
+            ->get();
+
+        $sinStock  = $queryContadores->filter(fn($p) => ($p->stock_cantidad ?? 0) <= 0)->count();
+        $bajoStock = $queryContadores->filter(fn($p) => ($p->stock_cantidad ?? 0) > 0 && ($p->stock_cantidad ?? 0) < ($p->stock_minimo ?? 5))->count();
+        $enStock   = $queryContadores->filter(fn($p) => ($p->stock_cantidad ?? 0) >= ($p->stock_minimo ?? 5))->count();
+
+        return view('inventario.index', compact(
+            'productos',
+            'sucursales',
+            'marcasDisponibles',
+            'productosNuevosHoy',
+            'sinStock',
+            'bajoStock',
+            'enStock'
+        ));
     }
 
     public function store(Request $request)
@@ -112,7 +133,6 @@ class ProductoController extends Controller
                 'estado'         => true,
             ]);
 
-            // Se generan automáticamente las relaciones de stock inicial en 0 para todas las sucursales
             $sucursales = Sucursal::all();
             foreach ($sucursales as $sucursal) {
                 $producto->sucursales()->attach($sucursal->id, [
@@ -122,6 +142,7 @@ class ProductoController extends Controller
             }
         });
 
-        return redirect()->route('inventario.index')->with('success', 'Producto agregado en el catálogo general e inicializado en sucursales.');
+        return redirect()->route('inventario.index')
+                         ->with('success', 'Producto agregado en el catálogo general e inicializado en sucursales.');
     }
 }

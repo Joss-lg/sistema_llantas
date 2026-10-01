@@ -85,6 +85,8 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     Route::post('/caja/abrir', [CajaController::class, 'abrir'])->name('caja.abrir');
     Route::post('/caja/cerrar', [CajaController::class, 'cerrar'])->name('caja.cerrar');
     Route::get('/caja/historial', [CajaController::class, 'historial'])->name('caja.historial');
+    Route::post('/caja/gasto', [CajaController::class, 'storeGasto'])->name('caja.gasto.store');
+    Route::post('/caja/anticipo', [CajaController::class, 'storeAnticipo'])->name('caja.anticipo.store');
 
     // ==========================================
     // MÓDULO DE PUNTO DE VENTA

@@ -15,7 +15,7 @@ class CajaController extends Controller
     public function index()
     {
         $usuario = Auth::user();
-        
+
         // 1. Buscar si el cajero actual tiene un turno activo
         $corteActual = CorteCaja::where('user_id', $usuario->id)
                                 ->where('estado', 'abierta')
@@ -26,38 +26,45 @@ class CajaController extends Controller
             return view('caja.index', ['corteActual' => null]);
         }
 
-        // 3. MATEMÁTICA EXACTA PARA EL CAJÓN FÍSICO
-        
-        // Sumamos el total de las ventas ligadas a este turno, PERO SOLO EN EFECTIVO
+        // 3. MATEMÁTICA DEL CAJÓN FÍSICO
         $totalVentas = Venta::where('corte_caja_id', $corteActual->id)
                             ->where('metodo_pago', 'Efectivo')
                             ->sum('total');
-        
-        // Sumamos los Gastos y Salidas (Egresos en efectivo)
+
         $totalGastos = MovimientoCaja::where('corte_caja_id', $corteActual->id)
                                      ->where('tipo', 'egreso')
                                      ->sum('monto');
-                                     
-        // Sumamos los Anticipos / Apartados (Ingresos en efectivo)
+
         $totalAnticipos = MovimientoCaja::where('corte_caja_id', $corteActual->id)
                                         ->where('tipo', 'ingreso')
                                         ->sum('monto');
 
-        // Calculamos el Saldo Actual Estimado en Caja Físico
         $saldoEstimado = ($corteActual->saldo_inicial + $totalVentas + $totalAnticipos) - $totalGastos;
 
-        // Traemos el historial de ventas de hoy para la tabla central
+        // 4. Historial de ventas y movimientos del turno
         $ventasDelTurno = Venta::where('corte_caja_id', $corteActual->id)
                                ->orderBy('created_at', 'desc')
                                ->get();
 
+        $gastosDelTurno = MovimientoCaja::where('corte_caja_id', $corteActual->id)
+                                        ->where('tipo', 'egreso')
+                                        ->orderBy('created_at', 'desc')
+                                        ->get();
+
+        $anticiposDelTurno = MovimientoCaja::where('corte_caja_id', $corteActual->id)
+                                           ->where('tipo', 'ingreso')
+                                           ->orderBy('created_at', 'desc')
+                                           ->get();
+
         return view('caja.index', compact(
-            'corteActual', 
-            'totalVentas', 
-            'totalGastos', 
-            'totalAnticipos', 
+            'corteActual',
+            'totalVentas',
+            'totalGastos',
+            'totalAnticipos',
             'saldoEstimado',
-            'ventasDelTurno'
+            'ventasDelTurno',
+            'gastosDelTurno',
+            'anticiposDelTurno'
         ));
     }
 
@@ -78,10 +85,10 @@ class CajaController extends Controller
         $sucursal_id = Auth::user()->sucursal_id ?? 1;
 
         CorteCaja::create([
-            'user_id' => Auth::id(),
-            'sucursal_id' => $sucursal_id, 
-            'saldo_inicial' => $request->saldo_inicial,
-            'estado' => 'abierta',
+            'user_id'        => Auth::id(),
+            'sucursal_id'    => $sucursal_id,
+            'saldo_inicial'  => $request->saldo_inicial,
+            'estado'         => 'abierta',
             'fecha_apertura' => now(),
         ]);
 
@@ -90,7 +97,6 @@ class CajaController extends Controller
 
     public function cerrar(Request $request)
     {
-        // Buscamos la caja abierta del usuario
         $corteActual = CorteCaja::where('user_id', Auth::id())
                                 ->where('estado', 'abierta')
                                 ->first();
@@ -99,27 +105,79 @@ class CajaController extends Controller
             return back()->with('error', 'No hay ninguna caja abierta para cerrar.');
         }
 
-        // Calculamos los totales finales para el historial
         $totalVentasEfectivo = Venta::where('corte_caja_id', $corteActual->id)->where('metodo_pago', 'Efectivo')->sum('total');
-        $totalGastos = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'egreso')->sum('monto');
-        $totalAnticipos = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'ingreso')->sum('monto');
-        
+        $totalGastos         = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'egreso')->sum('monto');
+        $totalAnticipos      = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'ingreso')->sum('monto');
+
         $saldoEstimado = ($corteActual->saldo_inicial + $totalVentasEfectivo + $totalAnticipos) - $totalGastos;
-        
-        // Actualizamos el registro para cerrarlo y construir el historial
-        // CORRECCIÓN: ahora sí se guarda el saldo_final, necesario para el Historial de Cajas
+
         $corteActual->update([
-            'estado'      => 'cerrada',
-            'fecha_cierre'=> now(),
-            'saldo_final' => $saldoEstimado,
+            'estado'       => 'cerrada',
+            'fecha_cierre' => now(),
+            'saldo_final'  => $saldoEstimado,
         ]);
 
         return redirect()->route('caja.index')->with('success', 'Corte de caja realizado correctamente. Turno finalizado.');
     }
 
+    // ----------------------------------------
+    // REGISTRAR GASTO / SALIDA DE EFECTIVO
+    // ----------------------------------------
+    public function storeGasto(Request $request)
+    {
+        $request->validate([
+            'concepto' => 'required|string|max:255',
+            'monto'    => 'required|numeric|min:0.01',
+        ]);
+
+        $corteActual = CorteCaja::where('user_id', Auth::id())
+                                ->where('estado', 'abierta')
+                                ->first();
+
+        if (!$corteActual) {
+            return back()->with('error', 'No hay una caja abierta para registrar el gasto.');
+        }
+
+        MovimientoCaja::create([
+            'corte_caja_id' => $corteActual->id,
+            'tipo'          => 'egreso',
+            'concepto'      => $request->concepto,
+            'monto'         => $request->monto,
+        ]);
+
+        return back()->with('success', 'Gasto registrado correctamente.');
+    }
+
+    // ----------------------------------------
+    // REGISTRAR ANTICIPO / INGRESO DE EFECTIVO
+    // ----------------------------------------
+    public function storeAnticipo(Request $request)
+    {
+        $request->validate([
+            'concepto' => 'required|string|max:255',
+            'monto'    => 'required|numeric|min:0.01',
+        ]);
+
+        $corteActual = CorteCaja::where('user_id', Auth::id())
+                                ->where('estado', 'abierta')
+                                ->first();
+
+        if (!$corteActual) {
+            return back()->with('error', 'No hay una caja abierta para registrar el anticipo.');
+        }
+
+        MovimientoCaja::create([
+            'corte_caja_id' => $corteActual->id,
+            'tipo'          => 'ingreso',
+            'concepto'      => $request->concepto,
+            'monto'         => $request->monto,
+        ]);
+
+        return back()->with('success', 'Anticipo registrado correctamente.');
+    }
+
     /**
-     * Historial de Cajas — solo accesible con el permiso 'caja.historial'
-     * (por defecto, solo el Administrador General lo tiene vía bypass).
+     * Historial de Cajas
      */
     public function historial(Request $request)
     {
@@ -150,14 +208,13 @@ class CajaController extends Controller
             $query->whereDate('fecha_apertura', '<=', $request->fecha_hasta);
         }
 
-        // Las cajas abiertas siempre aparecen primero, luego por fecha de apertura descendente
         $cortes = $query->orderByRaw("estado = 'abierta' DESC")
                          ->orderBy('fecha_apertura', 'desc')
                          ->paginate(15)
                          ->withQueryString();
 
-        $sucursales = Sucursal::all();
-        $cajeros = User::orderBy('name')->get();
+        $sucursales        = Sucursal::all();
+        $cajeros           = User::orderBy('name')->get();
         $totalCajasAbiertas = CorteCaja::where('estado', 'abierta')->count();
 
         return view('caja.historial', compact('cortes', 'sucursales', 'cajeros', 'totalCajasAbiertas'));
