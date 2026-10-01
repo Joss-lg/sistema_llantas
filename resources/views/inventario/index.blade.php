@@ -19,10 +19,14 @@
     .modal-overlay-anim { animation: fadeBg 0.3s ease-out forwards; }
     @keyframes barGrow { from { width: 0; } to { width: var(--target-w); } }
     .bar-grow { animation: barGrow 1.2s cubic-bezier(0.16,1,0.3,1) forwards; animation-delay: 0.4s; }
-    /* Borde lateral en hover — sin td extra que desplace columnas */
     tr.border-enstock:hover  { box-shadow: inset 3px 0 0 #34d399; }
     tr.border-bajstock:hover { box-shadow: inset 3px 0 0 #fbbf24; }
     tr.border-sinstock:hover { box-shadow: inset 3px 0 0 #f87171; }
+    /* Scrollbar visible para dropdowns con muchas opciones */
+    .scroll-dropdown { scrollbar-width: thin !important; -ms-overflow-style: auto !important; }
+    .scroll-dropdown::-webkit-scrollbar { display: block !important; width: 4px !important; height: auto !important; }
+    .scroll-dropdown::-webkit-scrollbar-thumb { background-color: #818CF8; border-radius: 99px; }
+    .scroll-dropdown::-webkit-scrollbar-track { background: transparent; }
 </style>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8"
@@ -383,7 +387,7 @@
                         <div @click="seleccionado = opcion.value; abierto = false; $nextTick(() => document.getElementById('filter-form').submit())"
                              class="px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors"
                              :class="seleccionado === opcion.value ? 'bg-[#818CF8]/10 text-[#818CF8] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'">
-                            <span x-text="opcion.label"></span>
+                           <span x-text="opcion.label" :title="opcion.label" class="block truncate"></span>
                         </div>
                     </template>
                 </div>
@@ -407,13 +411,15 @@
                     <span x-text="opciones.find(o => o.value === seleccionado)?.label || 'Todas las marcas'" class="truncate mr-2"></span>
                     <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200" :class="abierto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
+                {{-- scroll-dropdown: clase que activa scrollbar visible --}}
                 <div x-show="abierto" x-cloak x-transition
-                     class="absolute z-50 w-full mt-1.5 py-1 max-h-52 overflow-y-auto bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-neutral-800 rounded-xl shadow-xl">
+                     style="max-height: 13rem; overflow-y: auto;"
+                     class="scroll-dropdown absolute z-50 w-full mt-1.5 py-1 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-neutral-800 rounded-xl shadow-xl">
                     <template x-for="opcion in opciones" :key="opcion.value">
                         <div @click="seleccionado = opcion.value; abierto = false; $nextTick(() => document.getElementById('filter-form').submit())"
-                             class="px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors"
+                             class="px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors overflow-hidden"
                              :class="seleccionado === opcion.value ? 'bg-[#818CF8]/10 text-[#818CF8] font-bold' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5'">
-                            <span x-text="opcion.label"></span>
+                            <span x-text="opcion.label" :title="opcion.label" style="display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
                         </div>
                     </template>
                 </div>
@@ -440,8 +446,10 @@
                     <span x-text="opciones.find(o => o.value === seleccionado)?.label || 'Por Defecto'" class="truncate mr-2"></span>
                     <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200" :class="abierto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
+                {{-- scroll-dropdown + max-height para que las 7 opciones no se corten --}}
                 <div x-show="abierto" x-cloak x-transition
-                     class="absolute z-50 w-full mt-1.5 py-1 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-neutral-800 rounded-xl shadow-xl overflow-hidden">
+                     style="max-height: 16rem; overflow-y: auto;"
+                     class="scroll-dropdown absolute z-50 w-full mt-1.5 py-1 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-neutral-800 rounded-xl shadow-xl">
                     <template x-for="opcion in opciones" :key="opcion.value">
                         <div @click="seleccionado = opcion.value; abierto = false; $nextTick(() => document.getElementById('filter-form').submit())"
                              class="px-4 py-2.5 text-sm font-medium cursor-pointer transition-colors"
@@ -555,7 +563,6 @@
                             }
                         @endphp
 
-                        {{-- ▼ Ya NO hay <td> extra para el borde — se usa box-shadow en el <tr> --}}
                         <tr class="group row-anim {{ $borderClass }} hover:bg-gray-50/60 dark:hover:bg-[#111] transition-all duration-200 {{ $esNuevo ? 'bg-[#818CF8]/5 dark:bg-[#818CF8]/8' : '' }}"
                             style="animation-delay: {{ $index * 35 }}ms">
 

@@ -45,8 +45,44 @@ Route::middleware(['auth', 'permiso'])->group(function () {
 
     // Dashboard Principal
     Route::get('/', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    $hoy = now()->startOfDay();
+
+    // Ventas de hoy (monto total)
+    $ventasHoy = \App\Models\Venta::whereDate('created_at', today())->sum('total');
+
+    // Piezas vendidas hoy
+    $llantasVendidas = \App\Models\VentaDetalle::whereHas('venta', fn($q) => $q->whereDate('created_at', today()))->sum('cantidad');
+
+    // Productos en bajo stock (reutilizamos misma lógica del ProductoController)
+    $todosProductos = \App\Models\Producto::with('stock')->where('estado', true)->get()->map(function ($p) {
+        $totalStock  = $p->stock->sum('cantidad');
+        $minStock    = $p->stock->max('stock_minimo') ?? 5;
+        $p->stock_cantidad = $totalStock;
+        $p->stock_minimo   = $minStock;
+        return $p;
+    });
+    $bajoStock = $todosProductos->filter(fn($p) => ($p->stock_cantidad ?? 0) > 0 && ($p->stock_cantidad ?? 0) < ($p->stock_minimo ?? 5))->count();
+
+    // Clientes nuevos hoy
+    $clientesNuevos = \App\Models\Cliente::whereDate('created_at', today())->count();
+
+    // Últimas 6 ventas
+    $ultimasVentas = \App\Models\Venta::latest()->take(6)->get();
+
+    // Ventas de los últimos 7 días (para la mini gráfica)
+    $ventasSemana = collect();
+    for ($i = 6; $i >= 0; $i--) {
+        $dia = now()->subDays($i);
+        $ventasSemana->push([
+            'label' => $dia->translatedFormat('D'),
+            'total' => \App\Models\Venta::whereDate('created_at', $dia->toDateString())->sum('total'),
+        ]);
+    }
+
+    return view('dashboard', compact(
+        'ventasHoy', 'llantasVendidas', 'bajoStock', 'clientesNuevos', 'ultimasVentas', 'ventasSemana'
+    ));
+})->name('dashboard');
 
     // Módulo de Empleados y Roles
     Route::get('/empleados/inactivos', [EmpleadoController::class, 'inactivos'])->name('empleados.inactivos');
