@@ -266,9 +266,21 @@ class PuntoVentaController extends Controller
         return view('ventas.historial', compact('ventas', 'sucursales', 'esAdmin'));
     }
 
+    /**
+     * Ticket de una venta.
+     * El Administrador General puede ver cualquiera; los demás solo los de su sucursal.
+     * Si la venta es de otra sucursal, responde 404 (igual que si no existiera).
+     */
     public function ticket($id)
     {
-        $venta = Venta::with(['detalles', 'sucursal', 'user', 'cliente'])->findOrFail($id);
+        $query = Venta::with(['detalles', 'sucursal', 'user', 'cliente']);
+
+        if (!$this->usuarioEsAdmin()) {
+            $query->where('sucursal_id', $this->sucursalDelUsuario());
+        }
+
+        $venta = $query->findOrFail($id);
+
         return view('ventas.ticket', compact('venta'));
     }
 }

@@ -178,9 +178,15 @@ class CajaController extends Controller
 
     /**
      * Historial de Cajas
+     *
+     * El Administrador General ve todas las sucursales.
+     * Cualquier otro usuario ve solo los datos de su sucursal.
      */
     public function historial(Request $request)
     {
+        $usuario        = Auth::user();
+        $esAdminGeneral = $usuario->tieneRol('Administrador General');
+
         $query = CorteCaja::with(['user', 'sucursal'])
             ->withSum(['ventas as total_ventas_efectivo' => function ($q) {
                 $q->where('metodo_pago', 'Efectivo');
@@ -188,8 +194,13 @@ class CajaController extends Controller
             ->withSum('ventas as total_ventas', 'total')
             ->withCount('ventas as total_transacciones');
 
-        if ($request->filled('sucursal_id')) {
-            $query->where('sucursal_id', $request->sucursal_id);
+        // Sucursal: el admin general puede elegir; los demás quedan fijos en la suya
+        if ($esAdminGeneral) {
+            if ($request->filled('sucursal_id')) {
+                $query->where('sucursal_id', $request->sucursal_id);
+            }
+        } else {
+            $query->where('sucursal_id', $usuario->sucursal_id);
         }
 
         if ($request->filled('estado') && in_array($request->estado, ['abierta', 'cerrada'])) {
@@ -213,9 +224,18 @@ class CajaController extends Controller
                          ->paginate(15)
                          ->withQueryString();
 
-        $sucursales        = Sucursal::all();
-        $cajeros           = User::orderBy('name')->get();
-        $totalCajasAbiertas = CorteCaja::where('estado', 'abierta')->count();
+        // Listas de la pantalla: también limitadas a la sucursal del usuario
+        if ($esAdminGeneral) {
+            $sucursales         = Sucursal::all();
+            $cajeros            = User::orderBy('name')->get();
+            $totalCajasAbiertas = CorteCaja::where('estado', 'abierta')->count();
+        } else {
+            $sucursales         = Sucursal::where('id', $usuario->sucursal_id)->get();
+            $cajeros            = User::where('sucursal_id', $usuario->sucursal_id)->orderBy('name')->get();
+            $totalCajasAbiertas = CorteCaja::where('estado', 'abierta')
+                                           ->where('sucursal_id', $usuario->sucursal_id)
+                                           ->count();
+        }
 
         return view('caja.historial', compact('cortes', 'sucursales', 'cajeros', 'totalCajasAbiertas'));
     }

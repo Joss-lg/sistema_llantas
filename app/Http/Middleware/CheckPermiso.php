@@ -16,7 +16,6 @@ class CheckPermiso
     protected array $rutasExentas = [
         'dashboard',
         'logout.back',
-        'home',
     ];
 
     public function handle(Request $request, Closure $next): Response

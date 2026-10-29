@@ -76,8 +76,8 @@ class User extends Authenticatable
      */
     public function tienePermiso($nombreRuta): bool
     {
-        // 1. Acceso total para Administrador General o ID 1
-        if ((int)$this->id === 1 || ($this->role && $this->role->nombre === 'Administrador General')) {
+        // 1. Acceso total solo para el rol Administrador General (sin depender del ID)
+        if ($this->role && $this->role->nombre === 'Administrador General') {
             return true;
         }
 

@@ -98,6 +98,8 @@
         animation: weekBarGrow 1.2s cubic-bezier(0.16,1,0.3,1) both;
         animation-delay: var(--delay, 0ms);
     }
+    .week-bar-empty { background-color: rgb(229,231,235); }
+    .dark .week-bar-empty { background-color: rgb(38,38,38); }
     @keyframes weekBarGrow {
         from { transform: scaleY(0); transform-origin: bottom; }
         to   { transform: scaleY(1); transform-origin: bottom; }
@@ -231,25 +233,23 @@
                     $maxVenta = collect($ventasSemana ?? [])->max('total') ?: 1;
                 @endphp
 
-                <div class="flex items-end justify-between gap-2 h-36">
+                {{-- Alturas en píxeles (inline) para que no dependan de clases de Tailwind --}}
+                <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px; height:144px;">
                     @forelse($ventasSemana ?? [] as $i => $dia)
-                        <div class="flex-1 flex flex-col items-center gap-2">
+                        @php
+                            $totalDia = (float) $dia['total'];
+                            $alturaPx = max(6, (int) round(($totalDia / $maxVenta) * 112));
+                        @endphp
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
                             {{-- Barra --}}
-                            <div class="w-full flex items-end justify-center h-28">
-                                <div class="w-full rounded-t-lg week-bar-fill relative overflow-hidden"
-                                     style="height: {{ max(4, ($dia['total'] / $maxVenta) * 100) }}%; background: {{ $dia['total'] > 0 ? 'linear-gradient(to top, #6366F1, #818CF8)' : '' }}; background-color: {{ $dia['total'] == 0 ? 'rgb(229,231,235)' : '' }}; --delay: {{ $i * 80 }}ms;"
-                                     title="${{ number_format($dia['total'], 2) }}">
-                                    @if($dia['total'] > 0)
-                                        <div class="absolute inset-0 bg-white/10 opacity-0 hover:opacity-100 transition-opacity"></div>
-                                    @endif
+                            <div style="width:100%; height:112px; display:flex; align-items:flex-end; justify-content:center;">
+                                <div class="week-bar-fill {{ $totalDia > 0 ? '' : 'week-bar-empty' }}"
+                                     style="width:100%; height:{{ $alturaPx }}px; border-radius:8px 8px 0 0; {{ $totalDia > 0 ? 'background:linear-gradient(to top, #6366F1, #818CF8);' : '' }} --delay: {{ $i * 80 }}ms;"
+                                     title="${{ number_format($totalDia, 2) }}">
                                 </div>
                             </div>
-                            {{-- dark bg override --}}
-                            <style>
-                                .dark .week-bar-fill[style*="rgb(229,231,235)"] { background-color: rgb(38,38,38) !important; }
-                            </style>
                             {{-- Label día --}}
-                            <span class="text-[10px] font-semibold text-gray-400 dark:text-gray-600 uppercase">{{ $dia['label'] }}</span>
+                            <span class="text-gray-400 dark:text-gray-600" style="font-size:10px; font-weight:600; text-transform:uppercase;">{{ $dia['label'] }}</span>
                         </div>
                     @empty
                         <p class="text-xs text-gray-400 dark:text-gray-500 m-auto">Sin datos</p>
