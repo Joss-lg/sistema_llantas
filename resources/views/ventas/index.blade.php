@@ -89,7 +89,7 @@
                                     <button @click="openSucursal = !openSucursal" type="button" 
                                         class="text-xs font-bold bg-white dark:bg-[#151515] border border-amber-300 dark:border-neutral-700 rounded-lg px-2.5 py-1 text-gray-700 dark:text-white flex items-center gap-2 focus:outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-800">
                                         <span x-text="sucursales.find(s => s.id == sucursalSeleccionada)?.nombre || 'Seleccionar'"></span>
-                                        <svg class="w-3 h-3 text-gray-400 transition-transform duration-200" :class="openSucursal ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                        <svg class="w-3 h-3 text-gray-400 transition-transform duration-200" :class="openSucursal ? 'rotate-180' :''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
 
                                     <div x-show="openSucursal" x-cloak
@@ -165,7 +165,7 @@
                                         :class="filtroMarca === '' ? 'bg-[#818CF8]/10 text-[#818CF8] font-bold' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800'">
                                         <span>Todas las marcas</span>
                                     </button>
-                                    <template x-for="m in marcas" :key="m">
+                                    <template x-for="m in marcas()" :key="m">
                                         <button @click="filtroMarca = m; openMarca = false" type="button"
                                             class="w-full text-left px-3 py-1.5 text-xs rounded-lg transition-colors flex items-center justify-between"
                                             :class="filtroMarca === m ? 'bg-[#818CF8]/10 text-[#818CF8] font-bold' : 'text-gray-700 dark:text-neutral-300 hover:bg-gray-100 dark:hover:bg-neutral-800'">
@@ -269,7 +269,7 @@
                             </div>
 
                             <div class="w-full mt-3 pt-2.5 border-t border-gray-100 dark:border-neutral-800 flex items-center justify-between">
-                                <div class="text-base font-black text-[#818CF8] tabular-nums" x-text="'$' + (+p.precio_publico).toLocaleString('es-MX', {minimumFractionDigits:2})"></div>
+                                <div class="text-base font-black tabular-nums" :class="tipoPrecio === 'mayoreo' ? 'text-amber-500' : 'text-[#818CF8]'" x-text="'$' + (+precioDe(p)).toLocaleString('es-MX', {minimumFractionDigits:2})"></div>
                                 <div class="w-7 h-7 rounded-lg bg-[#818CF8]/10 text-[#818CF8] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
                                 </div>
@@ -292,7 +292,7 @@
             <div class="p-4 border-b border-gray-100 dark:border-neutral-800 flex items-center justify-between bg-gray-50/50 dark:bg-[#0A0A0A]/50">
                 <div class="flex items-center gap-2.5">
                     <div class="p-2 rounded-xl bg-[#818CF8]/10 text-[#818CF8]">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 2 0 100 4 2 2 0 000-4z"/></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-gray-800 dark:text-white">Carrito de Compra</h3>
@@ -313,7 +313,7 @@
                         
                         <div class="flex-1 min-w-0">
                             <h4 class="text-xs font-bold text-gray-800 dark:text-white truncate" x-text="item.tipo === 'Servicio' ? item.descripcion : item.marca + ' - ' + item.medida"></h4>
-                            <div class="text-[11px] text-gray-500 dark:text-neutral-400" x-text="'$' + (+item.precio_publico).toLocaleString('es-MX', {minimumFractionDigits:2}) + ' c/u'"></div>
+                            <div class="text-[11px] text-gray-500 dark:text-neutral-400" x-text="'$' + (+precioDe(item)).toLocaleString('es-MX', {minimumFractionDigits:2}) + ' c/u'"></div>
                         </div>
 
                         {{-- Controles de Cantidad --}}
@@ -329,7 +329,7 @@
 
                         {{-- Subtotal por Item --}}
                         <div class="text-right min-w-[65px]">
-                            <span class="text-xs font-black text-gray-900 dark:text-white" x-text="'$' + (item.cantidad * item.precio_publico).toLocaleString('es-MX', {minimumFractionDigits:2})"></span>
+                            <span class="text-xs font-black text-gray-900 dark:text-white" x-text="'$' + (item.cantidad * precioDe(item)).toLocaleString('es-MX', {minimumFractionDigits:2})"></span>
                         </div>
 
                         {{-- Eliminar Item --}}
@@ -348,12 +348,36 @@
 
             {{-- Resumen de Cobro y Datos de Cliente --}}
             <div class="p-4 border-t border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-[#0A0A0A]/50 space-y-3 shrink-0">
+
+                @if($puedeMayoreo)
+                    {{-- Tipo de precio (solo Administrador General y Administrador) --}}
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-[10px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider">Tipo de precio</span>
+                        <div class="flex gap-1">
+                            <button @click="tipoPrecio = 'menudeo'" type="button"
+                                class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all"
+                                :class="tipoPrecio === 'menudeo' ? 'bg-[#818CF8] text-white border-[#818CF8]' : 'bg-white dark:bg-[#151515] text-gray-600 dark:text-neutral-400 border-gray-200 dark:border-neutral-800'">
+                                Público
+                            </button>
+                            <button @click="tipoPrecio = 'mayoreo'" type="button"
+                                class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border transition-all"
+                                :class="tipoPrecio === 'mayoreo' ? 'bg-amber-500 text-white border-amber-500' : 'bg-white dark:bg-[#151515] text-gray-600 dark:text-neutral-400 border-gray-200 dark:border-neutral-800'">
+                                Mayoreo
+                            </button>
+                        </div>
+                    </div>
+                @endif
                 
-                {{-- Nombre del cliente --}}
+                {{-- Cliente --}}
                 <div>
                     <label for="input_cliente" class="block text-[10px] font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-wider mb-1">Cliente (Opcional)</label>
-                    <input id="input_cliente" x-model="cliente" type="text" placeholder="Público General"
-                        class="w-full px-3 py-1.5 bg-white dark:bg-[#151515] border border-gray-200 dark:border-neutral-800 rounded-xl text-xs text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8]">
+                    <select id="input_cliente" x-model="clienteId"
+                        class="w-full px-3 py-1.5 bg-white dark:bg-[#151515] border border-gray-200 dark:border-neutral-800 rounded-xl text-xs text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#818CF8]">
+                        <option value="">Público General</option>
+                        <template x-for="c in clientes" :key="c.id">
+                            <option :value="c.id" x-text="c.nombre + (c.rfc ? ' (' + c.rfc + ')' : '')"></option>
+                        </template>
+                    </select>
                 </div>
 
                 {{-- Factura & Métodos de Pago --}}
@@ -372,6 +396,12 @@
                             </button>
                         </template>
                     </div>
+                </div>
+
+                {{-- Aviso: la factura necesita un cliente con RFC --}}
+                <div x-show="requiereFactura && !clienteConRfc()" x-cloak
+                    class="text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-3 py-2">
+                    Para facturar elige un cliente que tenga RFC registrado.
                 </div>
 
                 {{-- Cálculo de Totales --}}
@@ -395,7 +425,7 @@
                 </div>
 
                 {{-- Botón Registrar Venta --}}
-                <button @click="procesarVenta()" :disabled="carrito.length === 0 || procesando" type="button"
+                <button @click="procesarVenta()" :disabled="carrito.length === 0 || procesando || (requiereFactura && !clienteConRfc())" type="button"
                     class="w-full py-3 bg-[#818CF8] hover:bg-[#6366F1] disabled:bg-gray-300 dark:disabled:bg-neutral-800 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
                     <svg x-show="!procesando" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     <svg x-show="procesando" x-cloak class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
@@ -419,6 +449,7 @@
             productos: @json($productos ?? []),
             sucursales: @json($sucursales ?? []),
             sucursalSeleccionada: @json($sucursalSeleccionada ?? 1),
+            clientes: @json($clientes ?? []),
 
             // Filtros
             busqueda: '',
@@ -430,9 +461,10 @@
 
             // Carrito
             carrito: [],
-            cliente: '',
+            clienteId: '',
             requiereFactura: false,
             metodoPago: 'efectivo',
+            tipoPrecio: 'menudeo',   // 'menudeo' (Público) o 'mayoreo'
 
             // Toast
             toastVisible: false,
@@ -441,6 +473,25 @@
 
             init() {
                 setTimeout(() => { this.cargado = true; }, 100);
+            },
+
+            // Precio que se muestra: mayoreo solo si está elegido y el producto lo tiene.
+            // (El servidor vuelve a calcular el precio real al cobrar.)
+            precioDe(p) {
+                if (this.tipoPrecio === 'mayoreo' && +p.precio_mayoreo > 0) {
+                    return +p.precio_mayoreo;
+                }
+                return +p.precio_publico;
+            },
+
+            clienteSeleccionado() {
+                if (!this.clienteId) return null;
+                return this.clientes.find(c => c.id == this.clienteId) || null;
+            },
+
+            clienteConRfc() {
+                const c = this.clienteSeleccionado();
+                return !!(c && c.rfc && String(c.rfc).trim() !== '');
             },
 
             marcas() {
@@ -565,7 +616,7 @@
             },
 
             subtotal() {
-                return this.carrito.reduce((sum, i) => sum + (i.cantidad * i.precio_publico), 0);
+                return this.carrito.reduce((sum, i) => sum + (i.cantidad * this.precioDe(i)), 0);
             },
 
             iva() {
@@ -585,16 +636,22 @@
 
             procesarVenta() {
                 if (this.carrito.length === 0) return;
+
+                if (this.requiereFactura && !this.clienteConRfc()) {
+                    this.showToast('Para facturar elige un cliente que tenga RFC registrado.', 'warning');
+                    return;
+                }
+
                 this.procesando = true;
 
-                // 1. Formateamos el carrito para que coincida EXACTAMENTE con lo que espera el Controlador
+                // 1. Formateamos el carrito (el servidor solo usa producto_id y cantidad; el precio lo calcula él)
                 const carritoFormateado = this.carrito.map(item => {
                     return {
                         producto_id: item.id,
                         nombre: item.tipo === 'Servicio' ? item.descripcion : (item.marca + ' ' + (item.medida || '')).trim(),
                         cantidad: item.cantidad,
-                        precio_unitario: item.precio_publico,
-                        subtotal: item.cantidad * item.precio_publico
+                        precio_unitario: this.precioDe(item),
+                        subtotal: item.cantidad * this.precioDe(item)
                     };
                 });
 
@@ -611,7 +668,8 @@
                     // 3. Enviamos los nombres de variables exactos que Laravel está leyendo en el Backend
                     body: JSON.stringify({
                         sucursal_id: this.sucursalSeleccionada,
-                        cliente: this.cliente,                  // El backend lee 'cliente'
+                        cliente_id: this.clienteId || null,     // Cliente registrado (o vacío = Público General)
+                        tipo_precio: this.tipoPrecio,           // 'menudeo' o 'mayoreo'
                         requiereFactura: this.requiereFactura,  // El backend lee 'requiereFactura'
                         pagoCon: metodoPagoCapitalizado,        // El backend lee 'pagoCon'
                         cambio: 0,
@@ -625,6 +683,8 @@
                     if (data.success) {
                         this.showToast('Venta realizada con éxito', 'success');
                         this.limpiarCarrito();
+                        this.clienteId = '';
+                        this.requiereFactura = false;
                         if (data.ticket_url) {
                             imprimirTicket(data.ticket_url);
                         }

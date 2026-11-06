@@ -235,13 +235,9 @@
                         @php $delayFila = min($loop->index * 0.05, 0.4); @endphp
                         <tr class="group relative hover:bg-gray-50/60 dark:hover:bg-[#111] transition-all duration-200 row-anim" style="animation-delay: {{ $delayFila }}s">
 
-                            {{-- Borde lateral acento --}}
-                            <td class="p-0 w-0">
-                                <div class="absolute left-0 top-0 bottom-0 w-[3px] {{ $c->is_vip ? 'bg-[#818CF8]' : 'bg-gray-300 dark:bg-neutral-700' }} opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-r"></div>
-                            </td>
-
-                            {{-- Nombre & Avatar --}}
+                            {{-- Nombre & Avatar (incluye el borde lateral de acento) --}}
                             <td class="px-6 py-4">
+                                <div class="absolute left-0 top-0 bottom-0 w-[3px] {{ $c->is_vip ? 'bg-[#818CF8]' : 'bg-gray-300 dark:bg-neutral-700' }} opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-r"></div>
                                 <div class="flex items-center gap-3">
                                     <div class="relative flex items-center justify-center w-9 h-9 rounded-xl {{ $c->is_vip ? 'bg-[#818CF8] text-white shadow-md shadow-[#818CF8]/30 vip-badge' : 'bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-300' }} font-black text-sm shrink-0 transition-transform duration-300 group-hover:scale-105">
                                         {{ strtoupper(substr($c->nombre, 0, 1)) }}
@@ -310,7 +306,7 @@
                                 </div>
                             </td>
                         </tr>
-                    @endempty
+                    @endforelse
                 </tbody>
             </table>
         </div>

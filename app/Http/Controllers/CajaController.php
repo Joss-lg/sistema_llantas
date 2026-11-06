@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\CorteCaja;
 use App\Models\Venta;
 use App\Models\MovimientoCaja;
@@ -17,13 +18,17 @@ class CajaController extends Controller
         $usuario = Auth::user();
 
         // 1. Buscar si el cajero actual tiene un turno activo
-        $corteActual = CorteCaja::where('user_id', $usuario->id)
+        $corteActual = CorteCaja::with('sucursal')
+                                ->where('user_id', $usuario->id)
                                 ->where('estado', 'abierta')
                                 ->first();
 
-        // 2. Si NO hay caja abierta, mandamos la vista limpia
+        // 2. Si NO hay caja abierta, mandamos la vista limpia (con la sucursal donde se abriría)
         if (!$corteActual) {
-            return view('caja.index', ['corteActual' => null]);
+            return view('caja.index', [
+                'corteActual'     => null,
+                'sucursalUsuario' => $usuario->sucursal,
+            ]);
         }
 
         // 3. MATEMÁTICA DEL CAJÓN FÍSICO
@@ -74,50 +79,103 @@ class CajaController extends Controller
             'saldo_inicial' => 'required|numeric|min:0'
         ]);
 
-        $cajaAbierta = CorteCaja::where('user_id', Auth::id())
-                                ->where('estado', 'abierta')
-                                ->first();
+        $usuario = Auth::user();
 
-        if ($cajaAbierta) {
-            return back()->with('error', 'Ya tienes un turno activo.');
+        // Si el usuario no tiene sucursal, NO se abre la caja
+        if (!$usuario->sucursal_id) {
+            return back()->with('error', 'Tu usuario no tiene una sucursal asignada. Pide a un administrador que te asigne una antes de abrir caja.');
         }
 
-        $sucursal_id = Auth::user()->sucursal_id ?? 1;
+        // Transacción con bloqueo: si llegan dos peticiones a la vez (doble clic, dos pestañas),
+        // la segunda espera a que termine la primera y ya encuentra el turno abierto.
+        $abierta = DB::transaction(function () use ($request, $usuario) {
+            User::where('id', $usuario->id)->lockForUpdate()->first();
 
-        CorteCaja::create([
-            'user_id'        => Auth::id(),
-            'sucursal_id'    => $sucursal_id,
-            'saldo_inicial'  => $request->saldo_inicial,
-            'estado'         => 'abierta',
-            'fecha_apertura' => now(),
-        ]);
+            $yaAbierta = CorteCaja::where('user_id', $usuario->id)
+                                  ->where('estado', 'abierta')
+                                  ->lockForUpdate()
+                                  ->first();
+
+            if ($yaAbierta) {
+                return false;
+            }
+
+            CorteCaja::create([
+                'user_id'        => $usuario->id,
+                'sucursal_id'    => $usuario->sucursal_id,
+                'saldo_inicial'  => $request->saldo_inicial,
+                'estado'         => 'abierta',
+                'fecha_apertura' => now(),
+            ]);
+
+            return true;
+        });
+
+        if (!$abierta) {
+            return back()->with('error', 'Ya tienes un turno activo.');
+        }
 
         return redirect()->route('ventas.index')->with('success', 'Caja abierta con éxito. ¡Excelente turno!');
     }
 
     public function cerrar(Request $request)
     {
-        $corteActual = CorteCaja::where('user_id', Auth::id())
-                                ->where('estado', 'abierta')
-                                ->first();
+        // El cajero debe capturar cuánto efectivo contó en el cajón
+        $request->validate([
+            'efectivo_contado' => 'required|numeric|min:0',
+        ], [
+            'efectivo_contado.required' => 'Captura el efectivo contado para cerrar la caja.',
+            'efectivo_contado.numeric'  => 'El efectivo contado debe ser un número.',
+            'efectivo_contado.min'      => 'El efectivo contado no puede ser negativo.',
+        ]);
 
-        if (!$corteActual) {
+        // Transacción con bloqueo: si el cierre se manda dos veces, la segunda ya no encuentra turno abierto.
+        $resultado = DB::transaction(function () use ($request) {
+            $corteActual = CorteCaja::where('user_id', Auth::id())
+                                    ->where('estado', 'abierta')
+                                    ->lockForUpdate()
+                                    ->first();
+
+            if (!$corteActual) {
+                return null;
+            }
+
+            $totalVentasEfectivo = Venta::where('corte_caja_id', $corteActual->id)->where('metodo_pago', 'Efectivo')->sum('total');
+            $totalGastos         = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'egreso')->sum('monto');
+            $totalAnticipos      = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'ingreso')->sum('monto');
+
+            $esperado = round(($corteActual->saldo_inicial + $totalVentasEfectivo + $totalAnticipos) - $totalGastos, 2);
+            $contado  = round((float) $request->efectivo_contado, 2);
+
+            // contado - esperado: positivo = sobrante, negativo = faltante
+            $diferencia = round($contado - $esperado, 2);
+
+            $corteActual->update([
+                'estado'           => 'cerrada',
+                'fecha_cierre'     => now(),
+                'saldo_final'      => $esperado,
+                'efectivo_contado' => $contado,
+                'diferencia'       => $diferencia,
+            ]);
+
+            return ['esperado' => $esperado, 'contado' => $contado, 'diferencia' => $diferencia];
+        });
+
+        if (!$resultado) {
             return back()->with('error', 'No hay ninguna caja abierta para cerrar.');
         }
 
-        $totalVentasEfectivo = Venta::where('corte_caja_id', $corteActual->id)->where('metodo_pago', 'Efectivo')->sum('total');
-        $totalGastos         = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'egreso')->sum('monto');
-        $totalAnticipos      = MovimientoCaja::where('corte_caja_id', $corteActual->id)->where('tipo', 'ingreso')->sum('monto');
+        $diferencia = $resultado['diferencia'];
 
-        $saldoEstimado = ($corteActual->saldo_inicial + $totalVentasEfectivo + $totalAnticipos) - $totalGastos;
+        if ($diferencia > 0) {
+            $detalle = 'Hay un SOBRANTE de $' . number_format($diferencia, 2) . '.';
+        } elseif ($diferencia < 0) {
+            $detalle = 'Hay un FALTANTE de $' . number_format(abs($diferencia), 2) . '.';
+        } else {
+            $detalle = 'La caja cuadra exacto.';
+        }
 
-        $corteActual->update([
-            'estado'       => 'cerrada',
-            'fecha_cierre' => now(),
-            'saldo_final'  => $saldoEstimado,
-        ]);
-
-        return redirect()->route('caja.index')->with('success', 'Corte de caja realizado correctamente. Turno finalizado.');
+        return redirect()->route('caja.index')->with('success', 'Corte de caja realizado. Turno finalizado. ' . $detalle);
     }
 
     // ----------------------------------------
@@ -130,20 +188,31 @@ class CajaController extends Controller
             'monto'    => 'required|numeric|min:0.01',
         ]);
 
-        $corteActual = CorteCaja::where('user_id', Auth::id())
-                                ->where('estado', 'abierta')
-                                ->first();
+        // Transacción con bloqueo del turno: así el gasto no puede entrar
+        // mientras otra pestaña está cerrando la caja (y viceversa).
+        $guardado = DB::transaction(function () use ($request) {
+            $corteActual = CorteCaja::where('user_id', Auth::id())
+                                    ->where('estado', 'abierta')
+                                    ->lockForUpdate()
+                                    ->first();
 
-        if (!$corteActual) {
+            if (!$corteActual) {
+                return false;
+            }
+
+            MovimientoCaja::create([
+                'corte_caja_id' => $corteActual->id,
+                'tipo'          => 'egreso',
+                'concepto'      => $request->concepto,
+                'monto'         => $request->monto,
+            ]);
+
+            return true;
+        });
+
+        if (!$guardado) {
             return back()->with('error', 'No hay una caja abierta para registrar el gasto.');
         }
-
-        MovimientoCaja::create([
-            'corte_caja_id' => $corteActual->id,
-            'tipo'          => 'egreso',
-            'concepto'      => $request->concepto,
-            'monto'         => $request->monto,
-        ]);
 
         return back()->with('success', 'Gasto registrado correctamente.');
     }
@@ -158,20 +227,30 @@ class CajaController extends Controller
             'monto'    => 'required|numeric|min:0.01',
         ]);
 
-        $corteActual = CorteCaja::where('user_id', Auth::id())
-                                ->where('estado', 'abierta')
-                                ->first();
+        // Transacción con bloqueo del turno: igual que en el gasto.
+        $guardado = DB::transaction(function () use ($request) {
+            $corteActual = CorteCaja::where('user_id', Auth::id())
+                                    ->where('estado', 'abierta')
+                                    ->lockForUpdate()
+                                    ->first();
 
-        if (!$corteActual) {
+            if (!$corteActual) {
+                return false;
+            }
+
+            MovimientoCaja::create([
+                'corte_caja_id' => $corteActual->id,
+                'tipo'          => 'ingreso',
+                'concepto'      => $request->concepto,
+                'monto'         => $request->monto,
+            ]);
+
+            return true;
+        });
+
+        if (!$guardado) {
             return back()->with('error', 'No hay una caja abierta para registrar el anticipo.');
         }
-
-        MovimientoCaja::create([
-            'corte_caja_id' => $corteActual->id,
-            'tipo'          => 'ingreso',
-            'concepto'      => $request->concepto,
-            'monto'         => $request->monto,
-        ]);
 
         return back()->with('success', 'Anticipo registrado correctamente.');
     }
@@ -192,7 +271,11 @@ class CajaController extends Controller
                 $q->where('metodo_pago', 'Efectivo');
             }], 'total')
             ->withSum('ventas as total_ventas', 'total')
-            ->withCount('ventas as total_transacciones');
+            ->withCount('ventas as total_transacciones')
+            // Ventas de este corte hechas en una sucursal distinta a la del corte
+            ->withCount(['ventas as ventas_otra_sucursal' => function ($q) {
+                $q->whereColumn('ventas.sucursal_id', '!=', 'cortes_caja.sucursal_id');
+            }]);
 
         // Sucursal: el admin general puede elegir; los demás quedan fijos en la suya
         if ($esAdminGeneral) {

@@ -149,18 +149,27 @@
                         <th class="px-6 py-5 font-bold whitespace-nowrap">Ventas (Efectivo)</th>
                         <th class="px-6 py-5 font-bold whitespace-nowrap">Ventas (Total)</th>
                         <th class="px-6 py-5 font-bold whitespace-nowrap">Saldo Final</th>
+                        <th class="px-6 py-5 font-bold whitespace-nowrap">Diferencia</th>
                         <th class="px-6 py-5 font-bold text-center whitespace-nowrap">Transacciones</th>
                         <th class="px-6 py-5 font-bold text-center whitespace-nowrap">Estado</th>
                     </tr>
                 </thead>
                 <tbody class="text-[13px] text-gray-700 dark:text-gray-300 divide-y divide-gray-50/50 dark:divide-white/5">
                     @forelse($cortes as $corte)
-                        <tr class="row-anim hover:bg-gray-50/80 dark:hover:bg-white/[0.02] transition-colors {{ $corte->estado === 'abierta' ? 'bg-emerald-50/50 dark:bg-emerald-900/10' : '' }}">
+                        <tr class="row-anim hover:bg-gray-50/80 dark:hover:bg-white/[0.02] transition-colors {{ $corte->estado === 'abierta' ?'bg-emerald-50/50 dark:bg-emerald-900/10' : '' }}">
                             <td class="px-6 py-4">
                                 <p class="font-bold text-gray-900 dark:text-white text-sm">{{ $corte->user->name ?? 'N/A' }}</p>
                                 <p class="text-xs text-gray-400 font-medium">{{ $corte->user->role->nombre ?? 'Sin rol' }}</p>
                             </td>
-                            <td class="px-6 py-4 font-medium text-gray-600 dark:text-neutral-300">{{ $corte->sucursal->nombre ?? 'N/A' }}</td>
+                            <td class="px-6 py-4 font-medium text-gray-600 dark:text-neutral-300">
+                                {{ $corte->sucursal->nombre ?? 'N/A' }}
+                                @if(($corte->ventas_otra_sucursal ?? 0) > 0)
+                                    <span class="mt-1 flex w-fit items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 whitespace-nowrap"
+                                          title="Estas ventas se cobraron en este turno pero se hicieron en una sucursal distinta a la del corte.">
+                                        {{ $corte->ventas_otra_sucursal }} {{ $corte->ventas_otra_sucursal === 1 ? 'venta' : 'ventas' }} en otra sucursal
+                                    </span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 font-medium text-gray-600 dark:text-neutral-300 whitespace-nowrap">
                                 {{ $corte->fecha_apertura ? \Carbon\Carbon::parse($corte->fecha_apertura)->format('d/m/Y h:i A') : 'N/A' }}
                             </td>
@@ -181,6 +190,19 @@
                                     <span class="text-gray-400 dark:text-neutral-600 italic">Pendiente</span>
                                 @endif
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($corte->estado === 'cerrada' && !is_null($corte->diferencia))
+                                    @if((float) $corte->diferencia > 0)
+                                        <span class="font-bold text-amber-600 dark:text-amber-400" title="Sobrante">+${{ number_format($corte->diferencia, 2) }}</span>
+                                    @elseif((float) $corte->diferencia < 0)
+                                        <span class="font-bold text-red-600 dark:text-red-400" title="Faltante">-${{ number_format(abs($corte->diferencia), 2) }}</span>
+                                    @else
+                                        <span class="font-bold text-emerald-600 dark:text-emerald-400">Cuadra</span>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400 dark:text-neutral-600">—</span>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 text-center font-bold text-gray-700 dark:text-neutral-300">{{ $corte->total_transacciones ?? 0 }}</td>
                             <td class="px-6 py-4 text-center">
                                 @if($corte->estado === 'abierta')
@@ -198,7 +220,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-12 text-center text-gray-400 font-medium">
+                            <td colspan="11" class="px-6 py-12 text-center text-gray-400 font-medium">
                                 No se encontraron cortes de caja con los filtros aplicados.
                             </td>
                         </tr>

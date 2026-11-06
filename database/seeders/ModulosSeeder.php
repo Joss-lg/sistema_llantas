@@ -55,10 +55,12 @@ class ModulosSeeder extends Seeder
             ],
 
             'Caja' => [
-                'caja.index'     => 'Ver Módulo de Caja',
-                'caja.abrir'     => 'Abrir Caja',
-                'caja.cerrar'    => 'Cerrar Caja',
-                'caja.historial' => 'Ver Historial de Cajas',
+                'caja.index'          => 'Ver Módulo de Caja',
+                'caja.abrir'          => 'Abrir Caja',
+                'caja.cerrar'         => 'Cerrar Caja',
+                'caja.historial'      => 'Ver Historial de Cajas',
+                'caja.gasto.store'    => 'Registrar Gasto de Caja',
+                'caja.anticipo.store' => 'Registrar Anticipo de Caja',
             ],
 
             'Ventas' => [

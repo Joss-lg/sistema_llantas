@@ -57,6 +57,11 @@
             <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
         </div>
     @endif
+    @error('efectivo_contado')
+        <div class="mb-4 px-5 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl flex items-center gap-2 animate-fade-in-up">
+            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+        </div>
+    @enderror
 
     {{-- ====================== --}}
     {{-- VISTA 1: ABRIR CAJA   --}}
@@ -74,6 +79,13 @@
                 </div>
 
                 <div class="p-8">
+                    {{-- Sucursal donde quedará el corte --}}
+                    <div class="mb-6 flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-[#1F2026] border border-gray-200 dark:border-gray-700 rounded-xl text-sm">
+                        <i class="fas fa-map-marker-alt text-[#818CF8]"></i>
+                        <span class="text-gray-500 dark:text-gray-400">Sucursal del turno:</span>
+                        <span class="font-bold text-gray-800 dark:text-gray-100">{{ $sucursalUsuario?->nombre ?? 'Sin sucursal asignada' }}</span>
+                    </div>
+
                     <form action="{{ route('caja.abrir') }}" method="POST">
                         @csrf
                         <div class="mb-6">
@@ -117,6 +129,10 @@
                             <span class="text-gray-500 dark:text-gray-400 text-sm">Cajero:</span>
                             <span class="font-bold text-gray-800 dark:text-gray-100">{{ Auth::user()->name }}</span>
                         </div>
+                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">Sucursal:</span>
+                            <span class="font-bold text-gray-800 dark:text-gray-100 text-right">{{ $corteActual->sucursal?->nombre ?? 'N/A' }}</span>
+                        </div>
                         <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-100 dark:border-white/10 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                             <span class="text-gray-500 dark:text-gray-400 text-sm">Apertura:</span>
                             <span class="font-bold text-gray-800 dark:text-gray-100">{{ \Carbon\Carbon::parse($corteActual->fecha_apertura)->format('d/m/Y H:i') }}</span>
@@ -149,23 +165,20 @@
                                 <i class="fas fa-shopping-cart mr-2"></i> Ir al Punto de Venta
                             </a>
                             {{-- Botón Registrar Gasto --}}
-                            <button onclick="document.getElementById('modalGasto').classList.add('active')"
+                            <button type="button" onclick="document.getElementById('modalGasto').classList.add('active')"
                                 class="group w-full flex items-center justify-center bg-red-50 dark:bg-red-950/30 border-2 border-red-100 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                                 <i class="fas fa-minus-circle mr-2"></i> Registrar Gasto
                             </button>
                             {{-- Botón Registrar Anticipo --}}
-                            <button onclick="document.getElementById('modalAnticipo').classList.add('active')"
+                            <button type="button" onclick="document.getElementById('modalAnticipo').classList.add('active')"
                                 class="group w-full flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-100 dark:border-amber-900/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                                 <i class="fas fa-plus-circle mr-2"></i> Registrar Anticipo
                             </button>
-                            {{-- Cerrar Caja --}}
-                            <form action="{{ route('caja.cerrar') }}" method="POST" class="block w-full">
-                                @csrf
-                                <button type="submit" class="group w-full flex items-center justify-center bg-white dark:bg-[#15161A] border-2 border-red-100 dark:border-red-900/40 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1"
-                                    onclick="return confirm('¿Estás seguro de cerrar la caja? Ya no podrás hacer más ventas en este turno.')">
-                                    <i class="fas fa-lock mr-2"></i> Cerrar Caja
-                                </button>
-                            </form>
+                            {{-- Cerrar Caja: abre la ventana para contar el efectivo --}}
+                            <button type="button" onclick="document.getElementById('modalCierre').classList.add('active'); document.getElementById('efectivo_contado').focus();"
+                                class="group w-full flex items-center justify-center bg-white dark:bg-[#15161A] border-2 border-red-100 dark:border-red-900/40 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                                <i class="fas fa-lock mr-2"></i> Cerrar Caja
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -319,7 +332,7 @@
                     <h5 class="text-lg font-bold flex items-center m-0">
                         <i class="fas fa-minus-circle mr-2"></i> Registrar Gasto / Salida
                     </h5>
-                    <button onclick="document.getElementById('modalGasto').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
+                    <button type="button" onclick="document.getElementById('modalGasto').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -354,7 +367,7 @@
                     <h5 class="text-lg font-bold flex items-center m-0">
                         <i class="fas fa-plus-circle mr-2"></i> Registrar Anticipo / Apartado
                     </h5>
-                    <button onclick="document.getElementById('modalAnticipo').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
+                    <button type="button" onclick="document.getElementById('modalAnticipo').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
@@ -379,6 +392,89 @@
                 </form>
             </div>
         </div>
+
+        {{-- ===================== --}}
+        {{-- MODAL: CERRAR CAJA    --}}
+        {{-- ===================== --}}
+        <div id="modalCierre" class="modal-overlay" onclick="if(event.target===this) this.classList.remove('active')">
+            <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-pop-in">
+                <div class="bg-[#EF4444] text-white py-4 px-6 flex justify-between items-center">
+                    <h5 class="text-lg font-bold flex items-center m-0">
+                        <i class="fas fa-lock mr-2"></i> Cerrar Caja
+                    </h5>
+                    <button type="button" onclick="document.getElementById('modalCierre').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form action="{{ route('caja.cerrar') }}" method="POST" class="p-6 space-y-4">
+                    @csrf
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Cuenta el efectivo que hay en el cajón y captúralo. Al cerrar ya no podrás hacer más ventas en este turno.
+                    </p>
+
+                    <div class="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-[#1F2026]">
+                        <span class="text-gray-500 dark:text-gray-400 text-sm">Efectivo esperado:</span>
+                        <span class="font-extrabold text-[#818CF8] text-lg">${{ number_format($saldoEstimado, 2) }}</span>
+                    </div>
+
+                    <div>
+                        <label for="efectivo_contado" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Efectivo contado</label>
+                        <div class="flex items-stretch border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-red-300/30 focus-within:border-red-400 transition-all">
+                            <span class="bg-gray-50 dark:bg-[#1F2026] px-4 py-3 font-bold text-gray-500 border-r border-gray-300 dark:border-gray-700 flex items-center">$</span>
+                            <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado" placeholder="0.00" required
+                                value="{{ old('efectivo_contado') }}"
+                                class="w-full px-4 py-3 outline-none bg-transparent text-gray-800 dark:text-white">
+                        </div>
+                    </div>
+
+                    {{-- Diferencia en vivo --}}
+                    <div id="cajaDiferencia" class="hidden p-3 rounded-xl text-sm font-bold text-center"></div>
+
+                    <button type="submit" class="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/25">
+                        <i class="fas fa-lock mr-2"></i> Confirmar y Cerrar Caja
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var esperado = {{ round((float) $saldoEstimado, 2) }};
+                var campo = document.getElementById('efectivo_contado');
+                var caja = document.getElementById('cajaDiferencia');
+
+                function dinero(n) {
+                    return '$' + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function actualizar() {
+                    if (campo.value === '') {
+                        caja.classList.add('hidden');
+                        return;
+                    }
+
+                    var diferencia = Math.round((parseFloat(campo.value) - esperado) * 100) / 100;
+                    caja.classList.remove('hidden');
+                    caja.className = 'p-3 rounded-xl text-sm font-bold text-center ';
+
+                    if (isNaN(diferencia)) {
+                        caja.classList.add('hidden');
+                    } else if (diferencia > 0) {
+                        caja.className += 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400';
+                        caja.textContent = 'Sobrante de ' + dinero(diferencia);
+                    } else if (diferencia < 0) {
+                        caja.className += 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400';
+                        caja.textContent = 'Faltante de ' + dinero(diferencia);
+                    } else {
+                        caja.className += 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400';
+                        caja.textContent = 'La caja cuadra exacto';
+                    }
+                }
+
+                campo.addEventListener('input', actualizar);
+                actualizar();
+            });
+        </script>
 
     @endif
 </div>
