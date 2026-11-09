@@ -56,6 +56,9 @@
           class="bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm transform transition-all duration-700 delay-200 hover:shadow-md"
           :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'">
 
+        {{-- Conserva el periodo al cambiar de sucursal. Va ANTES de los botones de periodo: si se pulsa uno, el botón gana. --}}
+        <input type="hidden" name="periodo" value="{{ $periodo }}">
+
         <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
             <span class="text-[11px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wide">Periodo</span>
             <div class="flex items-center bg-gray-100 dark:bg-[#0A0A0A] rounded-xl p-1 w-full sm:w-auto overflow-x-auto border dark:border-neutral-800">
@@ -98,8 +101,6 @@
                 </div>
             @endif
 
-            {{-- Preserva el periodo actual al exportar --}}
-            <input type="hidden" name="periodo_actual_marker" value="1">
             <a href="{{ route('reportes.exportar.pdf', request()->query()) }}"
                class="group inline-flex items-center gap-2 px-4 py-2 bg-[#818CF8] text-white rounded-xl text-sm font-semibold hover:bg-[#6366F1] hover:shadow-lg hover:shadow-indigo-500/30 transform hover:-translate-y-0.5 transition-all duration-300">
                 <svg class="w-4 h-4 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
@@ -107,6 +108,25 @@
             </a>
         </div>
     </form>
+
+    @if($errors->any())
+        <div class="bg-red-50 dark:bg-[#2a1315] border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm">
+            <p class="text-sm font-black text-red-800 dark:text-red-400 mb-1.5">Revisa las fechas del reporte:</p>
+            <ul class="space-y-1">
+                @foreach($errors->all() as $error)
+                    <li class="text-xs font-semibold text-red-700 dark:text-red-300">{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    {{-- Rango que se está mostrando y contra qué se compara --}}
+    <p class="text-xs text-gray-500 dark:text-neutral-400 font-medium px-1">
+        Periodo:
+        <span class="font-bold text-gray-700 dark:text-neutral-200">{{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}</span>
+        · Comparado con:
+        <span class="font-bold text-gray-700 dark:text-neutral-200">{{ $fechaInicioAnterior->format('d/m/Y') }} al {{ $fechaFinAnterior->format('d/m/Y') }}</span>
+    </p>
 
     @if(!$esAdmin)
         <div class="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-400 dark:border-amber-600 rounded-r-xl px-5 py-3 text-xs text-amber-700 dark:text-amber-400 font-medium">
@@ -165,9 +185,7 @@
                 <span class="transform group-hover:translate-x-1 transition-transform">{{ $porcentajeClientes >= 0 ? '↑' : '↓' }}</span>
                 {{ abs($porcentajeClientes) }}% tasa
             </p>
-            @if($esAdmin)
-                <p class="text-[10px] text-gray-400 dark:text-neutral-600 mt-1.5 italic">Total general (no separable por sucursal)</p>
-            @endif
+            <p class="text-[10px] text-gray-400 dark:text-neutral-600 mt-1.5 italic">De todo el negocio (no se separa por sucursal)</p>
         </div>
     </div>
 
@@ -269,10 +287,10 @@
         new Chart(document.getElementById('chartVentasPorDia'), {
             type: 'line',
             data: {
-                labels: {!! json_encode($ventasPorDia->pluck('dia')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))) !!},
+                labels: {!! json_encode($serieDiaria->pluck('dia')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))->values()) !!},
                 datasets: [{
                     label: 'Ingresos',
-                    data: {!! json_encode($ventasPorDia->pluck('total')->map(fn($v) => (float) $v)) !!},
+                    data: {!! json_encode($serieDiaria->pluck('total')->map(fn($v) => (float) $v)->values()) !!},
                     borderColor: '#818CF8',
                     backgroundColor: 'rgba(129, 140, 248, 0.15)',
                     fill: true,

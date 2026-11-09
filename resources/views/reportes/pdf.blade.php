@@ -11,9 +11,10 @@
         .metricas td { width: 33.33%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 4px; }
         .metrica-label { font-size: 9px; text-transform: uppercase; color: #9ca3af; font-weight: bold; }
         .metrica-valor { font-size: 18px; font-weight: bold; color: #111827; margin-top: 4px; }
+        .metrica-nota { font-size: 8px; color: #6b7280; margin-top: 3px; }
         h2 { font-size: 13px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin-top: 24px; margin-bottom: 10px; }
         table.datos { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        table.datos th { background-color: #f9fafb; text-align: left; padding: 6px 8px; font-size: 9px; text-transform: uppercase; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+        table.datos th { background-color: #f9fafb; text-align: left; padding: 6px 8px; font-size: 9px; text-transform: uppercase; color: #6b7280;border-bottom: 1px solid #e5e7eb; }
         table.datos td { padding: 6px 8px; border-bottom: 1px solid #f3f4f6; font-size: 10px; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
@@ -26,6 +27,7 @@
     <div class="header">
         <h1>Reporte de Ventas y Estadísticas</h1>
         <p>Periodo: {{ ucfirst($periodo) }} — Del {{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}</p>
+        <p>Comparado con: del {{ $fechaInicioAnterior->format('d/m/Y') }} al {{ $fechaFinAnterior->format('d/m/Y') }} ({{ $etiquetaComparativa }})</p>
         <p>Sucursal: {{ $sucursalFiltro ? ($sucursales->firstWhere('id', $sucursalFiltro)->nombre ?? 'N/A') : 'Todas las sucursales' }}</p>
         <p>Generado el {{ $fechaGeneracion }}</p>
     </div>
@@ -35,14 +37,18 @@
             <td>
                 <div class="metrica-label">Ingresos Totales</div>
                 <div class="metrica-valor">${{ number_format($ingresosTotales, 2) }}</div>
+                <div class="metrica-nota">{{ $porcentajeIngresos >= 0 ? '+' : '' }}{{ $porcentajeIngresos }}% {{ $etiquetaComparativa }}</div>
             </td>
             <td>
                 <div class="metrica-label">Ventas Realizadas</div>
                 <div class="metrica-valor">{{ $ventasRealizadas }}</div>
+                <div class="metrica-nota">{{ $porcentajeVentas >= 0 ? '+' : '' }}{{ $porcentajeVentas }}% {{ $etiquetaComparativa }}</div>
             </td>
             <td>
                 <div class="metrica-label">Nuevos Clientes</div>
                 <div class="metrica-valor">{{ $clientesNuevos }}</div>
+                <div class="metrica-nota">{{ $porcentajeClientes >= 0 ? '+' : '' }}{{ $porcentajeClientes }}% {{ $etiquetaComparativa }}</div>
+                <div class="metrica-nota">De todo el negocio (no se separa por sucursal)</div>
             </td>
         </tr>
     </table>
