@@ -104,8 +104,8 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     Route::put('/empleados/{empleado}/permisos', [EmpleadoController::class, 'updatePermisos'])->name('empleados.permisos.update');
     Route::patch('/empleados/{empleado}/toggle', [EmpleadoController::class, 'toggleStatus'])->name('empleados.toggle');
 
-    Route::resource('empleados', EmpleadoController::class);
-    Route::resource('roles', RoleController::class);
+    Route::resource('empleados', EmpleadoController::class)->except(['show']);
+    Route::resource('roles', RoleController::class)->except(['show']);
 
     // Módulo de Clientes
     Route::resource('clientes', ClienteController::class);
