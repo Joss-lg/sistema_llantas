@@ -150,8 +150,10 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     Route::get('/ventas/ticket/{id}', [PuntoVentaController::class, 'ticket'])->name('ventas.ticket');
     Route::get('/historial-ventas', [PuntoVentaController::class, 'historial'])->name('ventas.historial');
 
-    // Módulo de Gastos
-    Route::get('/gastos', function() { return view('gastos.index'); })->name('gastos.index');
+    // Módulo de Gastos: era un mockup con datos falsos. Los gastos reales se registran
+    // en Flujo de Caja (caja.gasto.store). Se conserva el nombre gastos.index para no
+    // romper el permiso id 34 (id 2) tiene en permiso_user.
+    Route::get('/gastos', function() { return redirect()->route('caja.index'); })->name('gastos.index');
 
     // ==========================================
     // MÓDULO DE REPORTES
