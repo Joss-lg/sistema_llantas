@@ -9,7 +9,7 @@ Incluye inventario, punto de venta, flujo de caja, clientes, empleados, permisos
 
 | Componente | Versión usada en desarrollo |
 |---|---|
-| Laravel | 12.61.0 |
+| Laravel | 12.72.0 |
 | PHP | 8.3.33 (mínimo 8.2) |
 | Base de datos | MySQL 8 |
 | Node.js | 24.15.0 |
