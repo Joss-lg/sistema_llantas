@@ -35,4 +35,10 @@ class MovimientoInventario extends Model
     {
         return $this->belongsTo(Sucursal::class, 'sucursal_id');
     }
+
+    // Quién registró el movimiento (la columna se llama usuario_id)
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
 }

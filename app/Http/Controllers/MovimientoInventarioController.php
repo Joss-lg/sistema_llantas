@@ -199,7 +199,8 @@ class MovimientoInventarioController extends Controller
         $esAdmin = $this->usuarioEsAdmin();
         $sucursalUsuario = $this->sucursalDelUsuario();
 
-        $query = MovimientoInventario::with(['producto', 'sucursal']);
+        // Producto, sucursal y usuario se cargan juntos para no hacer una consulta extra por cada fila
+        $query = MovimientoInventario::with(['producto', 'sucursal', 'usuario']);
 
         if (!$esAdmin) {
             $query->where('sucursal_id', $sucursalUsuario);
@@ -211,7 +212,14 @@ class MovimientoInventarioController extends Controller
             $query->where('tipo', $request->tipo);
         }
         if ($request->filled('motivo')) {
-            $query->where('motivo', $request->motivo);
+            if ($request->motivo === 'Venta') {
+                // Cada venta guarda su folio en el motivo ("Venta VNT-..."), por eso se juntan todas
+                $query->where(function ($q) {
+                    $q->where('motivo', 'Venta')->orWhere('motivo', 'like', 'Venta %');
+                });
+            } else {
+                $query->where('motivo', $request->motivo);
+            }
         }
         if ($request->filled('q')) {
             $busqueda = $request->q;
@@ -232,12 +240,20 @@ class MovimientoInventarioController extends Controller
         $totalSalidas = (clone $query)->where('tipo', 'salida')->sum('cantidad');
         $totalMovimientos = (clone $query)->count();
 
-        $movimientos = $query->orderBy('fecha', 'desc')->paginate(20)->withQueryString();
+        // El id desempata movimientos con la misma fecha, para que no se repitan ni se salten entre páginas
+        $movimientos = $query->orderBy('fecha', 'desc')->orderBy('id', 'desc')->paginate(20)->withQueryString();
         $sucursales = $this->sucursalesDisponibles();
 
+        // En la lista del filtro todas las ventas aparecen como una sola opción: "Venta"
         $motivosDisponibles = MovimientoInventario::select('motivo')
             ->whereNotNull('motivo')->where('motivo', '!=', '')
+            ->where('motivo', '!=', 'Venta')->where('motivo', 'not like', 'Venta %')
             ->distinct()->orderBy('motivo')->pluck('motivo');
+
+        $hayVentas = MovimientoInventario::where('motivo', 'Venta')->orWhere('motivo', 'like', 'Venta %')->exists();
+        if ($hayVentas) {
+            $motivosDisponibles = $motivosDisponibles->push('Venta')->sort(SORT_NATURAL | SORT_FLAG_CASE)->values();
+        }
 
         return view('inventario.historial', compact(
             'movimientos', 'sucursales', 'esAdmin',
