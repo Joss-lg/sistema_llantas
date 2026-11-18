@@ -1,135 +1,76 @@
-{{-- resources/views/clientes/partials/modal-nuevo-cliente.blade.php --}}
-<div x-show="modalNuevoCliente"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 backdrop-blur-none"
-     x-transition:enter-end="opacity-100 backdrop-blur-md"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100 backdrop-blur-md"
-     x-transition:leave-end="opacity-0 backdrop-blur-none"
-     class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 sm:p-6"
-     style="display: none;">
+{{-- Ventana para registrar un cliente nuevo. Se abre desde clientes/index (variable modalNuevoCliente). --}}
+@php
+    $camposCliente = [
+        ['nombre',         'Nombre completo *',  'text',  'sm:col-span-2'],
+        ['telefono',       'Teléfono',           'text',  ''],
+        ['email',          'Correo electrónico', 'email', ''],
+        ['rfc',            'RFC',                'text',  ''],
+        ['razon_social',   'Razón social',       'text',  ''],
+        ['uso_cfdi',       'Uso CFDI',           'text',  ''],
+        ['cp',             'Código postal',      'text',  ''],
+        ['regimen_fiscal', 'Régimen fiscal',     'text',  'sm:col-span-2'],
+    ];
+@endphp
 
-    <div x-show="modalNuevoCliente"
-         @click.away="modalNuevoCliente = false"
-         x-transition:enter="transition ease-out duration-300 delay-75"
-         x-transition:enter-start="opacity-0 translate-y-8 scale-95"
-         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
-         x-transition:leave-end="opacity-0 translate-y-4 scale-95"
-         class="bg-white dark:bg-zinc-900 rounded-3xl max-w-2xl w-full ring-1 ring-slate-900/5 dark:ring-white/10 shadow-2xl overflow-hidden transform transition-all flex flex-col max-h-full">
+<div x-show="modalNuevoCliente" x-cloak
+     class="fixed inset-0 !mt-0 z-50 overflow-y-auto bg-gray-900/50 flex items-start sm:items-center justify-center p-4">
 
-        {{-- Encabezado del Modal --}}
-        <div class="px-8 py-6 border-b border-slate-100 dark:border-zinc-800/60 flex justify-between items-center bg-white dark:bg-zinc-900 shrink-0">
-            <h3 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Registrar Nuevo <span class="text-[#818CF8]">Cliente</span>
-            </h3>
-            <button type="button" @click="modalNuevoCliente = false" class="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-all duration-200 focus:outline-none">
+    <div @click.away="modalNuevoCliente = false"
+         class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl max-w-2xl w-full my-8">
+
+        {{-- Encabezado --}}
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Registrar nuevo cliente</h3>
+            <button type="button" @click="modalNuevoCliente = false"
+                    class="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Cerrar">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
 
-        {{-- Formulario con scroll interno si es necesario --}}
-        <div class="overflow-y-auto custom-scrollbar p-8">
-            <form action="{{ route('clientes.store') }}" method="POST" class="space-y-6">
-                @csrf
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                    
-                    {{-- Input Nombre --}}
-                    <div class="md:col-span-2 group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Nombre Completo *</label>
-                        <input type="text" name="nombre" required value="{{ old('nombre') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
+        <form action="{{ route('clientes.store') }}" method="POST" class="p-6 space-y-5" x-data="{ enviando: false }" @submit="enviando = true">
+            @csrf
+            <input type="hidden" name="_form" value="nuevo">
 
-                    {{-- Input Teléfono --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Teléfono</label>
-                        <input type="text" name="telefono" value="{{ old('telefono') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                @foreach($camposCliente as [$campo, $etiqueta, $tipo, $ancho])
+                    <div class="{{ $ancho }}">
+                        <label for="nuevo_{{ $campo }}" class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">{{ $etiqueta }}</label>
+                        <input type="{{ $tipo }}" id="nuevo_{{ $campo }}" name="{{ $campo }}" value="{{ old('_form') === 'nuevo' ? old($campo) : '' }}" {{ $campo === 'nombre' ? 'required' : '' }}
+                               class="w-full px-3 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-sm font-medium rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
                     </div>
+                @endforeach
 
-                    {{-- Input Email --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Correo Electrónico</label>
-                        <input type="email" name="email" value="{{ old('email') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Input RFC --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">RFC</label>
-                        <input type="text" name="rfc" value="{{ old('rfc') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Input Razón Social --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Razón Social</label>
-                        <input type="text" name="razon_social" value="{{ old('razon_social') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Input Uso CFDI --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Uso CFDI</label>
-                        <input type="text" name="uso_cfdi" value="{{ old('uso_cfdi') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Input Código Postal --}}
-                    <div class="group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Código Postal</label>
-                        <input type="text" name="cp" value="{{ old('cp') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Input Régimen Fiscal --}}
-                    <div class="md:col-span-2 group">
-                        <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2 transition-colors group-focus-within:text-[#818CF8]">Régimen Fiscal</label>
-                        <input type="text" name="regimen_fiscal" value="{{ old('regimen_fiscal') }}"
-                               class="w-full px-4 py-3 bg-slate-50 dark:bg-zinc-950/50 border-0 ring-1 ring-inset ring-slate-200 dark:ring-white/10 rounded-xl text-sm font-medium text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#818CF8] focus:bg-white dark:focus:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-900 transition-all duration-300">
-                    </div>
-
-                    {{-- Checkbox VIP Premium --}}
-                    <div class="md:col-span-2 pt-2">
-                        <label for="is_vip_nuevo" class="flex items-center gap-3 cursor-pointer group w-fit">
-                            <div class="relative flex items-center justify-center">
-                                <input type="checkbox" name="is_vip" id="is_vip_nuevo" value="1" {{ old('is_vip') ? 'checked' : '' }}
-                                       class="peer appearance-none w-5 h-5 rounded-md border border-slate-300 dark:border-zinc-700 checked:bg-[#818CF8] checked:border-[#818CF8] focus:outline-none focus:ring-2 focus:ring-[#818CF8]/30 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-zinc-900 transition-all cursor-pointer">
-                                <svg class="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            </div>
-                            <span class="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-[#818CF8] dark:group-hover:text-[#818CF8] transition-colors">Marcar como cliente VIP</span>
-                        </label>
-                    </div>
+                <div class="sm:col-span-2">
+                    <label for="nuevo_is_vip" class="inline-flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="nuevo_is_vip" name="is_vip" value="1" {{ old('_form') === 'nuevo' && old('is_vip') ? 'checked' : '' }}
+                               class="w-5 h-5 rounded border-gray-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500/30">
+                        <span class="text-sm font-bold text-gray-700 dark:text-gray-200">Marcar como cliente VIP</span>
+                    </label>
                 </div>
+            </div>
 
-                {{-- Errores de Validación (Estilo Soft Error) --}}
-                @if ($errors->any())
-                    <div class="p-4 bg-rose-50/80 dark:bg-rose-900/10 backdrop-blur-md ring-1 ring-rose-500/20 rounded-xl text-rose-700 dark:text-rose-400 text-sm shadow-sm animate-[fadeUpIn_0.3s_ease-out]">
-                        <div class="flex items-start gap-3">
-                            <svg class="w-5 h-5 shrink-0 mt-0.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                            <ul class="list-none space-y-1 mt-0.5">
-                                @foreach ($errors->all() as $error)
-                                    <li class="font-bold">{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                @endif
-
-                {{-- Footer / Acciones --}}
-                <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 mt-2 border-t border-slate-100 dark:border-zinc-800/60 shrink-0">
-                    <button type="button" @click="modalNuevoCliente = false" class="px-6 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-all duration-300">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="group relative inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#818CF8] hover:bg-[#6366F1] text-white rounded-xl text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 shadow-[0_8px_20px_rgba(129,140,248,0.25)] hover:shadow-[0_12px_25px_rgba(129,140,248,0.35)] overflow-hidden">
-                        <!-- Brillo en el botón -->
-                        <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
-                        <span>Guardar Cliente</span>
-                    </button>
+            {{-- Errores de validación --}}
+            @if($errors->any() && old('_form') === 'nuevo')
+                <div class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm">
+                    <ul class="list-disc list-inside space-y-0.5 font-medium">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
-            </form>
-        </div>
+            @endif
+
+            {{-- Botones --}}
+            <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-100 dark:border-white/10">
+                <button type="button" @click="modalNuevoCliente = false"
+                        class="px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" :disabled="enviando"
+                        class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-bold text-sm rounded-xl transition-colors">
+                    Guardar cliente
+                </button>
+            </div>
+        </form>
     </div>
 </div>

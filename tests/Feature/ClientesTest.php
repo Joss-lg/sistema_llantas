@@ -259,4 +259,94 @@ class ClientesTest extends TestCase
             ->assertSee('Ana Lopez')
             ->assertSee($venta->folio);
     }
+
+    public function test_si_falla_la_validacion_al_crear_se_vuelve_a_abrir_la_ventana_con_lo_escrito(): void
+    {
+        $usuario = $this->usuarioDeClientes();
+
+        $this->actingAs($usuario)
+            ->from(route('clientes.index'))
+            ->followingRedirects()
+            ->post(route('clientes.store'), ['_form' => 'nuevo', 'nombre' => '', 'telefono' => '5500001111'])
+            ->assertOk()
+            ->assertSee('modalNuevoCliente: true', false)
+            ->assertSee('5500001111');
+
+        $this->assertSame(0, Cliente::count());
+    }
+
+    public function test_si_falla_la_validacion_al_editar_se_vuelve_a_abrir_la_ventana_de_editar(): void
+    {
+        $usuario = $this->usuarioDeClientes();
+        $cliente = $this->crearCliente(['nombre' => 'Nombre Viejo']);
+
+        $this->actingAs($usuario)
+            ->from(route('clientes.index'))
+            ->followingRedirects()
+            ->put(route('clientes.update', $cliente->id), [
+                '_form'       => 'editar',
+                '_cliente_id' => $cliente->id,
+                'nombre'      => '',
+                'rfc'         => 'ABCD800101AAA',
+            ])
+            ->assertOk()
+            ->assertSee('modalEditarCliente: true', false)
+            ->assertSee('ABCD800101AAA');
+
+        $this->assertSame('Nombre Viejo', $cliente->fresh()->nombre);
+    }
+
+    public function test_el_detalle_muestra_los_datos_fiscales_y_el_metodo_de_pago(): void
+    {
+        $sucursal = $this->crearSucursal('Chalco');
+        $usuario = $this->usuarioDeClientes($sucursal);
+        $cliente = $this->crearCliente([
+            'nombre'         => 'Ana Lopez',
+            'rfc'            => 'LOPA800101AAA',
+            'razon_social'   => 'Llantera Ana SA',
+            'uso_cfdi'       => 'G03',
+            'cp'             => '56600',
+            'regimen_fiscal' => '601',
+        ]);
+        $venta = $this->comprarComo($cliente, $usuario, 900);
+        $venta->metodo_pago = 'Transferencia';
+        $venta->save();
+
+        $this->actingAs($usuario)
+            ->get(route('clientes.show', $cliente->id))
+            ->assertOk()
+            ->assertSee('LOPA800101AAA')
+            ->assertSee('Llantera Ana SA')
+            ->assertSee('G03')
+            ->assertSee('56600')
+            ->assertSee('Transferencia');
+    }
+
+    public function test_el_detalle_calcula_el_ticket_promedio_del_cliente(): void
+    {
+        $sucursal = $this->crearSucursal('Chalco');
+        $usuario = $this->usuarioDeClientes($sucursal);
+        $cliente = $this->crearCliente(['nombre' => 'Ana Lopez']);
+
+        $this->comprarComo($cliente, $usuario, 1000);
+        $this->comprarComo($cliente, $usuario, 500);
+
+        // 1500 entre 2 compras = 750 por compra
+        $this->actingAs($usuario)
+            ->get(route('clientes.show', $cliente->id))
+            ->assertOk()
+            ->assertSee('$1,500.00')
+            ->assertSee('$750.00');
+    }
+
+    public function test_el_detalle_de_un_cliente_sin_compras_muestra_el_aviso(): void
+    {
+        $usuario = $this->usuarioDeClientes();
+        $cliente = $this->crearCliente(['nombre' => 'Sin Compras']);
+
+        $this->actingAs($usuario)
+            ->get(route('clientes.show', $cliente->id))
+            ->assertOk()
+            ->assertSee('Sin compras registradas');
+    }
 }

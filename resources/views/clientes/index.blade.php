@@ -6,11 +6,30 @@
 
 <style>[x-cloak] { display: none !important; }</style>
 
+@php
+    // Si falló la validación al EDITAR, se vuelve a abrir esa ventana con lo que la persona escribió
+    $editarDatos = session('clienteEditar');
+    if (old('_form') === 'editar') {
+        $editarDatos = [
+            'id'             => old('_cliente_id'),
+            'nombre'         => old('nombre'),
+            'telefono'       => old('telefono'),
+            'email'          => old('email'),
+            'rfc'            => old('rfc'),
+            'razon_social'   => old('razon_social'),
+            'uso_cfdi'       => old('uso_cfdi'),
+            'cp'             => old('cp'),
+            'regimen_fiscal' => old('regimen_fiscal'),
+            'is_vip'         => (bool) old('is_vip'),
+        ];
+    }
+@endphp
+
 <div class="max-w-7xl mx-auto space-y-6"
      x-data="{
-        modalNuevoCliente: @js((bool) session('abrirModalNuevo')),
-        modalEditarCliente: @js((bool) session('clienteEditar')),
-        clienteEditando: @js(session('clienteEditar')),
+        modalNuevoCliente: @js((bool) session('abrirModalNuevo') || old('_form') === 'nuevo'),
+        modalEditarCliente: @js(! empty($editarDatos)),
+        clienteEditando: @js($editarDatos),
         modalEliminarCliente: false,
         urlEliminar: '',
         nombreEliminar: ''
@@ -30,18 +49,6 @@
         <div class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm font-medium">
             <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             <span>{{ session('error') }}</span>
-        </div>
-    @endif
-
-    {{-- Errores al guardar un cliente (los formularios están en ventanas que se cierran al recargar) --}}
-    @if($errors->any())
-        <div class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm">
-            <p class="font-bold mb-1">No se pudo guardar el cliente:</p>
-            <ul class="list-disc list-inside space-y-0.5 font-medium">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
         </div>
     @endif
 
@@ -247,7 +254,7 @@
 
     {{-- VENTANA: eliminar cliente --}}
     <div x-show="modalEliminarCliente" x-cloak
-         class="fixed inset-0 z-[150] bg-gray-900/50 flex items-center justify-center p-4">
+         class="fixed inset-0 !mt-0 z-[150] bg-gray-900/50 flex items-center justify-center p-4">
         <div @click.away="modalEliminarCliente = false"
              class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl max-w-md w-full p-6">
             <div class="flex items-start gap-4">

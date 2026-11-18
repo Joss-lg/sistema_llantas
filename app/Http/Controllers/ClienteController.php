@@ -88,7 +88,7 @@ class ClienteController extends Controller
         $cliente->loadSum('ventas as compras_sum', 'total');
         $cliente->loadMax('ventas as ultima_compra', 'fecha');
         $cliente->load(['ventas' => function ($query) {
-            $query->latest('fecha');
+            $query->latest('fecha')->orderByDesc('id');
         }]);
 
         return view('clientes.show', compact('cliente'));
