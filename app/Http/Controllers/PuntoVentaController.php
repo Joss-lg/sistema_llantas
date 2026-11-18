@@ -325,7 +325,8 @@ class PuntoVentaController extends Controller
         $esAdmin = $this->usuarioEsAdmin();
         $sucursalUsuario = $this->sucursalDelUsuario();
 
-        $query = Venta::with(['detalles']);
+        // Consulta base con los filtros: sirve para la lista y para los totales
+        $query = Venta::query();
 
         if (!$esAdmin) {
             $query->where('sucursal_id', $sucursalUsuario);
@@ -344,10 +345,20 @@ class PuntoVentaController extends Controller
             ]);
         }
 
-        $ventas = $query->orderBy('fecha', 'desc')->paginate(15)->withQueryString();
+        // Totales de TODO el filtro (no solo de la página que se ve en pantalla)
+        $totalFiltrado = (float) (clone $query)->sum('total');
+        $piezasFiltradas = (int) VentaDetalle::whereIn('venta_id', (clone $query)->select('ventas.id'))->sum('cantidad');
+
+        // Sucursal y cajero se cargan juntos para no hacer una consulta extra por cada venta
+        $ventas = $query->with(['detalles', 'sucursal', 'user'])
+                        ->orderBy('fecha', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->paginate(15)
+                        ->withQueryString();
+
         $sucursales = $esAdmin ? $this->sucursalesDisponibles() : [];
 
-        return view('ventas.historial', compact('ventas', 'sucursales', 'esAdmin'));
+        return view('ventas.historial', compact('ventas', 'sucursales', 'esAdmin', 'totalFiltrado', 'piezasFiltradas'));
     }
 
     /**
