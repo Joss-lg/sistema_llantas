@@ -452,4 +452,211 @@ class InventarioMovimientosTest extends TestCase
             ->assertViewHas('movimientos', fn ($movs) => $movs->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all() === $esperados)
             ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 12);
     }
+
+    /* ============ HISTORIAL: totales, filtros y orden ============ */
+
+    /** Un movimiento guardado directo en la base; $datos cambia cualquier campo. */
+    private function movimientoCon(Producto $producto, Sucursal $sucursal, User $usuario, array $datos = []): MovimientoInventario
+    {
+        return MovimientoInventario::create(array_merge([
+            'producto_id' => $producto->id,
+            'sucursal_id' => $sucursal->id,
+            'usuario_id'  => $usuario->id,
+            'tipo'        => 'entrada',
+            'cantidad'    => 5,
+            'motivo'      => 'compra',
+            'fecha'       => now(),
+        ], $datos));
+    }
+
+    public function test_los_totales_del_historial_cuentan_todo_el_filtro_y_no_solo_la_pagina(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        // 25 entradas de 2 piezas y 1 salida de 3: la pagina trae 20, pero los totales deben contar las 26.
+        for ($i = 0; $i < 25; $i++) {
+            $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 2]);
+        }
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'cantidad' => 3, 'motivo' => 'Merma']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->total() === 26 && $movs->count() === 20)
+            ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 50)
+            ->assertViewHas('totalSalidas', fn ($total) => (int) $total === 3)
+            ->assertViewHas('totalMovimientos', fn ($total) => (int) $total === 26);
+    }
+
+    public function test_los_totales_del_historial_no_cambian_en_la_segunda_pagina(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        for ($i = 0; $i < 25; $i++) {
+            $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 2]);
+        }
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['page' => 2]))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->count() === 5)
+            ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 50)
+            ->assertViewHas('totalMovimientos', fn ($total) => (int) $total === 25);
+    }
+
+    public function test_el_filtro_de_tipo_solo_trae_ese_tipo_y_sus_totales(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 5]);
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 7]);
+        $salida = $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'cantidad' => 3, 'motivo' => 'Merma']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['tipo' => 'salida']))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->pluck('id')->map(fn ($id) => (int) $id)->all() === [$salida->id])
+            ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 0)
+            ->assertViewHas('totalSalidas', fn ($total) => (int) $total === 3)
+            ->assertViewHas('totalMovimientos', fn ($total) => (int) $total === 1);
+    }
+
+    public function test_los_movimientos_con_la_misma_fecha_salen_en_orden_estable(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $fecha = '2026-11-10 10:00:00';
+        $primero = $this->movimientoCon($producto, $chalco, $usuario, ['fecha' => $fecha]);
+        $segundo = $this->movimientoCon($producto, $chalco, $usuario, ['fecha' => $fecha]);
+        $tercero = $this->movimientoCon($producto, $chalco, $usuario, ['fecha' => $fecha]);
+
+        // Con la misma fecha, el id mas nuevo va primero.
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->pluck('id')->map(fn ($id) => (int) $id)->all() === [$tercero->id, $segundo->id, $primero->id]);
+    }
+
+    public function test_el_filtro_de_motivo_venta_junta_todas_las_ventas(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'cantidad' => 1, 'motivo' => 'Venta VNT-AAA-111']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'cantidad' => 2, 'motivo' => 'Venta VNT-BBB-222']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'cantidad' => 4, 'motivo' => 'Merma']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 9, 'motivo' => 'compra']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['motivo' => 'Venta']))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->total() === 2)
+            ->assertViewHas('totalSalidas', fn ($total) => (int) $total === 3)
+            ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 0);
+    }
+
+    public function test_la_lista_de_motivos_junta_las_ventas_en_una_sola_opcion(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'motivo' => 'Venta VNT-AAA-111']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'motivo' => 'Venta VNT-BBB-222']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'motivo' => 'Merma']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['motivo' => 'compra']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertViewHas('motivosDisponibles', fn ($motivos) => $motivos->all() === ['compra', 'Merma', 'Venta']);
+    }
+
+    public function test_sin_ventas_la_lista_de_motivos_no_trae_la_opcion_venta(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['motivo' => 'compra']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertViewHas('motivosDisponibles', fn ($motivos) => $motivos->all() === ['compra']);
+    }
+
+    public function test_un_motivo_normal_sigue_filtrando_exacto(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $compra = $this->movimientoCon($producto, $chalco, $usuario, ['motivo' => 'compra']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'motivo' => 'Merma']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['tipo' => 'salida', 'motivo' => 'Venta VNT-AAA-111']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['motivo' => 'compra']))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->pluck('id')->map(fn ($id) => (int) $id)->all() === [$compra->id]);
+    }
+
+    public function test_el_rango_de_fechas_del_historial_incluye_el_ultimo_dia_completo(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 1, 'fecha' => '2026-11-01 10:00:00']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 2, 'fecha' => '2026-11-15 23:30:00']);
+        $this->movimientoCon($producto, $chalco, $usuario, ['cantidad' => 4, 'fecha' => '2026-11-20 09:00:00']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['fecha_desde' => '2026-11-05', 'fecha_hasta' => '2026-11-15']))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->total() === 1)
+            ->assertViewHas('totalEntradas', fn ($total) => (int) $total === 2);
+    }
+
+    public function test_la_busqueda_por_producto_filtra_por_marca(): void
+    {
+        [$usuario, $chalco, $pirelli] = $this->escenario(10);
+        $michelin = $this->crearProducto(['marca' => 'MICHELIN', 'medida' => '195/65R15']);
+
+        $this->movimientoCon($pirelli, $chalco, $usuario);
+        $buscado = $this->movimientoCon($michelin, $chalco, $usuario);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial', ['q' => 'MICHELIN']))
+            ->assertOk()
+            ->assertViewHas('movimientos', fn ($movs) => $movs->pluck('id')->map(fn ($id) => (int) $id)->all() === [$buscado->id])
+            ->assertViewHas('totalMovimientos', fn ($total) => (int) $total === 1);
+    }
+
+    public function test_el_historial_carga_producto_sucursal_y_usuario_juntos(): void
+    {
+        [$usuario, $chalco, $producto] = $this->escenario(10);
+
+        $this->movimientoCon($producto, $chalco, $usuario);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertViewHas('movimientos', function ($movs) {
+                $mov = $movs->first();
+
+                return $mov->relationLoaded('producto')
+                    && $mov->relationLoaded('sucursal')
+                    && $mov->relationLoaded('usuario');
+            });
+    }
+
+    public function test_el_historial_muestra_quien_registro_el_movimiento_y_sus_observaciones(): void
+    {
+        $chalco = $this->crearSucursal('Chalco');
+        $usuario = $this->usuarioDeInventario($chalco);
+        $usuario->update(['name' => 'Pedro Prueba']);
+        $producto = $this->crearProducto();
+
+        $this->movimientoCon($producto, $chalco, $usuario, ['observaciones' => 'Caja dañada en bodega']);
+
+        $this->actingAs($usuario)
+            ->get(route('inventario.historial'))
+            ->assertOk()
+            ->assertSee('Pedro Prueba')
+            ->assertSee('Caja dañada en bodega')
+            ->assertSee('Compra');
+    }
 }
