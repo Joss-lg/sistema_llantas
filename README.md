@@ -313,6 +313,40 @@ Un usuario que no es Administrador General y no tiene sucursal asignada recibe u
 
 ---
 
+## Pruebas automáticas
+
+El proyecto tiene pruebas automáticas (PHPUnit) que revisan permisos, sucursales, caja, ventas, inventario, importación de Excel y reportes.
+
+### Antes de correrlas (una sola vez)
+
+Las pruebas usan su **propia base de datos**, separada de la real, para no tocar los datos del negocio. Hay que crearla vacía en MySQL:
+
+```sql
+CREATE DATABASE sistema_llantas_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+Se puede ejecutar desde phpMyAdmin (pestaña SQL) o desde la consola de MySQL. No hace falta crear tablas: las pruebas las crean solas.
+
+El servidor, el usuario y la contraseña de MySQL se toman del archivo `.env`. Solo cambia el nombre de la base, y eso lo fija `phpunit.xml`.
+
+### Correrlas
+
+```bash
+php artisan test
+```
+
+Para correr solo un archivo:
+
+```bash
+php artisan test --filter=ReportesTest
+```
+
+### Protección contra borrar la base real
+
+`tests/TestCase.php` revisa el nombre de la base antes de cada prueba y se detiene con un error si no termina en `_test`. Así es imposible que las pruebas toquen la base real por accidente.
+
+Las pruebas borran y vuelven a crear las tablas de `sistema_llantas_test`, por eso nunca se debe guardar nada importante en esa base.
+
 ## Comandos útiles del día a día
 
 ```bash
