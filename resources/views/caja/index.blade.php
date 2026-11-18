@@ -3,101 +3,71 @@
 @section('header_title', 'Flujo de Caja')
 
 @section('content')
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+{{-- Alpine oculta con x-cloak lo que aún no debe verse (ventanas emergentes) --}}
+<style>[x-cloak] { display: none !important; }</style>
 
-<style>
-    ::-webkit-scrollbar { display: none; width: 0; height: 0; }
-    * { -ms-overflow-style: none; scrollbar-width: none; }
-
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(25px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes popIn {
-        0%   { opacity: 0; transform: scale(0.9) translateY(10px); }
-        70%  { transform: scale(1.02); }
-        100% { opacity: 1; transform: scale(1) translateY(0); }
-    }
-    @keyframes softFloat {
-        0%, 100% { transform: translateY(0px); }
-        50%       { transform: translateY(-4px); }
-    }
-
-    .animate-fade-in-up { animation: fadeInUp 0.45s cubic-bezier(0.16,1,0.3,1) forwards; }
-    .animate-pop-in     { animation: popIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards; }
-    .animate-float      { animation: softFloat 3s infinite ease-in-out; }
-
-    .delay-100 { animation-delay: 100ms; }
-    .delay-200 { animation-delay: 200ms; }
-    .delay-300 { animation-delay: 300ms; }
-
-    /* Modal */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 50;
-        align-items: center;
-        justify-content: center;
-    }
-    .modal-overlay.active { display: flex; }
-</style>
-
-<div class="container mx-auto px-4 py-8">
+<div class="max-w-7xl mx-auto">
 
     {{-- MENSAJES DE ÉXITO / ERROR --}}
     @if(session('success'))
-        <div class="mb-4 px-5 py-3 bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-xl flex items-center gap-2 animate-fade-in-up">
-            <i class="fas fa-check-circle"></i> {{ session('success') }}
+        <div class="mb-4 px-5 py-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl flex items-center gap-2 text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ session('success') }}</span>
         </div>
     @endif
     @if(session('error'))
-        <div class="mb-4 px-5 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl flex items-center gap-2 animate-fade-in-up">
-            <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
+        <div class="mb-4 px-5 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-xl flex items-center gap-2 text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
-    @error('efectivo_contado')
-        <div class="mb-4 px-5 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-xl flex items-center gap-2 animate-fade-in-up">
-            <i class="fas fa-exclamation-circle"></i> {{ $message }}
+    @if($errors->any())
+        <div class="mb-4 px-5 py-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 rounded-xl flex items-start gap-2 text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                @foreach($errors->all() as $mensajeError)
+                    <p>{{ $mensajeError }}</p>
+                @endforeach
+            </div>
         </div>
-    @enderror
+    @endif
 
     {{-- ====================== --}}
     {{-- VISTA 1: ABRIR CAJA   --}}
     {{-- ====================== --}}
     @if(is_null($corteActual))
         <div class="flex justify-center items-center min-h-[60vh]">
-            <div class="w-full max-w-md bg-white dark:bg-[#15161A] rounded-2xl shadow-xl dark:shadow-black/40 border border-gray-100 dark:border-white/10 overflow-hidden animate-pop-in hover:-translate-y-1.5 hover:shadow-2xl transition-all duration-300">
+            <div class="w-full max-w-md bg-white dark:bg-[#15161A] rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 overflow-hidden">
 
-                <div class="bg-[#818CF8] text-white text-center py-6 relative overflow-hidden">
-                    <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-xl animate-pulse"></div>
-                    <h4 class="text-2xl font-bold mb-1 flex items-center justify-center">
-                        <i class="fas fa-cash-register mr-3 animate-bounce"></i> Apertura de Caja
-                    </h4>
-                    <p class="text-[#EEF2FF] text-sm mt-1">Ingresa el efectivo inicial para comenzar tu turno</p>
+                <div class="px-8 pt-8 pb-6 text-center border-b border-gray-100 dark:border-white/10">
+                    <div class="mx-auto mb-4 w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Apertura de Caja</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Ingresa el efectivo inicial para comenzar tu turno</p>
                 </div>
 
                 <div class="p-8">
                     {{-- Sucursal donde quedará el corte --}}
-                    <div class="mb-6 flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-[#1F2026] border border-gray-200 dark:border-gray-700 rounded-xl text-sm">
-                        <i class="fas fa-map-marker-alt text-[#818CF8]"></i>
+                    <div class="mb-6 flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 rounded-xl text-sm">
+                        <svg class="w-4 h-4 shrink-0 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         <span class="text-gray-500 dark:text-gray-400">Sucursal del turno:</span>
-                        <span class="font-bold text-gray-800 dark:text-gray-100">{{ $sucursalUsuario?->nombre ?? 'Sin sucursal asignada' }}</span>
+                        <span class="font-bold text-gray-900 dark:text-gray-100">{{ $sucursalUsuario?->nombre ?? 'Sin sucursal asignada' }}</span>
                     </div>
 
-                    <form action="{{ route('caja.abrir') }}" method="POST">
+                    <form action="{{ route('caja.abrir') }}" method="POST" x-data="{ enviando: false }" @submit="enviando = true">
                         @csrf
                         <div class="mb-6">
                             <label for="saldo_inicial" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Fondo de Caja (Efectivo)</label>
-                            <div class="flex items-stretch border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-[#818CF8]/30 focus-within:border-[#818CF8] transition-all duration-300 shadow-sm">
-                                <span class="bg-gray-50 dark:bg-[#1F2026] px-5 py-3 font-bold text-gray-500 dark:text-gray-400 border-r border-gray-300 dark:border-gray-700 flex items-center">$</span>
-                                <input type="number" step="0.01" min="0" class="w-full px-4 py-3 text-lg outline-none bg-transparent text-gray-800 dark:text-white placeholder-gray-400" name="saldo_inicial" id="saldo_inicial" placeholder="Ej. 1000.00" required autofocus>
+                            <div class="flex items-stretch border border-gray-300 dark:border-white/15 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition">
+                                <span class="bg-gray-50 dark:bg-white/[0.03] px-5 py-3 font-bold text-gray-500 dark:text-gray-400 border-r border-gray-300 dark:border-white/15 flex items-center">$</span>
+                                <input type="number" step="0.01" min="0" class="w-full px-4 py-3 text-lg outline-none bg-transparent text-gray-900 dark:text-white placeholder-gray-400" name="saldo_inicial" id="saldo_inicial" placeholder="Ej. 1000.00" required autofocus>
                             </div>
                         </div>
-                        <button type="submit" class="group w-full bg-[#818CF8] hover:bg-[#6366F1] text-white font-bold py-4 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-indigo-500/30 hover:-translate-y-0.5 text-lg flex items-center justify-center">
+                        <button type="submit" :disabled="enviando"
+                            class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 px-4 rounded-xl transition-colors text-base">
                             <span>Abrir Caja e Ir a Vender</span>
-                            <i class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform duration-300"></i>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                         </button>
                     </form>
                 </div>
@@ -108,371 +78,425 @@
     {{-- VISTA 2: CAJA ABIERTA    --}}
     {{-- ========================= --}}
     @else
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+        @php
+            $cantidadVentas = $ventasDelTurno->count();
+            $totalVendido   = $ventasDelTurno->sum('total');
+        @endphp
 
-            {{-- COLUMNA IZQUIERDA: RESUMEN --}}
-            <div class="md:col-span-4 lg:col-span-3">
-                <div class="bg-white dark:bg-[#15161A] shadow-sm hover:shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl h-full flex flex-col transition-all duration-300 animate-fade-in-up hover:-translate-y-1">
+        <div x-data="cajaTurno({ esperado: {{ round((float) $saldoEstimado, 2) }}, abrirCierre: @js($errors->has('efectivo_contado')), contado: @js(old('efectivo_contado', '')) })"
+             @keydown.escape.window="modal = null">
 
-                    <div class="bg-[#818CF8] text-white py-4 px-6 rounded-t-2xl">
-                        <h5 class="text-lg font-bold flex items-center m-0">
-                            <i class="fas fa-calculator mr-2"></i> Resumen de Turno
-                        </h5>
-                    </div>
+            {{-- DATOS DEL TURNO --}}
+            <div class="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Turno abierto
+                </span>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    <span class="font-semibold text-gray-700 dark:text-gray-200">Turno #{{ $corteActual->id }}</span>
+                    · {{ $corteActual->sucursal?->nombre ?? 'N/A' }}
+                    · Cajero: {{ Auth::user()->name }}
+                    · Apertura: {{ \Carbon\Carbon::parse($corteActual->fecha_apertura)->format('d/m/Y H:i') }}
+                </p>
+            </div>
 
-                    <div class="p-6 flex-1 flex flex-col">
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">ID Caja:</span>
-                            <span class="font-bold text-gray-800 dark:text-gray-100">#{{ $corteActual->id }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">Cajero:</span>
-                            <span class="font-bold text-gray-800 dark:text-gray-100">{{ Auth::user()->name }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">Sucursal:</span>
-                            <span class="font-bold text-gray-800 dark:text-gray-100 text-right">{{ $corteActual->sucursal?->nombre ?? 'N/A' }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-5 pb-4 border-b border-gray-100 dark:border-white/10 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">Apertura:</span>
-                            <span class="font-bold text-gray-800 dark:text-gray-100">{{ \Carbon\Carbon::parse($corteActual->fecha_apertura)->format('d/m/Y H:i') }}</span>
-                        </div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">Saldo Inicial:</span>
-                            <span class="font-bold bg-gray-100 dark:bg-[#202228] px-2.5 py-1 rounded-lg text-gray-700 dark:text-gray-300 text-sm">${{ number_format($corteActual->saldo_inicial, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">+ Ventas (Efectivo):</span>
-                            <span class="font-bold text-green-600 dark:text-green-400">+${{ number_format($totalVentas, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">+ Anticipos:</span>
-                            <span class="font-bold text-green-600 dark:text-green-400">+${{ number_format($totalAnticipos, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-100 dark:border-white/10 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">- Gastos:</span>
-                            <span class="font-bold text-red-600 dark:text-red-400">-${{ number_format($totalGastos, 2) }}</span>
+                {{-- COLUMNA IZQUIERDA: RESUMEN Y ACCIONES --}}
+                <div class="lg:col-span-4 xl:col-span-3">
+                    <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-6">
+
+                        <div class="text-center pb-6 border-b border-gray-100 dark:border-white/10">
+                            <span class="block text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Efectivo estimado en caja</span>
+                            <p class="mt-2 text-4xl font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">${{ number_format($saldoEstimado, 2) }}</p>
                         </div>
 
-                        <div class="text-center mt-2 mb-8 animate-float cursor-default">
-                            <span class="text-gray-400 dark:text-gray-500 font-bold text-xs tracking-wider uppercase block mb-1">SALDO ACTUAL ESTIMADO</span>
-                            <h2 class="font-extrabold text-[#818CF8] text-4xl">${{ number_format($saldoEstimado, 2) }}</h2>
-                        </div>
+                        <dl class="py-5 space-y-3 text-sm border-b border-gray-100 dark:border-white/10">
+                            <div class="flex justify-between items-center">
+                                <dt class="text-gray-500 dark:text-gray-400">Saldo inicial</dt>
+                                <dd class="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">${{ number_format($corteActual->saldo_inicial, 2) }}</dd>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <dt class="text-gray-500 dark:text-gray-400">+ Ventas (efectivo)</dt>
+                                <dd class="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">+${{ number_format($totalVentas, 2) }}</dd>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <dt class="text-gray-500 dark:text-gray-400">+ Anticipos</dt>
+                                <dd class="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">+${{ number_format($totalAnticipos, 2) }}</dd>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <dt class="text-gray-500 dark:text-gray-400">- Gastos</dt>
+                                <dd class="font-semibold text-red-600 dark:text-red-400 tabular-nums">-${{ number_format($totalGastos, 2) }}</dd>
+                            </div>
+                        </dl>
 
-                        <div class="space-y-3 mt-auto">
-                            <a href="{{ route('ventas.index') }}" class="group w-full flex items-center justify-center bg-[#818CF8] hover:bg-[#6366F1] text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1">
-                                <i class="fas fa-shopping-cart mr-2"></i> Ir al Punto de Venta
+                        <div class="pt-5 space-y-3">
+                            <a href="{{ route('ventas.index') }}"
+                               class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                Ir al Punto de Venta
                             </a>
-                            {{-- Botón Registrar Gasto --}}
-                            <button type="button" onclick="document.getElementById('modalGasto').classList.add('active')"
-                                class="group w-full flex items-center justify-center bg-red-50 dark:bg-red-950/30 border-2 border-red-100 dark:border-red-900/40 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-                                <i class="fas fa-minus-circle mr-2"></i> Registrar Gasto
+
+                            <button type="button" @click="abrir('gasto')"
+                                class="w-full flex items-center justify-center gap-2 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 font-semibold py-2.5 px-4 rounded-xl transition-colors">
+                                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Registrar Gasto
                             </button>
-                            {{-- Botón Registrar Anticipo --}}
-                            <button type="button" onclick="document.getElementById('modalAnticipo').classList.add('active')"
-                                class="group w-full flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-100 dark:border-amber-900/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-                                <i class="fas fa-plus-circle mr-2"></i> Registrar Anticipo
-                            </button>
-                            {{-- Cerrar Caja: abre la ventana para contar el efectivo --}}
-                            <button type="button" onclick="document.getElementById('modalCierre').classList.add('active'); document.getElementById('efectivo_contado').focus();"
-                                class="group w-full flex items-center justify-center bg-white dark:bg-[#15161A] border-2 border-red-100 dark:border-red-900/40 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 font-bold py-3 px-4 rounded-xl transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-                                <i class="fas fa-lock mr-2"></i> Cerrar Caja
+
+                            <button type="button" @click="abrir('anticipo')"
+                                class="w-full flex items-center justify-center gap-2 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 font-semibold py-2.5 px-4 rounded-xl transition-colors">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Registrar Anticipo
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            {{-- COLUMNA DERECHA: TABLAS --}}
-            <div class="md:col-span-8 lg:col-span-9 space-y-6">
-
-                {{-- VENTAS DEL TURNO --}}
-                <div class="bg-white dark:bg-[#15161A] shadow-sm hover:shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 animate-fade-in-up delay-100 hover:-translate-y-0.5">
-                    <div class="bg-[#818CF8] text-white py-4 px-6 flex justify-between items-center">
-                        <h5 class="text-lg font-bold flex items-center m-0">
-                            <i class="fas fa-shopping-basket mr-2"></i> Ventas del Turno
-                        </h5>
-                        <span class="bg-white dark:bg-[#1F2026] text-[#818CF8] text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-                            Total: ${{ number_format($totalVentas, 2) }}
-                        </span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-center whitespace-nowrap">
-                            <thead class="bg-gray-50 dark:bg-[#1B1D22] border-b border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
-                                <tr>
-                                    <th class="px-6 py-4">FECHA</th>
-                                    <th class="px-6 py-4">TOTAL</th>
-                                    <th class="px-6 py-4">MÉTODO</th>
-                                    <th class="px-6 py-4">ACCIÓN</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
-                                @forelse($ventasDelTurno as $venta)
-                                <tr class="hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all duration-200">
-                                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 font-bold text-gray-800 dark:text-white">${{ number_format($venta->total, 2) }}</td>
-                                    @php
-                                        $metodo = $venta->metodo_pago ?? 'Efectivo';
-                                        $estiloMetodo = match ($metodo) {
-                                            'Tarjeta'       => ['bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/50', 'fa-credit-card'],
-                                            'Transferencia' => ['bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800/50', 'fa-exchange-alt'],
-                                            default         => ['bg-green-50 dark:bg-green-950/40 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50', 'fa-money-bill-wave'],
-                                        };
-                                    @endphp
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center {{ $estiloMetodo[0] }} border px-3 py-1 rounded-full text-xs font-bold">
-                                            <i class="fas {{ $estiloMetodo[1] }} mr-1.5"></i> {{ $metodo }}
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <a href="{{ route('ventas.ticket', $venta->id) }}" onclick="event.preventDefault(); imprimirTicket(this.href);"
-                                            class="inline-flex items-center justify-center w-9 h-9 rounded-full text-[#818CF8] hover:bg-[#818CF8] hover:text-white transition-all duration-300 hover:scale-125" title="Reimprimir Ticket">
-                                            <i class="fas fa-print"></i>
-                                        </a>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
-                                        No hay ventas registradas en este turno aún.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {{-- ANTICIPOS --}}
-                <div class="bg-white dark:bg-[#15161A] shadow-sm hover:shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 animate-fade-in-up delay-200 hover:-translate-y-0.5">
-                    <div class="bg-[#D97706] text-white py-4 px-6 flex justify-between items-center">
-                        <h5 class="text-lg font-bold flex items-center m-0">
-                            <i class="fas fa-clock mr-2"></i> Anticipos / Apartados
-                        </h5>
-                        <span class="bg-white dark:bg-[#1F2026] text-[#92400E] dark:text-[#FBBF24] text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-                            Total: ${{ number_format($totalAnticipos, 2) }}
-                        </span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-center whitespace-nowrap">
-                            <thead class="bg-gray-50 dark:bg-[#1B1D22] border-b border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
-                                <tr>
-                                    <th class="px-6 py-4">FECHA</th>
-                                    <th class="px-6 py-4">CONCEPTO</th>
-                                    <th class="px-6 py-4">MONTO</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
-                                @forelse($anticiposDelTurno as $anticipo)
-                                <tr class="hover:bg-amber-50/50 dark:hover:bg-amber-950/20 transition-all duration-200">
-                                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($anticipo->created_at)->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 text-gray-800 dark:text-white">{{ $anticipo->concepto }}</td>
-                                    <td class="px-6 py-4 font-bold text-green-600 dark:text-green-400">+${{ number_format($anticipo->monto, 2) }}</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
-                                        No hay anticipos registrados en este turno.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {{-- GASTOS --}}
-                <div class="bg-white dark:bg-[#15161A] shadow-sm hover:shadow-xl border border-gray-100 dark:border-white/10 rounded-2xl overflow-hidden transition-all duration-300 animate-fade-in-up delay-300 hover:-translate-y-0.5">
-                    <div class="bg-[#EF4444] text-white py-4 px-6 flex justify-between items-center">
-                        <h5 class="text-lg font-bold flex items-center m-0">
-                            <i class="fas fa-chart-line mr-2"></i> Gastos y Salidas
-                        </h5>
-                        <span class="bg-white dark:bg-[#1F2026] text-[#991B1B] dark:text-[#FCA5A5] text-sm font-bold px-4 py-1.5 rounded-full shadow-sm">
-                            Total: ${{ number_format($totalGastos, 2) }}
-                        </span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-center whitespace-nowrap">
-                            <thead class="bg-gray-50 dark:bg-[#1B1D22] border-b border-gray-100 dark:border-white/10 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
-                                <tr>
-                                    <th class="px-6 py-4">FECHA</th>
-                                    <th class="px-6 py-4">CONCEPTO</th>
-                                    <th class="px-6 py-4">MONTO</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
-                                @forelse($gastosDelTurno as $gasto)
-                                <tr class="hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-all duration-200">
-                                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
-                                    <td class="px-6 py-4 text-gray-800 dark:text-white">{{ $gasto->concepto }}</td>
-                                    <td class="px-6 py-4 font-bold text-red-600 dark:text-red-400">-${{ number_format($gasto->monto, 2) }}</td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
-                                        No hay gastos registrados en este turno.
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>{{-- fin columna derecha --}}
-        </div>{{-- fin grid --}}
-
-        {{-- ===================== --}}
-        {{-- MODAL: GASTO          --}}
-        {{-- ===================== --}}
-        <div id="modalGasto" class="modal-overlay" onclick="if(event.target===this) this.classList.remove('active')">
-            <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-pop-in">
-                <div class="bg-[#EF4444] text-white py-4 px-6 flex justify-between items-center">
-                    <h5 class="text-lg font-bold flex items-center m-0">
-                        <i class="fas fa-minus-circle mr-2"></i> Registrar Gasto / Salida
-                    </h5>
-                    <button type="button" onclick="document.getElementById('modalGasto').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                <form action="{{ route('caja.gasto.store') }}" method="POST" class="p-6 space-y-4">
-                    @csrf
-                    <div>
-                        <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Concepto</label>
-                        <input type="text" name="concepto" placeholder="Ej. Compra de refacciones" required
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl outline-none bg-transparent text-gray-800 dark:text-white focus:ring-4 focus:ring-red-300/30 focus:border-red-400 transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Monto</label>
-                        <div class="flex items-stretch border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-red-300/30 focus-within:border-red-400 transition-all">
-                            <span class="bg-gray-50 dark:bg-[#1F2026] px-4 py-3 font-bold text-gray-500 border-r border-gray-300 dark:border-gray-700 flex items-center">$</span>
-                            <input type="number" step="0.01" min="0.01" name="monto" placeholder="0.00" required
-                                class="w-full px-4 py-3 outline-none bg-transparent text-gray-800 dark:text-white">
+                        {{-- Cerrar Caja: separada del resto porque termina el turno --}}
+                        <div class="mt-5 pt-5 border-t border-gray-100 dark:border-white/10">
+                            <button type="button" @click="abrir('cierre')"
+                                class="w-full flex items-center justify-center gap-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 font-bold py-2.5 px-4 rounded-xl transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                Cerrar Caja
+                            </button>
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/25">
-                        <i class="fas fa-save mr-2"></i> Guardar Gasto
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        {{-- ===================== --}}
-        {{-- MODAL: ANTICIPO       --}}
-        {{-- ===================== --}}
-        <div id="modalAnticipo" class="modal-overlay" onclick="if(event.target===this) this.classList.remove('active')">
-            <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-pop-in">
-                <div class="bg-[#D97706] text-white py-4 px-6 flex justify-between items-center">
-                    <h5 class="text-lg font-bold flex items-center m-0">
-                        <i class="fas fa-plus-circle mr-2"></i> Registrar Anticipo / Apartado
-                    </h5>
-                    <button type="button" onclick="document.getElementById('modalAnticipo').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
                 </div>
-                <form action="{{ route('caja.anticipo.store') }}" method="POST" class="p-6 space-y-4">
-                    @csrf
-                    <div>
-                        <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Concepto</label>
-                        <input type="text" name="concepto" placeholder="Ej. Anticipo de cliente Juan" required
-                            class="w-full px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-xl outline-none bg-transparent text-gray-800 dark:text-white focus:ring-4 focus:ring-amber-300/30 focus:border-amber-400 transition-all">
-                    </div>
-                    <div>
-                        <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Monto</label>
-                        <div class="flex items-stretch border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-amber-300/30 focus-within:border-amber-400 transition-all">
-                            <span class="bg-gray-50 dark:bg-[#1F2026] px-4 py-3 font-bold text-gray-500 border-r border-gray-300 dark:border-gray-700 flex items-center">$</span>
-                            <input type="number" step="0.01" min="0.01" name="monto" placeholder="0.00" required
-                                class="w-full px-4 py-3 outline-none bg-transparent text-gray-800 dark:text-white">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-[#D97706] hover:bg-amber-700 text-white font-bold py-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-500/25">
-                        <i class="fas fa-save mr-2"></i> Guardar Anticipo
-                    </button>
-                </form>
-            </div>
-        </div>
 
-        {{-- ===================== --}}
-        {{-- MODAL: CERRAR CAJA    --}}
-        {{-- ===================== --}}
-        <div id="modalCierre" class="modal-overlay" onclick="if(event.target===this) this.classList.remove('active')">
-            <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden animate-pop-in">
-                <div class="bg-[#EF4444] text-white py-4 px-6 flex justify-between items-center">
-                    <h5 class="text-lg font-bold flex items-center m-0">
-                        <i class="fas fa-lock mr-2"></i> Cerrar Caja
-                    </h5>
-                    <button type="button" onclick="document.getElementById('modalCierre').classList.remove('active')" class="text-white/80 hover:text-white transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+                {{-- COLUMNA DERECHA: TABLAS --}}
+                <div class="lg:col-span-8 xl:col-span-9 space-y-6">
+
+                    {{-- VENTAS DEL TURNO --}}
+                    <section class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-gray-900 dark:text-white leading-tight">Ventas del Turno</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ $cantidadVentas }} {{ $cantidadVentas === 1 ? 'venta' : 'ventas' }} · Total vendido ${{ number_format($totalVendido, 2) }} (todos los métodos)
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="shrink-0 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-sm font-bold tabular-nums">
+                                Efectivo: ${{ number_format($totalVentas, 2) }}
+                            </span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="bg-gray-50 dark:bg-white/[0.03] text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3">Fecha</th>
+                                        <th class="px-6 py-3 text-right">Total</th>
+                                        <th class="px-6 py-3">Método</th>
+                                        <th class="px-6 py-3 text-right">Ticket</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
+                                    @forelse($ventasDelTurno as $venta)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+                                        <td class="px-6 py-3.5 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($venta->fecha)->format('d/m/Y H:i') }}</td>
+                                        <td class="px-6 py-3.5 text-right font-bold text-gray-900 dark:text-white tabular-nums">${{ number_format($venta->total, 2) }}</td>
+                                        @php
+                                            $metodo = $venta->metodo_pago ?? 'Efectivo';
+                                            $claseMetodo = match ($metodo) {
+                                                'Tarjeta'       => 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/50',
+                                                'Transferencia' => 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800/50',
+                                                default         => 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
+                                            };
+                                        @endphp
+                                        <td class="px-6 py-3.5">
+                                            <span class="inline-flex items-center border px-3 py-0.5 rounded-full text-xs font-bold {{ $claseMetodo }}">{{ $metodo }}</span>
+                                        </td>
+                                        <td class="px-6 py-3.5 text-right">
+                                            <a href="{{ route('ventas.ticket', $venta->id) }}" onclick="event.preventDefault(); imprimirTicket(this.href);"
+                                               class="inline-flex items-center justify-center w-9 h-9 rounded-full text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors" title="Reimprimir Ticket">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                                            No hay ventas registradas en este turno aún.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    {{-- ANTICIPOS --}}
+                    <section class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-gray-900 dark:text-white leading-tight">Anticipos / Apartados</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Dinero que entró al cajón sin ser una venta</p>
+                                </div>
+                            </div>
+                            <span class="shrink-0 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 text-sm font-bold tabular-nums">
+                                Total: ${{ number_format($totalAnticipos, 2) }}
+                            </span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="bg-gray-50 dark:bg-white/[0.03] text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3">Fecha</th>
+                                        <th class="px-6 py-3">Concepto</th>
+                                        <th class="px-6 py-3 text-right">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
+                                    @forelse($anticiposDelTurno as $anticipo)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+                                        <td class="px-6 py-3.5 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($anticipo->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td class="px-6 py-3.5 text-gray-800 dark:text-white whitespace-normal">{{ $anticipo->concepto }}</td>
+                                        <td class="px-6 py-3.5 text-right font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">+${{ number_format($anticipo->monto, 2) }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                                            No hay anticipos registrados en este turno.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    {{-- GASTOS --}}
+                    <section class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <span class="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"></path></svg>
+                                </span>
+                                <div class="min-w-0">
+                                    <h3 class="font-bold text-gray-900 dark:text-white leading-tight">Gastos y Salidas</h3>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Dinero que salió del cajón</p>
+                                </div>
+                            </div>
+                            <span class="shrink-0 px-3 py-1 rounded-full bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 text-sm font-bold tabular-nums">
+                                Total: ${{ number_format($totalGastos, 2) }}
+                            </span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left whitespace-nowrap">
+                                <thead class="bg-gray-50 dark:bg-white/[0.03] text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3">Fecha</th>
+                                        <th class="px-6 py-3">Concepto</th>
+                                        <th class="px-6 py-3 text-right">Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-white/10 text-sm">
+                                    @forelse($gastosDelTurno as $gasto)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+                                        <td class="px-6 py-3.5 text-gray-600 dark:text-gray-300">{{ \Carbon\Carbon::parse($gasto->created_at)->format('d/m/Y H:i') }}</td>
+                                        <td class="px-6 py-3.5 text-gray-800 dark:text-white whitespace-normal">{{ $gasto->concepto }}</td>
+                                        <td class="px-6 py-3.5 text-right font-bold text-red-600 dark:text-red-400 tabular-nums">-${{ number_format($gasto->monto, 2) }}</td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-12 text-center text-gray-400 dark:text-gray-500">
+                                            No hay gastos registrados en este turno.
+                                        </td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                </div>{{-- fin columna derecha --}}
+            </div>{{-- fin grid --}}
+
+            {{-- ===================== --}}
+            {{-- VENTANA: GASTO        --}}
+            {{-- ===================== --}}
+            <div x-show="modal === 'gasto'" x-cloak x-transition.opacity
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                 role="dialog" aria-modal="true" aria-labelledby="titulo-gasto"
+                 @click.self="modal = null">
+                <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/10">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                        <h3 id="titulo-gasto" class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <span class="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </span>
+                            Registrar Gasto / Salida
+                        </h3>
+                        <button type="button" @click="modal = null" class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors" aria-label="Cerrar ventana">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <form action="{{ route('caja.gasto.store') }}" method="POST" class="p-6 space-y-4" @submit="enviando = true">
+                        @csrf
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Concepto</label>
+                            <input type="text" name="concepto" placeholder="Ej. Compra de refacciones" required maxlength="255"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl outline-none bg-transparent text-gray-900 dark:text-white focus:ring-4 focus:ring-red-500/20 focus:border-red-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Monto</label>
+                            <div class="flex items-stretch border border-gray-300 dark:border-white/15 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-red-500/20 focus-within:border-red-500 transition">
+                                <span class="bg-gray-50 dark:bg-white/[0.03] px-4 py-3 font-bold text-gray-500 dark:text-gray-400 border-r border-gray-300 dark:border-white/15 flex items-center">$</span>
+                                <input type="number" step="0.01" min="0.01" name="monto" placeholder="0.00" required
+                                    class="w-full px-4 py-3 outline-none bg-transparent text-gray-900 dark:text-white">
+                            </div>
+                        </div>
+                        <button type="submit" :disabled="enviando"
+                            class="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors">
+                            Guardar Gasto
+                        </button>
+                    </form>
                 </div>
-                <form action="{{ route('caja.cerrar') }}" method="POST" class="p-6 space-y-4">
-                    @csrf
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Cuenta el efectivo que hay en el cajón y captúralo. Al cerrar ya no podrás hacer más ventas en este turno.
-                    </p>
-
-                    <div class="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-[#1F2026]">
-                        <span class="text-gray-500 dark:text-gray-400 text-sm">Efectivo esperado:</span>
-                        <span class="font-extrabold text-[#818CF8] text-lg">${{ number_format($saldoEstimado, 2) }}</span>
-                    </div>
-
-                    <div>
-                        <label for="efectivo_contado" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Efectivo contado</label>
-                        <div class="flex items-stretch border border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-red-300/30 focus-within:border-red-400 transition-all">
-                            <span class="bg-gray-50 dark:bg-[#1F2026] px-4 py-3 font-bold text-gray-500 border-r border-gray-300 dark:border-gray-700 flex items-center">$</span>
-                            <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado" placeholder="0.00" required
-                                value="{{ old('efectivo_contado') }}"
-                                class="w-full px-4 py-3 outline-none bg-transparent text-gray-800 dark:text-white">
-                        </div>
-                    </div>
-
-                    {{-- Diferencia en vivo --}}
-                    <div id="cajaDiferencia" class="hidden p-3 rounded-xl text-sm font-bold text-center"></div>
-
-                    <button type="submit" class="w-full bg-[#EF4444] hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-red-500/25">
-                        <i class="fas fa-lock mr-2"></i> Confirmar y Cerrar Caja
-                    </button>
-                </form>
             </div>
-        </div>
+
+            {{-- ===================== --}}
+            {{-- VENTANA: ANTICIPO     --}}
+            {{-- ===================== --}}
+            <div x-show="modal === 'anticipo'" x-cloak x-transition.opacity
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                 role="dialog" aria-modal="true" aria-labelledby="titulo-anticipo"
+                 @click.self="modal = null">
+                <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/10">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                        <h3 id="titulo-anticipo" class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </span>
+                            Registrar Anticipo / Apartado
+                        </h3>
+                        <button type="button" @click="modal = null" class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors" aria-label="Cerrar ventana">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <form action="{{ route('caja.anticipo.store') }}" method="POST" class="p-6 space-y-4" @submit="enviando = true">
+                        @csrf
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Concepto</label>
+                            <input type="text" name="concepto" placeholder="Ej. Anticipo de cliente Juan" required maxlength="255"
+                                class="w-full px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl outline-none bg-transparent text-gray-900 dark:text-white focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Monto</label>
+                            <div class="flex items-stretch border border-gray-300 dark:border-white/15 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition">
+                                <span class="bg-gray-50 dark:bg-white/[0.03] px-4 py-3 font-bold text-gray-500 dark:text-gray-400 border-r border-gray-300 dark:border-white/15 flex items-center">$</span>
+                                <input type="number" step="0.01" min="0.01" name="monto" placeholder="0.00" required
+                                    class="w-full px-4 py-3 outline-none bg-transparent text-gray-900 dark:text-white">
+                            </div>
+                        </div>
+                        <button type="submit" :disabled="enviando"
+                            class="w-full bg-amber-700 hover:bg-amber-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors">
+                            Guardar Anticipo
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            {{-- ===================== --}}
+            {{-- VENTANA: CERRAR CAJA  --}}
+            {{-- ===================== --}}
+            <div x-show="modal === 'cierre'" x-cloak x-transition.opacity
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                 role="dialog" aria-modal="true" aria-labelledby="titulo-cierre"
+                 @click.self="modal = null">
+                <div class="bg-white dark:bg-[#15161A] rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-transparent dark:border-white/10">
+                    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
+                        <h3 id="titulo-cierre" class="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+                            <span class="w-9 h-9 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            </span>
+                            Cerrar Caja
+                        </h3>
+                        <button type="button" @click="modal = null" class="text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors" aria-label="Cerrar ventana">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <form action="{{ route('caja.cerrar') }}" method="POST" class="p-6 space-y-4" @submit="enviando = true">
+                        @csrf
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            Cuenta el efectivo que hay en el cajón y captúralo. Al cerrar ya no podrás hacer más ventas en este turno.
+                        </p>
+
+                        <div class="flex justify-between items-center p-3 rounded-xl bg-gray-50 dark:bg-white/[0.03]">
+                            <span class="text-gray-500 dark:text-gray-400 text-sm">Efectivo esperado:</span>
+                            <span class="font-extrabold text-indigo-600 dark:text-indigo-400 text-lg tabular-nums">${{ number_format($saldoEstimado, 2) }}</span>
+                        </div>
+
+                        <div>
+                            <label for="efectivo_contado" class="block text-gray-700 dark:text-gray-200 font-bold mb-2">Efectivo contado</label>
+                            <div class="flex items-stretch border border-gray-300 dark:border-white/15 rounded-xl overflow-hidden focus-within:ring-4 focus-within:ring-red-500/20 focus-within:border-red-500 transition">
+                                <span class="bg-gray-50 dark:bg-white/[0.03] px-4 py-3 font-bold text-gray-500 dark:text-gray-400 border-r border-gray-300 dark:border-white/15 flex items-center">$</span>
+                                <input type="number" step="0.01" min="0" name="efectivo_contado" id="efectivo_contado" placeholder="0.00" required
+                                    x-ref="contado" x-model="contado"
+                                    class="w-full px-4 py-3 outline-none bg-transparent text-gray-900 dark:text-white">
+                            </div>
+                        </div>
+
+                        {{-- Diferencia en vivo --}}
+                        <div x-show="diferencia !== null" x-cloak
+                             class="p-3 rounded-xl text-sm font-bold text-center"
+                             :class="diferencia > 0
+                                ? 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                                : (diferencia < 0
+                                    ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400'
+                                    : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400')"
+                             x-text="textoDiferencia"></div>
+
+                        <button type="submit" :disabled="enviando"
+                            class="w-full bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-colors">
+                            Confirmar y Cerrar Caja
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>{{-- fin x-data --}}
 
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var esperado = {{ round((float) $saldoEstimado, 2) }};
-                var campo = document.getElementById('efectivo_contado');
-                var caja = document.getElementById('cajaDiferencia');
+            document.addEventListener('alpine:init', function () {
+                Alpine.data('cajaTurno', function (config) {
+                    return {
+                        modal: config.abrirCierre ? 'cierre' : null,
+                        esperado: config.esperado,
+                        contado: config.contado,
+                        enviando: false,
 
-                function dinero(n) {
-                    return '$' + Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
+                        abrir: function (nombre) {
+                            this.modal = nombre;
+                            if (nombre === 'cierre') {
+                                var self = this;
+                                this.$nextTick(function () { self.$refs.contado.focus(); });
+                            }
+                        },
 
-                function actualizar() {
-                    if (campo.value === '') {
-                        caja.classList.add('hidden');
-                        return;
-                    }
+                        // contado - esperado: positivo = sobrante, negativo = faltante
+                        get diferencia() {
+                            if (this.contado === '' || this.contado === null) { return null; }
+                            var numero = parseFloat(this.contado);
+                            if (isNaN(numero)) { return null; }
+                            return Math.round((numero - this.esperado) * 100) / 100;
+                        },
 
-                    var diferencia = Math.round((parseFloat(campo.value) - esperado) * 100) / 100;
-                    caja.classList.remove('hidden');
-                    caja.className = 'p-3 rounded-xl text-sm font-bold text-center ';
-
-                    if (isNaN(diferencia)) {
-                        caja.classList.add('hidden');
-                    } else if (diferencia > 0) {
-                        caja.className += 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400';
-                        caja.textContent = 'Sobrante de ' + dinero(diferencia);
-                    } else if (diferencia < 0) {
-                        caja.className += 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400';
-                        caja.textContent = 'Faltante de ' + dinero(diferencia);
-                    } else {
-                        caja.className += 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400';
-                        caja.textContent = 'La caja cuadra exacto';
-                    }
-                }
-
-                campo.addEventListener('input', actualizar);
-                actualizar();
+                        get textoDiferencia() {
+                            var d = this.diferencia;
+                            if (d === null) { return ''; }
+                            var monto = '$' + Math.abs(d).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            if (d > 0) { return 'Sobrante de ' + monto; }
+                            if (d < 0) { return 'Faltante de ' + monto; }
+                            return 'La caja cuadra exacto';
+                        }
+                    };
+                });
             });
         </script>
 
