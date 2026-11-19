@@ -1,71 +1,104 @@
 @extends('layouts.app')
 
-@section('header_title', 'Reportes y Estadísticas')
+@section('header_title', 'Reportes')
 
 @section('content')
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 
-<!-- Flatpickr: selector de calendario para rango de fechas -->
+{{-- Flatpickr: calendario para elegir el rango de fechas --}}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.js"></script>
 
 <style>
-    [x-cloak] { display: none !important; }
-
-    /* =========================================================
-       FLATPICKR — estilo de marca + soporte modo oscuro
-       ========================================================= */
-    .flatpickr-calendar {
-        border-radius: 16px;
-        box-shadow: 0 20px 40px -10px rgba(0,0,0,0.18);
-        border: 1px solid #e5e7eb;
-        font-family: inherit;
-    }
+    /* Calendario con los colores del sistema (y modo oscuro) */
+    .flatpickr-calendar { border-radius: 16px; border: 1px solid #e5e7eb; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.18); font-family: inherit; }
     .flatpickr-day.selected,
     .flatpickr-day.startRange,
-    .flatpickr-day.endRange { background: #818CF8 !important; border-color: #818CF8 !important; }
+    .flatpickr-day.endRange { background: #4F46E5 !important; border-color: #4F46E5 !important; }
     .flatpickr-day.inRange {
-        background: rgba(129, 140, 248, 0.15) !important;
-        border-color: rgba(129, 140, 248, 0.15) !important;
-        box-shadow: -5px 0 0 rgba(129, 140, 248, 0.15), 5px 0 0 rgba(129, 140, 248, 0.15);
+        background: rgba(79, 70, 229, 0.12) !important;
+        border-color: rgba(79, 70, 229, 0.12) !important;
+        box-shadow: -5px 0 0 rgba(79, 70, 229, 0.12), 5px 0 0 rgba(79, 70, 229, 0.12);
     }
-    .flatpickr-day:hover { background: #e0e7ff; }
-    html.dark .flatpickr-calendar { background: #151515; border-color: #2e2e2e; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5); }
+    html.dark .flatpickr-calendar { background: #15161A; border-color: rgba(255,255,255,0.1); }
     html.dark .flatpickr-day { color: #d4d4d4; }
     html.dark .flatpickr-day.flatpickr-disabled,
     html.dark .flatpickr-day.prevMonthDay,
     html.dark .flatpickr-day.nextMonthDay { color: #525252; }
-    html.dark .flatpickr-day:hover { background: #27272a; }
     html.dark .flatpickr-months,
     html.dark .flatpickr-weekdays,
-    html.dark span.flatpickr-weekday { background: #151515; color: #e5e5e5; }
+    html.dark span.flatpickr-weekday { background: #15161A; color: #e5e5e5; }
     html.dark .flatpickr-current-month .cur-month,
     html.dark .flatpickr-current-month input.cur-year { color: #e5e5e5; }
     html.dark .flatpickr-prev-month svg,
     html.dark .flatpickr-next-month svg { fill: #a3a3a3; }
 </style>
 
-<div class="max-w-7xl mx-auto space-y-6 transition-colors duration-500"
-     x-data="{ cargado: false }"
-     x-init="setTimeout(() => cargado = true, 100);">
+@php
+    $dinero = fn ($n) => '$' . number_format((float) $n, 2);
 
-    {{-- Barra de periodo + sucursal + exportar --}}
+    // Cómo se muestra el cambio contra el periodo anterior
+    $variacion = function (float $p): array {
+        if ($p > 0) {
+            return ['text-emerald-600 dark:text-emerald-400', '↑ ' . rtrim(rtrim(number_format($p, 1), '0'), '.') . '% más'];
+        }
+        if ($p < 0) {
+            return ['text-red-600 dark:text-red-400', '↓ ' . rtrim(rtrim(number_format(abs($p), 1), '0'), '.') . '% menos'];
+        }
+
+        return ['text-gray-500 dark:text-gray-400', 'Sin cambio'];
+    };
+
+    $tarjetas = [
+        [
+            'titulo'   => 'Ingresos totales',
+            'valor'    => $dinero($ingresosTotales),
+            'pct'      => $porcentajeIngresos,
+            'burbuja'  => 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+            'icono'    => 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+            'nota'     => null,
+        ],
+        [
+            'titulo'   => 'Ventas realizadas',
+            'valor'    => number_format($ventasRealizadas),
+            'pct'      => $porcentajeVentas,
+            'burbuja'  => 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+            'icono'    => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
+            'nota'     => null,
+        ],
+        [
+            'titulo'   => 'Clientes nuevos',
+            'valor'    => number_format($clientesNuevos),
+            'pct'      => $porcentajeClientes,
+            'burbuja'  => 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400',
+            'icono'    => 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z',
+            'nota'     => 'De todo el negocio, no se separa por sucursal.',
+        ],
+    ];
+@endphp
+
+<div class="max-w-7xl mx-auto space-y-6">
+
+    {{-- Filtros: periodo, sucursal y exportar --}}
     <form id="filtros-reporte" method="GET" action="{{ route('reportes.index') }}"
-          class="bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-sm transform transition-all duration-700 delay-200 hover:shadow-md"
-          :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'">
+          class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
         {{-- Conserva el periodo al cambiar de sucursal. Va ANTES de los botones de periodo: si se pulsa uno, el botón gana. --}}
         <input type="hidden" name="periodo" value="{{ $periodo }}">
 
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:w-auto">
-            <span class="text-[11px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wide">Periodo</span>
-            <div class="flex items-center bg-gray-100 dark:bg-[#0A0A0A] rounded-xl p-1 w-full sm:w-auto overflow-x-auto border dark:border-neutral-800">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Periodo</span>
+
+            <div class="flex items-center bg-gray-100 dark:bg-white/5 rounded-xl p-1 overflow-x-auto">
                 @foreach(['hoy' => 'Hoy', 'semana' => 'Semana', 'mes' => 'Mes', 'personalizado' => 'Personalizado'] as $valor => $etiqueta)
                     <button type="submit" name="periodo" value="{{ $valor }}"
-                        class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 w-full sm:w-auto whitespace-nowrap
-                        {{ $periodo === $valor ? 'bg-[#818CF8] text-white shadow-md transform scale-105' : 'text-gray-600 dark:text-neutral-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-neutral-800' }}">
+                            aria-pressed="{{ $periodo === $valor ? 'true' : 'false' }}"
+                            class="px-4 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors
+                                   {{ $periodo === $valor
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/10' }}">
                         {{ $etiqueta }}
                     </button>
                 @endforeach
@@ -74,199 +107,167 @@
             @if($periodo === 'personalizado')
                 <div class="flex items-center gap-2">
                     <div class="relative">
-                        <input type="text" id="rango_fechas_reporte" placeholder="Selecciona un rango" readonly
-                            class="pl-3 pr-9 py-2 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#818CF8] cursor-pointer w-56">
-                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
+                        <input type="text" id="rango_fechas_reporte" placeholder="Elige un rango" readonly
+                               class="w-56 pl-3 pr-9 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                        <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
                     <input type="hidden" name="fecha_desde" id="hidden_fecha_desde_reporte" value="{{ request('fecha_desde', $fechaInicio->format('Y-m-d')) }}">
                     <input type="hidden" name="fecha_hasta" id="hidden_fecha_hasta_reporte" value="{{ request('fecha_hasta', $fechaFin->format('Y-m-d')) }}">
-                    <button type="submit" name="periodo" value="personalizado" class="px-3 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl text-xs font-bold">Ir</button>
+                    <button type="submit" name="periodo" value="personalizado"
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors">
+                        Aplicar
+                    </button>
                 </div>
             @endif
         </div>
 
-        <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
             @if($esAdmin)
                 <div class="flex items-center gap-2">
-                    <span class="text-[11px] font-bold text-gray-400 dark:text-neutral-500 uppercase tracking-wide hidden sm:block">Sucursal</span>
-                    <select name="sucursal_id" onchange="document.getElementById('filtros-reporte').submit()"
-                        class="px-3 py-2 bg-gray-50 dark:bg-[#0A0A0A] border border-gray-200 dark:border-neutral-800 rounded-xl text-sm text-gray-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#818CF8] transition-colors cursor-pointer hover:border-gray-300 dark:hover:border-neutral-600">
-                        <option value="" {{ !$sucursalFiltro ? 'selected' : '' }}>Todas las sucursales</option>
+                    <label for="filtro_sucursal" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Sucursal</label>
+                    <select id="filtro_sucursal" name="sucursal_id" onchange="document.getElementById('filtros-reporte').submit()"
+                            class="px-3 py-2 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                        <option value="" @selected(! $sucursalFiltro)>Todas las sucursales</option>
                         @foreach($sucursales as $suc)
-                            <option value="{{ $suc->id }}" {{ (string) $sucursalFiltro === (string) $suc->id ? 'selected' : '' }}>{{ $suc->nombre }}</option>
+                            <option value="{{ $suc->id }}" @selected((string) $sucursalFiltro === (string) $suc->id)>{{ $suc->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
             @endif
 
             <a href="{{ route('reportes.exportar.pdf', request()->query()) }}"
-               class="group inline-flex items-center gap-2 px-4 py-2 bg-[#818CF8] text-white rounded-xl text-sm font-semibold hover:bg-[#6366F1] hover:shadow-lg hover:shadow-indigo-500/30 transform hover:-translate-y-0.5 transition-all duration-300">
-                <svg class="w-4 h-4 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                Exportar
+               class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Exportar PDF
             </a>
         </div>
     </form>
 
+    {{-- Errores de fechas --}}
     @if($errors->any())
-        <div class="bg-red-50 dark:bg-[#2a1315] border border-red-200 dark:border-red-900/50 p-4 rounded-xl shadow-sm">
-            <p class="text-sm font-black text-red-800 dark:text-red-400 mb-1.5">Revisa las fechas del reporte:</p>
-            <ul class="space-y-1">
-                @foreach($errors->all() as $error)
-                    <li class="text-xs font-semibold text-red-700 dark:text-red-300">{{ $error }}</li>
-                @endforeach
-            </ul>
+        <div class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div>
+                <p class="font-bold">Revisa las fechas del reporte:</p>
+                <ul class="mt-1 space-y-0.5 font-medium">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
     @endif
 
-    {{-- Rango que se está mostrando y contra qué se compara --}}
-    <p class="text-xs text-gray-500 dark:text-neutral-400 font-medium px-1">
+    {{-- Aviso: usuario de una sola sucursal --}}
+    @if(! $esAdmin)
+        <div class="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Estás viendo únicamente los datos de tu sucursal asignada.</span>
+        </div>
+    @endif
+
+    {{-- Rango que se muestra y contra qué se compara --}}
+    <p class="text-sm text-gray-500 dark:text-gray-400">
         Periodo:
-        <span class="font-bold text-gray-700 dark:text-neutral-200">{{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}</span>
-        · Comparado con:
-        <span class="font-bold text-gray-700 dark:text-neutral-200">{{ $fechaInicioAnterior->format('d/m/Y') }} al {{ $fechaFinAnterior->format('d/m/Y') }}</span>
+        <span class="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}</span>
+        <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>
+        Comparado con:
+        <span class="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{{ $fechaInicioAnterior->format('d/m/Y') }} al {{ $fechaFinAnterior->format('d/m/Y') }}</span>
     </p>
 
-    @if(!$esAdmin)
-        <div class="bg-amber-50 dark:bg-amber-950/30 border-l-4 border-amber-400 dark:border-amber-600 rounded-r-xl px-5 py-3 text-xs text-amber-700 dark:text-amber-400 font-medium">
-            Estás viendo únicamente los datos de tu sucursal asignada.
-        </div>
-    @endif
-
-    {{-- Métricas (Tarjetas) --}}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <!-- Ingresos Totales -->
-        <div class="bg-white dark:bg-[#151515] rounded-2xl p-6 border border-gray-200 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:border-emerald-200 dark:hover:border-emerald-900/50 transform hover:-translate-y-1 transition-all duration-500 delay-300"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 flex items-center justify-center transition-transform hover:rotate-12 duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    {{-- TARJETAS --}}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        @foreach($tarjetas as $t)
+            @php [$claseCambio, $textoCambio] = $variacion((float) $t['pct']); @endphp
+            <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+                <div class="flex items-center gap-3">
+                    <span class="w-9 h-9 rounded-xl {{ $t['burbuja'] }} flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $t['icono'] }}"/></svg>
+                    </span>
+                    <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{{ $t['titulo'] }}</p>
                 </div>
-                <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-600 uppercase">{{ $etiquetaComparativa }}</span>
+                <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ $t['valor'] }}</p>
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                    <span class="font-semibold {{ $claseCambio }}">{{ $textoCambio }}</span>
+                    {{ $etiquetaComparativa }}
+                </p>
+                @if($t['nota'])
+                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ $t['nota'] }}</p>
+                @endif
             </div>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 font-semibold uppercase tracking-wide">Ingresos Totales</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 transition-colors">${{ number_format($ingresosTotales, 2) }}</p>
-            <p class="text-xs {{ $porcentajeIngresos >= 0 ? 'text-emerald-500' : 'text-red-500' }} font-medium mt-2 flex items-center gap-1 group">
-                <span class="transform group-hover:translate-x-1 transition-transform">{{ $porcentajeIngresos >= 0 ? '↑' : '↓' }}</span>
-                {{ abs($porcentajeIngresos) }}% {{ $porcentajeIngresos >= 0 ? 'incremento' : 'decremento' }}
-            </p>
-        </div>
-
-        <!-- Ventas Realizadas -->
-        <div class="bg-white dark:bg-[#151515] rounded-2xl p-6 border border-gray-200 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:border-gray-400 dark:hover:border-neutral-600 transform hover:-translate-y-1 transition-all duration-500 delay-400"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-11 h-11 rounded-xl bg-[#1A1A1A] dark:bg-[#2A2A2A] text-white flex items-center justify-center transition-transform hover:scale-110 duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                </div>
-                <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-600 uppercase">{{ $etiquetaComparativa }}</span>
-            </div>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 font-semibold uppercase tracking-wide">Ventas Realizadas</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 transition-colors">{{ $ventasRealizadas }}</p>
-            <p class="text-xs {{ $porcentajeVentas >= 0 ? 'text-emerald-500' : 'text-red-500' }} font-medium mt-2 flex items-center gap-1 group">
-                <span class="transform group-hover:translate-x-1 transition-transform">{{ $porcentajeVentas >= 0 ? '↑' : '↓' }}</span>
-                {{ abs($porcentajeVentas) }}% {{ $porcentajeVentas >= 0 ? 'incremento' : 'decremento' }}
-            </p>
-        </div>
-
-        <!-- Nuevos Clientes -->
-        <div class="bg-white dark:bg-[#151515] rounded-2xl p-6 border border-gray-200 dark:border-neutral-800 shadow-sm hover:shadow-xl hover:border-indigo-200 dark:hover:border-indigo-900/50 transform hover:-translate-y-1 transition-all duration-500 delay-500"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-            <div class="flex items-center justify-between mb-4">
-                <div class="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-[#818CF8] dark:text-[#818CF8] flex items-center justify-center transition-transform hover:-rotate-12 duration-300">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-1.13a4 4 0 100-5.4M9 14a4 4 0 100-8 4 4 0 000 8z"/></svg>
-                </div>
-                <span class="text-[10px] font-bold text-gray-400 dark:text-neutral-600 uppercase">{{ $etiquetaComparativa }}</span>
-            </div>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 font-semibold uppercase tracking-wide">Nuevos Clientes</p>
-            <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 transition-colors">{{ $clientesNuevos }}</p>
-            <p class="text-xs {{ $porcentajeClientes >= 0 ? 'text-[#818CF8]' : 'text-red-500' }} font-medium mt-2 flex items-center gap-1 group">
-                <span class="transform group-hover:translate-x-1 transition-transform">{{ $porcentajeClientes >= 0 ? '↑' : '↓' }}</span>
-                {{ abs($porcentajeClientes) }}% tasa
-            </p>
-            <p class="text-[10px] text-gray-400 dark:text-neutral-600 mt-1.5 italic">De todo el negocio (no se separa por sucursal)</p>
-        </div>
+        @endforeach
     </div>
 
-    {{-- Gráficas --}}
+    {{-- GRÁFICAS --}}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Ventas por Día -->
-        <div class="bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 p-6 shadow-sm hover:shadow-lg transition-all duration-500 delay-600 transform"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-            <div class="flex items-center justify-between mb-1">
-                <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">Ventas por Día</h3>
-            </div>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 mb-4">Tendencia de ingresos en el tiempo</p>
+
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-6">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">Ventas por día</h3>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Ingresos de cada día del periodo</p>
 
             @if($ventasPorDia->isEmpty())
-                <div class="h-56 border-2 border-dashed border-gray-200 dark:border-neutral-800 rounded-xl flex flex-col items-center justify-center text-gray-300 dark:text-neutral-700">
-                    <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M3 21h18"/></svg>
+                <div class="mt-4 h-56 border border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                    <svg class="w-9 h-9 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M3 21h18"/></svg>
                     <p class="text-sm font-medium">Sin ventas en este periodo</p>
                 </div>
             @else
-                <div class="relative h-56 w-full"><canvas id="chartVentasPorDia"></canvas></div>
+                <div class="mt-4 relative h-56 w-full"><canvas id="chartVentasPorDia"></canvas></div>
             @endif
         </div>
 
-        <!-- Ventas por Sucursal -->
-        <div class="bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 p-6 shadow-sm hover:shadow-lg transition-all duration-500 delay-700 transform"
-             :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-            <div class="flex items-center justify-between mb-1">
-                <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">Ventas por Sucursal</h3>
-            </div>
-            <p class="text-xs text-gray-400 dark:text-neutral-500 mb-4">Desempeño comparativo regional</p>
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-6">
+            <h3 class="text-base font-bold text-gray-900 dark:text-white">Ventas por sucursal</h3>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Ingresos de cada sucursal en el periodo</p>
 
             @if($ventasPorSucursal->isEmpty())
-                <div class="h-56 border-2 border-dashed border-gray-200 dark:border-neutral-800 rounded-xl flex flex-col items-center justify-center text-gray-300 dark:text-neutral-700">
-                    <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6m4 6V9m4 10V5M3 21h18"/></svg>
-                    <p class="text-sm font-medium">Sin registros</p>
+                <div class="mt-4 h-56 border border-dashed border-gray-200 dark:border-white/10 rounded-xl flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                    <svg class="w-9 h-9 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6m4 6V9m4 10V5M3 21h18"/></svg>
+                    <p class="text-sm font-medium">Sin ventas en este periodo</p>
                 </div>
             @else
-                <div class="relative h-56 w-full"><canvas id="chartVentasPorSucursal"></canvas></div>
+                <div class="mt-4 relative h-56 w-full"><canvas id="chartVentasPorSucursal"></canvas></div>
             @endif
         </div>
     </div>
 
-    {{-- Productos más vendidos --}}
-    <div class="bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 delay-1000 transform"
-         :class="cargado ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    {{-- PRODUCTOS MÁS VENDIDOS --}}
+    <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-                <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">Productos más Vendidos</h3>
-                <p class="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">Artículos con mayor rotación en el periodo seleccionado</p>
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Productos más vendidos</h3>
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Los 5 con más piezas vendidas en el periodo</p>
             </div>
-            <a href="{{ route('inventario.index') }}" class="group text-xs font-semibold text-[#818CF8] hover:text-[#6366F1] dark:hover:text-[#a5b4fc] transition flex items-center gap-1">
-                Ver catálogo completo
-                <span class="transform group-hover:translate-x-1 transition-transform">→</span>
-            </a>
+            @if(auth()->user()->tienePermiso('inventario.index'))
+                <a href="{{ route('inventario.index') }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Ver inventario</a>
+            @endif
         </div>
 
         @if($productosMasVendidos->isEmpty())
-            <div class="p-6">
-                <div class="text-center py-12">
-                    <div class="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-[#0A0A0A] text-gray-300 dark:text-neutral-700 flex items-center justify-center mx-auto mb-3 shadow-inner">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                    </div>
-                    <p class="text-sm text-gray-400 dark:text-neutral-600">Aún no hay productos vendidos en este periodo</p>
-                </div>
+            <div class="py-12 text-center">
+                <span class="mx-auto w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-400 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </span>
+                <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Todavía no hay productos vendidos</p>
+                <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">en este periodo.</p>
             </div>
         @else
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left">
                     <thead>
-                        <tr class="bg-gray-50/50 dark:bg-black/30 text-gray-400 dark:text-neutral-500 text-[10px] uppercase tracking-widest border-b border-gray-100 dark:border-white/5">
-                            <th class="px-6 py-4 font-bold">Producto</th>
-                            <th class="px-6 py-4 font-bold text-center">Unidades Vendidas</th>
-                            <th class="px-6 py-4 font-bold text-right">Ingresos Generados</th>
+                        <tr class="bg-gray-50 dark:bg-white/[0.03] text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <th class="px-6 py-3 font-bold w-12">#</th>
+                            <th class="px-6 py-3 font-bold">Producto</th>
+                            <th class="px-6 py-3 font-bold text-center">Piezas vendidas</th>
+                            <th class="px-6 py-3 font-bold text-right">Ingresos</th>
                         </tr>
                     </thead>
-                    <tbody class="text-[13px] text-gray-700 dark:text-gray-300 divide-y divide-gray-50/50 dark:divide-white/5">
+                    <tbody class="text-sm text-gray-700 dark:text-gray-300 divide-y divide-gray-100 dark:divide-white/5">
                         @foreach($productosMasVendidos as $producto)
-                            <tr class="hover:bg-gray-50/80 dark:hover:bg-white/[0.02] transition-colors">
-                                <td class="px-6 py-4 font-bold text-gray-900 dark:text-white">{{ $producto->nombre_producto }}</td>
-                                <td class="px-6 py-4 text-center font-semibold text-[#818CF8]">{{ (int) $producto->total_cantidad }}</td>
-                                <td class="px-6 py-4 text-right font-bold text-gray-900 dark:text-white">${{ number_format($producto->total_ingresos, 2) }}</td>
+                            <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
+                                <td class="px-6 py-3.5 text-gray-400 dark:text-gray-500 tabular-nums">{{ $loop->iteration }}</td>
+                                <td class="px-6 py-3.5 font-semibold text-gray-900 dark:text-white">{{ $producto->nombre_producto }}</td>
+                                <td class="px-6 py-3.5 text-center font-semibold text-indigo-600 dark:text-indigo-400 tabular-nums">{{ number_format((int) $producto->total_cantidad) }}</td>
+                                <td class="px-6 py-3.5 text-right font-bold text-gray-900 dark:text-white tabular-nums">{{ $dinero($producto->total_ingresos) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -280,33 +281,45 @@
 @if($ventasPorDia->isNotEmpty() || $ventasPorSucursal->isNotEmpty())
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const gridColor = document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-        const textColor = document.documentElement.classList.contains('dark') ? '#a3a3a3' : '#6b7280';
+        var oscuro    = document.documentElement.classList.contains('dark');
+        var gridColor = oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+        var textColor = oscuro ? '#a3a3a3' : '#6b7280';
+        var dinero    = function (v) {
+            return '$' + Number(v).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+        var opciones = function (conRejillaX) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function (c) { return ' ' + dinero(c.parsed.y); } } }
+                },
+                scales: {
+                    x: { grid: { display: conRejillaX, color: gridColor }, ticks: { color: textColor, font: { size: 10 } } },
+                    y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: function (v) { return '$' + Number(v).toLocaleString('es-MX'); } } }
+                }
+            };
+        };
 
         @if($ventasPorDia->isNotEmpty())
         new Chart(document.getElementById('chartVentasPorDia'), {
             type: 'line',
             data: {
-                labels: {!! json_encode($serieDiaria->pluck('dia')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))->values()) !!},
+                labels: @json($serieDiaria->pluck('dia')->map(fn ($d) => \Carbon\Carbon::parse($d)->format('d/m'))->values()),
                 datasets: [{
                     label: 'Ingresos',
-                    data: {!! json_encode($serieDiaria->pluck('total')->map(fn($v) => (float) $v)->values()) !!},
-                    borderColor: '#818CF8',
-                    backgroundColor: 'rgba(129, 140, 248, 0.15)',
+                    data: @json($serieDiaria->pluck('total')->map(fn ($v) => (float) $v)->values()),
+                    borderColor: '#6366F1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.12)',
                     fill: true,
-                    tension: 0.35,
-                    pointBackgroundColor: '#818CF8',
+                    tension: 0.3,
+                    pointBackgroundColor: '#6366F1',
+                    pointRadius: 3
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } },
-                    y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } }
-                }
-            }
+            options: opciones(true)
         });
         @endif
 
@@ -314,23 +327,15 @@
         new Chart(document.getElementById('chartVentasPorSucursal'), {
             type: 'bar',
             data: {
-                labels: {!! json_encode($ventasPorSucursal->map(fn($v) => $v->sucursal->nombre ?? 'N/A')) !!},
+                labels: @json($ventasPorSucursal->map(fn ($v) => $v->sucursal->nombre ?? 'Sin sucursal')->values()),
                 datasets: [{
                     label: 'Ingresos',
-                    data: {!! json_encode($ventasPorSucursal->pluck('total')->map(fn($v) => (float) $v)) !!},
-                    backgroundColor: '#818CF8',
-                    borderRadius: 8,
+                    data: @json($ventasPorSucursal->pluck('total')->map(fn ($v) => (float) $v)->values()),
+                    backgroundColor: '#6366F1',
+                    borderRadius: 8
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
-                    y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } }
-                }
-            }
+            options: opciones(false)
         });
         @endif
     });
@@ -340,8 +345,8 @@
 @if($periodo === 'personalizado')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var fechaDesdeActual = "{{ request('fecha_desde', $fechaInicio->format('Y-m-d')) }}";
-        var fechaHastaActual = "{{ request('fecha_hasta', $fechaFin->format('Y-m-d')) }}";
+        var fechaDesdeActual = @json(request('fecha_desde', $fechaInicio->format('Y-m-d')));
+        var fechaHastaActual = @json(request('fecha_hasta', $fechaFin->format('Y-m-d')));
 
         flatpickr("#rango_fechas_reporte", {
             mode: "range",
@@ -349,6 +354,7 @@
             altInput: true,
             altFormat: "d M Y",
             locale: "es",
+            maxDate: "today",
             defaultDate: [fechaDesdeActual, fechaHastaActual],
             onChange: function (selectedDates, dateStr, instance) {
                 if (selectedDates.length === 2) {
