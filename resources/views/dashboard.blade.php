@@ -1,395 +1,193 @@
 @extends('layouts.app')
 
-@section('header_title', 'Resumen General')
+@section('header_title', 'Inicio')
 
 @section('content')
 
-<style>
-    body {
-        opacity: 0;
-        animation: page-fade-in 0.6s ease-out forwards;
-    }
-    @keyframes page-fade-in {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-    }
+@php
+    $nombrePila = \Illuminate\Support\Str::before(trim((string) auth()->user()->name), ' ');
+    $dinero     = fn ($n) => '$' . number_format((float) $n, 2);
+@endphp
 
-    *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
-    * { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+<div class="max-w-7xl mx-auto space-y-6">
 
-    @media (prefers-reduced-motion: no-preference) {
-        .dash-rise {
-            opacity: 0;
-            animation: dash-slide-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes dash-slide-up {
-            from { opacity: 0; transform: translateY(40px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .dash-icon-pop     { animation: icon-pop .6s cubic-bezier(.34,1.56,.64,1) both; }
-        .dash-icon         { transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
-        .tilt-card:hover .dash-icon { transform: scale(1.12) rotate(-6deg); }
-        .dash-row          { transition: background-color .25s ease, transform .25s ease; }
-        .dash-row:hover    { transform: translateX(3px); }
-        .dash-dot          { animation: dash-pulse-dot 2s ease-in-out infinite; }
-        .dash-empty-icon   { animation: empty-float 3.5s ease-in-out infinite; }
-        .dash-link-arrow   { transition: transform .2s ease; display: inline-block; }
-        .group:hover .dash-link-arrow { transform: translateX(3px); }
-
-        .tilt-card {
-            transform-style: preserve-3d;
-            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.35s ease;
-            will-change: transform, box-shadow;
-        }
-        .tilt-card:hover { box-shadow: 0 20px 40px -10px rgba(129, 140, 248, 0.35); }
-        .tilt-spotlight {
-            position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-            opacity: 0; transition: opacity .4s ease;
-            background: radial-gradient(320px circle at var(--mx,50%) var(--my,50%), rgba(129, 140, 248, .25), transparent 65%);
-        }
-        .tilt-card:hover .tilt-spotlight { opacity: 1; }
-        .tilt-border {
-            position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-            opacity: 0; transition: opacity .4s ease; padding: 1px;
-            background: radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(129, 140, 248, .9), transparent 70%);
-            -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-            -webkit-mask-composite: xor; mask-composite: exclude;
-        }
-        .tilt-card:hover .tilt-border { opacity: 1; }
-    }
-
-    @keyframes icon-pop {
-        0%   { opacity: 0; transform: scale(.3) rotate(-15deg); }
-        60%  { opacity: 1; transform: scale(1.12) rotate(4deg); }
-        100% { opacity: 1; transform: scale(1) rotate(0); }
-    }
-    @keyframes dash-pulse-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
-    @keyframes empty-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
-    .dash-counter { font-variant-numeric: tabular-nums; }
-    .dash-dot-grid {
-        background-image: radial-gradient(currentColor 1px, transparent 1px);
-        background-size: 20px 20px;
-    }
-
-    .btn-glow-base {
-        transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-        will-change: transform, box-shadow;
-    }
-    .btn-glow-base:hover { transform: translateY(-3px) scale(1.015); }
-    .btn-glow-base:active { transform: translateY(0) scale(0.98); }
-
-    .btn-sheen { position: relative; overflow: hidden; }
-    .btn-sheen::after {
-        content: '';
-        position: absolute; top: -50%; left: -60%;
-        width: 50%; height: 200%;
-        background: linear-gradient(60deg, transparent, rgba(255,255,255,0.25), transparent);
-        transform: rotate(30deg);
-        transition: opacity 0.3s; opacity: 0; pointer-events: none;
-    }
-    .btn-sheen:hover::after { opacity: 1; animation: btn-sheen-slide 0.85s ease-in-out forwards; }
-    @keyframes btn-sheen-slide { 0% { left: -60%; } 100% { left: 140%; } }
-
-    /* Barras del mini gráfico semanal */
-    .week-bar { transition: height 1s cubic-bezier(0.16,1,0.3,1); }
-    .week-bar-fill {
-        animation: weekBarGrow 1.2s cubic-bezier(0.16,1,0.3,1) both;
-        animation-delay: var(--delay, 0ms);
-    }
-    .week-bar-empty { background-color: rgb(229,231,235); }
-    .dark .week-bar-empty { background-color: rgb(38,38,38); }
-    @keyframes weekBarGrow {
-        from { transform: scaleY(0); transform-origin: bottom; }
-        to   { transform: scaleY(1); transform-origin: bottom; }
-    }
-
-    /* Accesos rápidos */
-    .quick-btn { transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .quick-btn:hover { transform: translateY(-4px) scale(1.03); }
-    .quick-btn:active { transform: translateY(0) scale(0.97); }
-</style>
-
-<div class="relative">
-
-    {{-- Fondo dot grid --}}
-    <div class="pointer-events-none fixed inset-0 -z-10 overflow-hidden hidden dark:block">
-        <div class="absolute inset-0 dash-dot-grid text-white/[0.025]"></div>
-    </div>
-
-    <div class="max-w-7xl mx-auto space-y-6 px-4 sm:px-6 lg:px-8">
-
-        {{-- ======== ENCABEZADO ======== --}}
-        <div class="dash-rise flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="animation-delay: 100ms;">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                    @php
-                        $hora = now()->hour;
-                        $saludo = $hora < 12 ? 'Buen día' : ($hora < 18 ? 'Buenas tardes' : 'Buenas noches');
-                    @endphp
-                    {{ $saludo }}, {{ Auth::user()->name ?? 'Administrador' }}
-                </h2>
-                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">{{ now()->translatedFormat('l, j \d\e F \d\e Y') }}</p>
-            </div>
-
-            <a href="{{ route('ventas.index') }}"
-               class="btn-glow-base btn-sheen group relative inline-flex items-center justify-center gap-2.5 px-6 py-3 bg-[#818CF8] hover:bg-[#6366F1] text-white rounded-2xl text-sm font-bold border border-[#818CF8] hover:border-[#6366F1] shadow-[0_10px_25px_-5px_rgba(129,140,248,0.5)] transition duration-300">
-                <span class="absolute -inset-0.5 bg-white/20 rounded-2xl blur-md opacity-40 group-hover:opacity-75 transition duration-300 -z-10"></span>
-                <svg class="w-4 h-4 text-white transition-transform duration-300 group-hover:rotate-90 stroke-[2.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
-                </svg>
-                <span>Nueva Venta</span>
-            </a>
+    {{-- Encabezado --}}
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-gray-900 dark:text-white">Hola, {{ $nombrePila }}</h2>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                {{ $fechaHoy }}
+                @if($sucursalNombre)
+                    <span class="mx-1 text-gray-300 dark:text-gray-600">·</span>{{ $sucursalNombre }}
+                @endif
+            </p>
         </div>
 
-        {{-- ======== 4 TARJETAS MÉTRICAS ======== --}}
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+    </div>
 
-            {{-- Ventas de hoy --}}
-            <div class="js-tilt tilt-card btn-glow-base btn-sheen dash-rise relative overflow-hidden bg-[#818CF8] dark:bg-[#818CF8] rounded-2xl p-6 text-white" style="animation-delay: 200ms;">
-                <div class="tilt-spotlight"></div>
-                <div class="tilt-border"></div>
-                <div class="relative flex items-center justify-between mb-5">
-                    <div class="dash-icon dash-icon-pop w-11 h-11 rounded-xl bg-white/20 text-white flex items-center justify-center shadow-lg" style="animation-delay: 400ms;">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                    </div>
-                    <span class="text-[10px] font-bold text-indigo-100 uppercase tracking-wide flex items-center gap-1.5">
-                        <span class="dash-dot h-1.5 w-1.5 rounded-full bg-white"></span> Hoy
-                    </span>
-                </div>
-                <p class="relative text-xs text-indigo-100 font-medium">Ventas de Hoy</p>
-                <p class="relative dash-counter text-3xl font-bold mt-1 text-white" data-counter data-value="{{ $ventasHoy ?? 0 }}" data-prefix="$" data-decimals="2">$0.00</p>
+    {{-- Sin permiso para ver los datos del inicio --}}
+    @if($sinPermiso)
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-8 text-center">
+            <span class="mx-auto w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            </span>
+            <p class="mt-3 text-base font-bold text-gray-900 dark:text-white">Bienvenido</p>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Usa el menú de la izquierda para entrar a tus módulos.</p>
+        </div>
+    @else
+
+    {{-- Aviso: usuario sin sucursal --}}
+    @if($sinSucursal)
+        <div class="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 rounded-xl text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            <span>Tu usuario no tiene una sucursal asignada, por eso no se muestran datos. Pide a un administrador que te asigne una.</span>
+        </div>
+    @endif
+
+    {{-- TARJETAS --}}
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        {{-- Ventas de hoy --}}
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Ventas de hoy</p>
             </div>
-
-            {{-- Llantas vendidas --}}
-            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-white/[0.03] rounded-2xl p-6 border border-gray-200 dark:border-white/10" style="animation-delay: 300ms;">
-                <div class="tilt-spotlight"></div>
-                <div class="tilt-border"></div>
-                <div class="relative flex items-center justify-between mb-5">
-                    <div class="dash-icon dash-icon-pop w-11 h-11 rounded-xl bg-[#1A1A1A] dark:bg-white/10 text-white flex items-center justify-center" style="animation-delay: 500ms;">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
-                    </div>
-                </div>
-                <p class="relative text-xs text-gray-400 dark:text-gray-500 font-medium">Piezas Vendidas Hoy</p>
-                <p class="relative text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <span class="dash-counter" data-counter data-value="{{ $llantasVendidas ?? 0 }}">0</span>
-                    <span class="text-base font-medium text-gray-400 dark:text-gray-500">pzas</span>
-                </p>
-            </div>
-
-            {{-- Bajo stock --}}
-            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-white/[0.03] rounded-2xl p-6 border border-gray-200 dark:border-white/10" style="animation-delay: 400ms;">
-                <div class="tilt-spotlight"></div>
-                <div class="tilt-border"></div>
-                <div class="relative flex items-center justify-between mb-5">
-                    <div class="dash-icon dash-icon-pop w-11 h-11 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center" style="animation-delay: 600ms;">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                    </div>
-                    @if(($bajoStock ?? 0) > 0)
-                        <span class="text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-500/30 px-2 py-0.5 rounded-full">Atención</span>
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ $dinero($ventasHoy) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                {{ number_format($numVentasHoy) }} {{ $numVentasHoy === 1 ? 'venta' : 'ventas' }}
+                @if(! $sinSucursal)
+                    @if($cambioVsAyer === null)
+                        · ayer no hubo ventas
+                    @elseif($cambioVsAyer > 0)
+                        · <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ $cambioVsAyer }}% más que ayer</span>
+                    @elseif($cambioVsAyer < 0)
+                        · <span class="font-semibold text-red-600 dark:text-red-400">{{ abs($cambioVsAyer) }}% menos que ayer</span>
+                    @else
+                        · igual que ayer
                     @endif
-                </div>
-                <p class="relative text-xs text-gray-400 dark:text-gray-500 font-medium">Bajo Stock</p>
-                <p class="relative text-3xl font-bold mt-1 {{ ($bajoStock ?? 0) > 0 ? 'text-amber-500' : 'text-gray-900 dark:text-white' }}">
-                    <span class="dash-counter" data-counter data-value="{{ $bajoStock ?? 0 }}">0</span>
-                    <span class="text-base font-medium text-gray-400 dark:text-gray-500">productos</span>
-                </p>
-            </div>
-
-            {{-- Clientes nuevos --}}
-            <div class="js-tilt tilt-card btn-glow-base dash-rise relative overflow-hidden bg-white dark:bg-white/[0.03] rounded-2xl p-6 border border-gray-200 dark:border-white/10" style="animation-delay: 500ms;">
-                <div class="tilt-spotlight"></div>
-                <div class="tilt-border"></div>
-                <div class="relative flex items-center justify-between mb-5">
-                    <div class="dash-icon dash-icon-pop w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 flex items-center justify-center" style="animation-delay: 700ms;">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-1.13a4 4 0 100-5.4M9 14a4 4 0 100-8 4 4 0 000 8z"/></svg>
-                    </div>
-                </div>
-                <p class="relative text-xs text-gray-400 dark:text-gray-500 font-medium">Clientes Nuevos</p>
-                <p class="relative text-3xl font-bold text-gray-900 dark:text-white mt-1">
-                    <span class="dash-counter" data-counter data-value="{{ $clientesNuevos ?? 0 }}">0</span>
-                    <span class="text-base font-medium text-gray-400 dark:text-gray-500">hoy</span>
-                </p>
-            </div>
+                @endif
+            </p>
         </div>
 
-        {{-- ======== FILA: GRÁFICA SEMANAL + ACCESOS RÁPIDOS ======== --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-            {{-- Mini gráfica — ventas 7 días --}}
-            <div class="dash-rise lg:col-span-2 bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-white/10 p-6" style="animation-delay: 600ms;">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-800 dark:text-white">Ventas — últimos 7 días</h3>
-                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Ingresos diarios</p>
-                    </div>
-                    <a href="{{ route('ventas.historial') }}" class="group text-xs font-semibold text-[#818CF8] hover:text-[#6366F1] transition inline-flex items-center gap-1">
-                        Ver historial <span class="dash-link-arrow">→</span>
-                    </a>
-                </div>
-
-                @php
-                    $maxVenta = collect($ventasSemana ?? [])->max('total') ?: 1;
-                @endphp
-
-                {{-- Alturas en píxeles (inline) para que no dependan de clases de Tailwind --}}
-                <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:8px; height:144px;">
-                    @forelse($ventasSemana ?? [] as $i => $dia)
-                        @php
-                            $totalDia = (float) $dia['total'];
-                            $alturaPx = max(6, (int) round(($totalDia / $maxVenta) * 112));
-                        @endphp
-                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:8px;">
-                            {{-- Barra --}}
-                            <div style="width:100%; height:112px; display:flex; align-items:flex-end; justify-content:center;">
-                                <div class="week-bar-fill {{ $totalDia > 0 ? '' : 'week-bar-empty' }}"
-                                     style="width:100%; height:{{ $alturaPx }}px; border-radius:8px 8px 0 0; {{ $totalDia > 0 ? 'background:linear-gradient(to top, #6366F1, #818CF8);' : '' }} --delay: {{ $i * 80 }}ms;"
-                                     title="${{ number_format($totalDia, 2) }}">
-                                </div>
-                            </div>
-                            {{-- Label día --}}
-                            <span class="text-gray-400 dark:text-gray-600" style="font-size:10px; font-weight:600; text-transform:uppercase;">{{ $dia['label'] }}</span>
-                        </div>
-                    @empty
-                        <p class="text-xs text-gray-400 dark:text-gray-500 m-auto">Sin datos</p>
-                    @endforelse
-                </div>
+        {{-- Piezas vendidas --}}
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Piezas vendidas</p>
             </div>
-
-            {{-- Accesos rápidos --}}
-            <div class="dash-rise bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-white/10 p-6" style="animation-delay: 700ms;">
-                <h3 class="text-sm font-bold text-gray-800 dark:text-white mb-4">Accesos Rápidos</h3>
-                <div class="grid grid-cols-2 gap-3">
-
-                    <a href="{{ route('ventas.index') }}" class="quick-btn flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-[#818CF8]/10 dark:bg-[#818CF8]/10 border border-[#818CF8]/20 hover:border-[#818CF8]/50 hover:bg-[#818CF8]/20 text-center">
-                        <div class="w-9 h-9 rounded-lg bg-[#818CF8] text-white flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <span class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">Punto de Venta</span>
-                    </a>
-
-                    <a href="{{ route('inventario.index') }}" class="quick-btn flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-[#818CF8]/40 hover:bg-[#818CF8]/5 text-center">
-                        <div class="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        </div>
-                        <span class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">Inventario</span>
-                    </a>
-
-                    <a href="{{ route('clientes.index') }}" class="quick-btn flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-[#818CF8]/40 hover:bg-[#818CF8]/5 text-center">
-                        <div class="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <span class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">Clientes</span>
-                    </a>
-
-                    <a href="{{ route('caja.index') }}" class="quick-btn flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 hover:border-[#818CF8]/40 hover:bg-[#818CF8]/5 text-center">
-                        <div class="w-9 h-9 rounded-lg bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                        </div>
-                        <span class="text-[11px] font-semibold text-gray-700 dark:text-gray-300 leading-tight">Caja</span>
-                    </a>
-
-                </div>
-            </div>
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ number_format($llantasVendidas) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">hoy, sin contar servicios</p>
         </div>
 
-        {{-- ======== ÚLTIMAS VENTAS ======== --}}
-        <div class="dash-rise bg-white dark:bg-white/[0.03] rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden" style="animation-delay: 800ms;">
-            <div class="px-6 py-5 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
-                <div>
-                    <h3 class="text-sm font-bold text-gray-800 dark:text-white">Últimas Ventas</h3>
-                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Transacciones recientes</p>
-                </div>
-                <a href="{{ route('ventas.historial') }}" class="group text-xs font-semibold text-[#818CF8] hover:text-[#6366F1] transition inline-flex items-center gap-1">
-                    Ver todas <span class="dash-link-arrow">→</span>
-                </a>
+        {{-- Bajo stock --}}
+        @php
+            $tarjetaBajo = 'bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5 block';
+        @endphp
+        @if($puede['inventario'] && ! $sinSucursal)
+            <a href="{{ route('inventario.index', ['stock_status' => 'bajo_stock']) }}" class="{{ $tarjetaBajo }} hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+        @else
+            <div class="{{ $tarjetaBajo }}">
+        @endif
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Bajo stock</p>
             </div>
-            <div class="divide-y divide-gray-100 dark:divide-white/10">
-                @forelse($ultimasVentas ?? [] as $venta)
-                    <div class="dash-row flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 dark:hover:bg-white/[0.03]">
-                        <div class="flex items-center gap-4">
-                            <div class="w-9 h-9 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 flex items-center justify-center shrink-0">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                            </div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-800 dark:text-white">#{{ $venta->folio }}</p>
-                                <p class="text-xs text-gray-400 dark:text-gray-500">{{ $venta->nombre_cliente_temporal ?? 'Mostrador' }} · {{ $venta->created_at->format('H:i') }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            @if($venta->metodo_pago ?? false)
-                                <span class="hidden sm:inline text-[10px] font-semibold text-gray-400 dark:text-gray-600 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded-full">{{ $venta->metodo_pago }}</span>
-                            @endif
-                            <p class="text-sm font-bold text-gray-800 dark:text-white">${{ number_format($venta->total, 2) }}</p>
-                        </div>
-                    </div>
-                @empty
-                    <div class="text-center py-14">
-                        <div class="dash-empty-icon w-14 h-14 rounded-2xl bg-gray-100 dark:bg-white/5 text-gray-300 dark:text-gray-600 flex items-center justify-center mx-auto mb-3">
-                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                        </div>
-                        <p class="text-sm text-gray-400 dark:text-gray-500">Sin ventas registradas hoy</p>
-                        <a href="{{ route('ventas.index') }}" class="text-xs text-[#818CF8] font-semibold mt-1 inline-block hover:underline">Ir al punto de venta →</a>
-                    </div>
-                @endforelse
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ number_format($bajoStock) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                {{ $bajoStock === 1 ? 'producto por debajo' : 'productos por debajo' }} de su mínimo
+            </p>
+        @if($puede['inventario'] && ! $sinSucursal)
+            </a>
+        @else
             </div>
-        </div>
+        @endif
 
+        {{-- Clientes nuevos --}}
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Clientes nuevos</p>
+            </div>
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ number_format($clientesNuevos) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">registrados hoy</p>
+        </div>
     </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {{-- Ventas de los últimos 7 días --}}
+        <div class="lg:col-span-2 bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-gray-900 dark:text-white">Ventas de los últimos 7 días</h3>
+                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Total de la semana</p>
+                </div>
+                <p class="text-xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ $dinero($totalSemana) }}</p>
+            </div>
+
+            <div class="mt-6 flex items-end gap-3 h-44">
+                @foreach($ventasSemana as $dia)
+                    @php
+                        $alto = $maxSemana > 0 ? max((int) round($dia['total'] / $maxSemana * 100), $dia['total'] > 0 ? 4 : 0) : 0;
+                    @endphp
+                    <div class="flex-1 h-full flex flex-col items-center gap-2" title="{{ $dia['label'] }}: {{ $dinero($dia['total']) }}">
+                        <div class="w-full flex-1 min-h-0 flex items-end">
+                            <div class="w-full rounded-t-lg {{ $dia['hoy'] ? 'bg-indigo-600' : 'bg-indigo-200 dark:bg-indigo-500/30' }}"
+                                 style="height: {{ $alto }}%"></div>
+                        </div>
+                        <span class="text-xs {{ $dia['hoy'] ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">{{ $dia['label'] }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            @if($totalSemana <= 0)
+                <p class="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">Todavía no hay ventas en estos 7 días.</p>
+            @endif
+        </div>
+
+        {{-- Últimas ventas --}}
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-6">
+            <div class="flex items-center justify-between gap-4">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white">Últimas ventas</h3>
+                @if($puede['historial'])
+                    <a href="{{ route('ventas.historial') }}" class="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Ver historial</a>
+                @endif
+            </div>
+
+            @forelse($ultimasVentas as $venta)
+                <div class="flex items-center justify-between gap-3 py-3 {{ ! $loop->last ? 'border-b border-gray-100 dark:border-white/5' : '' }} {{ $loop->first ? 'mt-2' : '' }}">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate">#{{ $venta->folio }}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                            {{ $venta->cliente?->nombre ?? ($venta->nombre_cliente_temporal ?: 'Mostrador') }}
+                            · {{ \Carbon\Carbon::parse($venta->fecha)->format('d/m H:i') }}
+                        </p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white tabular-nums">{{ $dinero($venta->total) }}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500">{{ $venta->metodo_pago }}</p>
+                    </div>
+                </div>
+            @empty
+                <div class="py-10 text-center">
+                    <span class="mx-auto w-11 h-11 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-400 flex items-center justify-center">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </span>
+                    <p class="mt-3 text-sm font-semibold text-gray-700 dark:text-gray-200">Todavía no hay ventas</p>
+                    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Cuando se cobre la primera, aparecerá aquí.</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
+    @endif
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    // Contador animado
-    var counters = document.querySelectorAll('[data-counter]');
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    counters.forEach(function (el) {
-        var target   = parseFloat(el.getAttribute('data-value')) || 0;
-        var decimals = parseInt(el.getAttribute('data-decimals') || '0', 10);
-        var prefix   = el.getAttribute('data-prefix') || '';
-
-        if (reduceMotion) {
-            el.textContent = prefix + target.toFixed(decimals);
-            return;
-        }
-        var duration = 1200, startTime = null;
-        function formatNumber(n) {
-            return decimals > 0
-                ? n.toLocaleString('es-MX', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-                : Math.round(n).toLocaleString('es-MX');
-        }
-        function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            var progress = Math.min((timestamp - startTime) / duration, 1);
-            var eased    = 1 - Math.pow(1 - progress, 3);
-            el.textContent = prefix + formatNumber(eased * target);
-            if (progress < 1) requestAnimationFrame(step);
-        }
-        requestAnimationFrame(step);
-    });
-
-    // Tilt + spotlight con mouse
-    var isFinePointer = window.matchMedia('(pointer: fine)').matches;
-    if (!reduceMotion && isFinePointer) {
-        document.querySelectorAll('.js-tilt').forEach(function (card) {
-            card.addEventListener('mousemove', function (e) {
-                var rect = card.getBoundingClientRect();
-                var x = e.clientX - rect.left, y = e.clientY - rect.top;
-                card.style.setProperty('--mx', x + 'px');
-                card.style.setProperty('--my', y + 'px');
-                var rotateY =  ((x - rect.width  / 2) / (rect.width  / 2)) * 4;
-                var rotateX = -((y - rect.height / 2) / (rect.height / 2)) * 4;
-                card.style.transform = 'perspective(700px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px)';
-            });
-            card.addEventListener('mouseleave', function () {
-                card.style.transform = 'perspective(700px) rotateX(0) rotateY(0) translateY(0)';
-            });
-        });
-    }
-});
-</script>
-
 @endsection

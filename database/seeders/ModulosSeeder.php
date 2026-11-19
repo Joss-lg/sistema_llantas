@@ -19,6 +19,10 @@ class ModulosSeeder extends Seeder
         // 2. Permisos alineados EXACTAMENTE con los nombres de ruta reales
         $permisosPorModulo = [
 
+            'Inicio' => [
+                'dashboard.datos' => 'Ver Datos del Inicio (ventas, stock y clientes)',
+            ],
+
             'Empleados' => [
                 'empleados.index'   => 'Ver Listado de Empleados',
                 'empleados.create'  => 'Ver Formulario de Nuevo Empleado',

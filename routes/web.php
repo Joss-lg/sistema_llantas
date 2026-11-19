@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PuntoVentaController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\RoleController;
@@ -44,60 +45,7 @@ Route::middleware(['auth', 'permiso'])->group(function () {
     })->name('logout.back');
 
     // Dashboard Principal
-    Route::get('/', function () {
-        // Si es Administrador General ve todas las sucursales (null = sin filtro).
-        // Cualquier otro usuario ve solo los datos de su sucursal.
-        $usuario    = Auth::user();
-        $sucursalId = $usuario->tieneRol('Administrador General') ? null : $usuario->sucursal_id;
-
-        // Ventas de hoy (monto total)
-        $ventasHoy = \App\Models\Venta::whereDate('created_at', today())
-            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
-            ->sum('total');
-
-        // Piezas vendidas hoy
-        $llantasVendidas = \App\Models\VentaDetalle::whereHas('venta', function ($q) use ($sucursalId) {
-            $q->whereDate('created_at', today())
-              ->when($sucursalId, fn($q2) => $q2->where('sucursal_id', $sucursalId));
-        })->sum('cantidad');
-
-        // Productos en bajo stock (solo cuenta el stock de la sucursal que corresponde)
-        $todosProductos = \App\Models\Producto::with(['stock' => function ($q) use ($sucursalId) {
-            $q->when($sucursalId, fn($q2) => $q2->where('sucursal_id', $sucursalId));
-        }])->where('estado', true)->get()->map(function ($p) {
-            $totalStock  = $p->stock->sum('cantidad');
-            $minStock    = $p->stock->max('stock_minimo') ?? 5;
-            $p->stock_cantidad = $totalStock;
-            $p->stock_minimo   = $minStock;
-            return $p;
-        });
-        $bajoStock = $todosProductos->filter(fn($p) => ($p->stock_cantidad ?? 0) > 0 && ($p->stock_cantidad ?? 0) < ($p->stock_minimo ?? 5))->count();
-
-        // Clientes nuevos hoy (los clientes son de todo el negocio, no tienen sucursal)
-        $clientesNuevos = \App\Models\Cliente::whereDate('created_at', today())->count();
-
-        // Últimas 6 ventas
-        $ultimasVentas = \App\Models\Venta::latest()
-            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
-            ->take(6)
-            ->get();
-
-        // Ventas de los últimos 7 días (para la mini gráfica)
-        $ventasSemana = collect();
-        for ($i = 6; $i >= 0; $i--) {
-            $dia = now()->subDays($i);
-            $ventasSemana->push([
-                'label' => $dia->translatedFormat('D'),
-                'total' => \App\Models\Venta::whereDate('created_at', $dia->toDateString())
-                    ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
-                    ->sum('total'),
-            ]);
-        }
-
-        return view('dashboard', compact(
-            'ventasHoy', 'llantasVendidas', 'bajoStock', 'clientesNuevos', 'ultimasVentas', 'ventasSemana'
-        ));
-    })->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Módulo de Empleados y Roles
     Route::get('/empleados/inactivos', [EmpleadoController::class, 'inactivos'])->name('empleados.inactivos');
