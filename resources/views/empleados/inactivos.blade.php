@@ -1,212 +1,233 @@
 @extends('layouts.app')
 
+@section('header_title', 'Empleados inactivos')
+
 @section('content')
-<style>
-    [x-cloak] { display: none !important; }
-</style>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative"
+<style>[x-cloak] { display: none !important; }</style>
+
+<div class="max-w-7xl mx-auto space-y-6"
      x-data="{
-        cargado: false,
-        deleteModalOpen: false,
-        empleadoActual: null,
-        empleadoNombre: '',
-        abrirModalEliminar(id, nombre) {
-            this.empleadoActual = id;
-            this.empleadoNombre = nombre;
-            this.deleteModalOpen = true;
-        },
-        cerrarModalEliminar() {
-            this.deleteModalOpen = false;
-            this.empleadoActual = null;
-        }
+        modalEliminar: false,
+        urlEliminar: '',
+        nombreEliminar: ''
      }"
-     x-init="setTimeout(() => cargado = true, 50)">
+     @keydown.escape.window="modalEliminar = false">
 
-    <div class="relative z-10 space-y-8">
+    {{-- Aviso de éxito --}}
+    @if(session('success'))
+        <div class="flex items-start gap-3 p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span>{{ session('success') }}</span>
+        </div>
+    @endif
 
-        {{-- Header --}}
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-5 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform"
-             :class="cargado ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-8 scale-95'">
-            <div>
-                <a href="{{ route('empleados.index') }}" class="group inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-neutral-400 hover:text-[#D32030] dark:hover:text-red-500 transition-colors mb-2">
-                    <svg class="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Volver a Empleados
-                </a>
-                <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight transition-colors">Empleados Inactivos</h1>
-                <p class="text-sm text-gray-500 dark:text-neutral-400 mt-1.5 font-medium transition-colors">Personal deshabilitado. Puedes habilitarlo de nuevo o eliminarlo permanentemente.</p>
+    {{-- Aviso de error --}}
+    @if(session('error'))
+        <div class="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 rounded-xl text-sm font-medium">
+            <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>{{ session('error') }}</span>
+        </div>
+    @endif
+
+    {{-- Encabezado --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">Personal deshabilitado. Puedes habilitarlo de nuevo o, si no tiene historial, eliminarlo.</p>
+        <a href="{{ route('empleados.index') }}"
+           class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            Volver a empleados
+        </a>
+    </div>
+
+    {{-- TARJETAS --}}
+    <div class="grid grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Inactivos</p>
+            </div>
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ number_format($totalInactivos) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">{{ $busqueda !== '' ? 'que coinciden con la búsqueda' : 'empleados deshabilitados' }}</p>
+        </div>
+        <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
+            <div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </span>
+                <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Activos</p>
+            </div>
+            <p class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white tabular-nums">{{ number_format($totalActivos) }}</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">empleados con acceso</p>
+        </div>
+    </div>
+
+    {{-- BUSCADOR --}}
+    <form method="GET" action="{{ route('empleados.inactivos') }}"
+          class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5 sm:p-6">
+        <label for="filter_q" class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Buscar empleado inactivo</label>
+        <div class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                <input type="text" id="filter_q" name="q" value="{{ $busqueda }}" placeholder="Nombre o correo..."
+                       class="w-full pl-9 pr-3 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-sm font-medium rounded-xl outline-none placeholder-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+            </div>
+            <div class="flex gap-3">
+                @if($busqueda !== '')
+                    <a href="{{ route('empleados.inactivos') }}"
+                       class="flex-1 sm:flex-none text-center px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        Limpiar
+                    </a>
+                @endif
+                <button type="submit"
+                        class="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-colors">
+                    Buscar
+                </button>
             </div>
         </div>
+    </form>
 
-        {{-- Alertas --}}
-        <div class="transition-all duration-700 ease-out transform delay-150" :class="cargado ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'">
-            @if(session('success'))
-                <div class="bg-emerald-50 dark:bg-[#0f1f17] border border-emerald-200 dark:border-emerald-900/50 p-4 rounded-xl flex items-center gap-3 mb-6 shadow-sm transition-colors">
-                    <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-lg">
-                        <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </div>
-                    <span class="text-sm font-bold text-emerald-800 dark:text-emerald-400">{{ session('success') }}</span>
-                </div>
-            @endif
+    {{-- TABLA --}}
+    <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 dark:bg-white/[0.03] text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100 dark:border-white/10">
+                        <th class="px-5 py-4 font-bold whitespace-nowrap">Empleado</th>
+                        <th class="px-5 py-4 font-bold whitespace-nowrap">Sucursal</th>
+                        <th class="px-5 py-4 font-bold whitespace-nowrap">Rol</th>
+                        <th class="px-5 py-4 font-bold whitespace-nowrap text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm text-gray-700 dark:text-gray-300 divide-y divide-gray-100 dark:divide-white/10">
+                    @forelse($empleados as $empleado)
+                        @php
+                            $esAdminFila  = $empleado->role && $empleado->role->nombre === $rolAdmin;
+                            $sinAcceso    = $esAdminFila && ! $puedeGestionarAdmins;
+                            $tieneHistorial = in_array($empleado->id, $conHistorial, true);
+                        @endphp
+                        <tr class="hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors">
 
-            @if(session('error'))
-                <div class="bg-red-50 dark:bg-[#2a1315] border border-red-200 dark:border-red-900/50 p-4 rounded-xl flex items-center gap-3 mb-6 shadow-sm transition-colors">
-                    <div class="p-1.5 bg-red-100 dark:bg-red-900/40 rounded-lg">
-                        <svg class="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </div>
-                    <span class="text-sm font-bold text-red-800 dark:text-red-400">{{ session('error') }}</span>
-                </div>
-            @endif
-        </div>
-
-        {{-- Tabla --}}
-        <div class="bg-white dark:bg-[#0c0c0c] rounded-2xl border border-gray-200 dark:border-neutral-800/60 shadow-sm dark:shadow-2xl transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform delay-300"
-             :class="cargado ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-95'">
-
-            <div class="w-full overflow-x-auto rounded-2xl">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
-                    <thead>
-                        <tr class="bg-gray-50/80 dark:bg-[#121212] border-b border-gray-200 dark:border-neutral-800/50 transition-colors">
-                            <th class="px-6 py-5 text-[10px] font-black text-gray-500 dark:text-neutral-500 uppercase tracking-[0.2em]">Empleado</th>
-                            <th class="px-6 py-5 text-[10px] font-black text-gray-500 dark:text-neutral-500 uppercase tracking-[0.2em]">Sucursal</th>
-                            <th class="px-6 py-5 text-[10px] font-black text-gray-500 dark:text-neutral-500 uppercase tracking-[0.2em]">Rol</th>
-                            <th class="px-6 py-5 text-[10px] font-black text-gray-500 dark:text-neutral-500 uppercase tracking-[0.2em] text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 dark:divide-neutral-800/30">
-                        @forelse($empleados as $empleado)
-                            <tr class="group hover:bg-gray-50/50 dark:hover:bg-[#151515] transition-all duration-300">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-full bg-gray-100 dark:bg-[#1a1a1a] border border-gray-200 dark:border-neutral-700/50 text-gray-600 dark:text-neutral-300 flex items-center justify-center font-black text-sm shrink-0">
-                                            {{ strtoupper(substr($empleado->name, 0, 1)) }}
-                                        </div>
-                                        <div class="flex flex-col justify-center">
-                                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $empleado->name }}</p>
-                                            <p class="text-xs font-semibold text-gray-500 dark:text-neutral-500 mt-0.5">{{ $empleado->email }}</p>
-                                        </div>
+                            <td class="px-5 py-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-bold bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400">
+                                        {{ mb_strtoupper(mb_substr($empleado->name, 0, 1)) }}
+                                    </span>
+                                    <div>
+                                        <p class="font-bold text-gray-900 dark:text-white">
+                                            {{ $empleado->name }}
+                                            <span class="ml-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-500/20">Inactivo</span>
+                                        </p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ $empleado->email }}</p>
                                     </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-bold bg-gray-100 dark:bg-[#141414] text-gray-600 dark:text-neutral-300 border border-gray-200 dark:border-neutral-800/80">
-                                        {{ $empleado->sucursal ? $empleado->sucursal->nombre : 'Sin asignación' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1.5 rounded-md text-[11px] font-bold bg-gray-100 dark:bg-[#141414] text-gray-600 dark:text-neutral-300 border border-gray-200 dark:border-neutral-800/80">
-                                        {{ $empleado->role ? $empleado->role->nombre : ($empleado->rol ? $empleado->rol->nombre : 'Sin rol') }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-3">
+                                </div>
+                            </td>
 
-                                        {{-- Habilitar (switch con animación completa antes de enviar) --}}
-                                        <form action="{{ route('empleados.toggle', $empleado->id) }}"
-                                              method="POST"
-                                              class="inline-block"
-                                              title="Habilitar"
-                                              x-data="{ on: false }"
-                                              @submit.prevent="on = !on; setTimeout(() => $el.submit(), 250)">
+                            <td class="px-5 py-4 whitespace-nowrap">
+                                @if($empleado->sucursal)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10">{{ $empleado->sucursal->nombre }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">Sin asignar</span>
+                                @endif
+                            </td>
+
+                            <td class="px-5 py-4 whitespace-nowrap">
+                                @if($empleado->role)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10">{{ $empleado->role->nombre }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">Sin rol</span>
+                                @endif
+                            </td>
+
+                            <td class="px-5 py-4">
+                                <div class="flex items-center justify-end gap-2">
+                                    @if($sinAcceso)
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">Solo un administrador</span>
+                                    @else
+                                        <form action="{{ route('empleados.toggle', $empleado->id) }}" method="POST"
+                                              x-data="{ enviando: false }" @submit="enviando = true">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="relative inline-flex items-center w-11 h-6 rounded-full transition-colors duration-200 cursor-pointer" :class="on ? 'bg-[#D32030]' : 'bg-gray-200 dark:bg-neutral-700'">
-                                                <span class="inline-block w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200" :class="on ? 'translate-x-5' : 'translate-x-0.5'"></span>
+                                            <button type="submit" :disabled="enviando"
+                                                    class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-60">
+                                                Habilitar
                                             </button>
                                         </form>
 
-                                        @if($empleado->email !== 'admin@llantas.com')
-                                            {{-- Eliminar (abre modal de confirmación) --}}
+                                        @if($tieneHistorial)
+                                            <span class="text-xs text-gray-400 dark:text-gray-500 max-w-[9rem] leading-tight" title="Tiene ventas o movimientos registrados">Con historial: no se elimina</span>
+                                        @elseif($empleado->id !== auth()->id())
                                             <button type="button"
-                                                    @click="abrirModalEliminar({{ $empleado->id }}, '{{ addslashes($empleado->name) }}')"
-                                                    title="Eliminar"
-                                                    class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/40 transition-all duration-200 cursor-pointer">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
+                                                    @click="urlEliminar = @js(route('empleados.destroy', $empleado->id)); nombreEliminar = @js($empleado->name); modalEliminar = true"
+                                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors" title="Eliminar">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                             </button>
                                         @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="px-6 py-24 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-400 dark:text-neutral-500">
-                                        <h3 class="text-sm font-bold text-gray-900 dark:text-white tracking-wide">Sin empleados inactivos</h3>
-                                        <p class="text-xs font-semibold mt-1 text-gray-500 dark:text-neutral-500 dark:opacity-70">Todos tus empleados están activos actualmente.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-16 text-center">
+                                <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 mb-4">
+                                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/></svg>
+                                </div>
+                                @if($busqueda !== '')
+                                    <p class="text-base font-bold text-gray-800 dark:text-gray-200">Sin resultados</p>
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 max-w-sm mx-auto">Ningún empleado inactivo coincide con tu búsqueda.</p>
+                                @else
+                                    <p class="text-base font-bold text-gray-800 dark:text-gray-200">Sin empleados inactivos</p>
+                                    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 max-w-sm mx-auto">Todo el personal está activo.</p>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        @if($empleados->hasPages())
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-white/10">
+                {{ $empleados->links() }}
+            </div>
+        @endif
     </div>
 
-    {{-- ============================= --}}
-    {{-- MODAL: Confirmar Eliminación  --}}
-    {{-- ============================= --}}
-    <div x-show="deleteModalOpen"
-         x-cloak
-         class="fixed inset-0 z-50 flex items-center justify-center p-4">
-
-        {{-- Overlay --}}
-        <div x-show="deleteModalOpen"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             @click="cerrarModalEliminar()"
-             class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-        {{-- Contenido --}}
-        <div x-show="deleteModalOpen"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95"
-             x-transition:enter-end="opacity-100 scale-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95"
-             class="relative bg-white dark:bg-[#151515] rounded-2xl border border-gray-200 dark:border-neutral-800 shadow-2xl w-full max-w-md">
-
-            <div class="p-6">
-                <div class="flex items-start gap-4">
-                    <div class="shrink-0 w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
-                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zM10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                        </svg>
-                    </div>
-                    <div class="flex-1 pt-1">
-                        <h2 class="font-bold text-lg text-gray-900 dark:text-white">Eliminar empleado</h2>
-                        <p class="text-sm text-gray-500 dark:text-neutral-400 mt-1">
-                            ¿Seguro que deseas eliminar a <span class="font-semibold text-gray-900 dark:text-white" x-text="empleadoNombre"></span>? Esta acción no se puede deshacer.
-                        </p>
-                    </div>
+    {{-- VENTANA: eliminar empleado --}}
+    <div x-show="modalEliminar" x-cloak
+         class="fixed inset-0 !mt-0 z-[150] bg-gray-900/50 flex items-center justify-center p-4">
+        <div @click.away="modalEliminar = false"
+             class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div class="flex items-start gap-4">
+                <span class="w-11 h-11 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center shrink-0">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </span>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">¿Eliminar empleado?</h3>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        Vas a eliminar a <span class="font-bold text-gray-900 dark:text-white" x-text="nombreEliminar"></span>. Esta acción no se puede deshacer.
+                    </p>
+                    <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">Si ya tiene ventas o movimientos registrados no se puede eliminar, para conservar el historial.</p>
                 </div>
             </div>
-
-            <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-neutral-800">
-                <button type="button" @click="cerrarModalEliminar()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-[#151515] border border-gray-300 dark:border-neutral-800 rounded-xl hover:bg-gray-50 dark:hover:bg-neutral-800 transition-all duration-200">
+            <form :action="urlEliminar" method="POST" x-data="{ enviando: false }" @submit="enviando = true"
+                  class="mt-6 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                @csrf
+                @method('DELETE')
+                <button type="button" @click="modalEliminar = false"
+                        class="px-5 py-2.5 bg-white dark:bg-transparent border border-gray-200 dark:border-white/15 text-gray-700 dark:text-gray-200 font-semibold text-sm rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                     Cancelar
                 </button>
-                <form :action="`/empleados/${empleadoActual}`" method="POST" class="inline-block">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="px-6 py-2.5 text-sm font-semibold text-white bg-[#D32030] rounded-xl shadow-lg shadow-red-500/20 hover:bg-[#B91C2C] transition-all duration-200">
-                        Sí, eliminar
-                    </button>
-                </form>
-            </div>
+                <button type="submit" :disabled="enviando"
+                        class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60">
+                    Sí, eliminar
+                </button>
+            </form>
         </div>
     </div>
+
 </div>
 @endsection
