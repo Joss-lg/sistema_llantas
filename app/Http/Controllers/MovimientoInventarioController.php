@@ -23,6 +23,20 @@ class MovimientoInventarioController extends Controller
             'precio_publico' => 'nullable|numeric|min:0',
             'precio_mayoreo' => 'nullable|numeric|min:0',
             'sucursal_id'    => 'nullable|exists:sucursales,id',
+        ], [
+            'producto_id.required'    => 'Elige un producto del catálogo.',
+            'producto_id.exists'      => 'El producto elegido ya no existe.',
+            'cantidad.required'       => 'Escribe la cantidad.',
+            'cantidad.integer'        => 'La cantidad debe ser un número entero.',
+            'cantidad.min'            => 'La cantidad debe ser al menos 1.',
+            'costo_unitario.required' => 'Escribe el costo unitario.',
+            'costo_unitario.numeric'  => 'El costo debe ser un número.',
+            'costo_unitario.min'      => 'El costo no puede ser negativo.',
+            'precio_publico.numeric'  => 'El precio al público debe ser un número.',
+            'precio_publico.min'      => 'El precio al público no puede ser negativo.',
+            'precio_mayoreo.numeric'  => 'El precio de mayoreo debe ser un número.',
+            'precio_mayoreo.min'      => 'El precio de mayoreo no puede ser negativo.',
+            'sucursal_id.exists'      => 'La sucursal elegida no existe.',
         ]);
 
         // Admin: la sucursal que eligió. Empleado: SIEMPRE la suya.
