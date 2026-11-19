@@ -245,7 +245,11 @@ class EmpleadoController extends Controller
         $sucursales = Sucursal::where('activa', true)->orderBy('nombre')->get();
         $permisosGrouped = Permiso::orderBy('modulo')->orderBy('nombre')->get()->groupBy('modulo');
 
-        return view('empleados.edit', compact('empleado', 'roles', 'sucursales', 'permisosGrouped'));
+        $empleado->load('permisos');
+        $esPrincipal = $this->esPrincipal($empleado);
+        $esYo        = auth()->id() === $empleado->id;
+
+        return view('empleados.edit', compact('empleado', 'roles', 'sucursales', 'permisosGrouped', 'esPrincipal', 'esYo'));
     }
 
     public function update(Request $request, User $empleado)
