@@ -4,79 +4,41 @@ namespace App\Http\Controllers;
 
 use App\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RoleController extends Controller
 {
+    /** El rol con acceso total solo se protege por su nombre (no por su número de id). */
+    public const ROL_ADMIN = EmpleadoController::ROL_ADMIN;
+
+    private function esProtegido(Role $role): bool
+    {
+        return $role->nombre === self::ROL_ADMIN;
+    }
+
+    private function mensajes(string $unico): array
+    {
+        return [
+            'nombre.required' => 'Escribe el nombre del rol.',
+            'nombre.max'      => 'El nombre del rol no puede pasar de 50 letras.',
+            'nombre.unique'   => $unico,
+        ];
+    }
+
     /**
-     * Muestra el listado de roles con el conteo de usuarios asignados.
+     * Lista de roles con cuántos empleados tiene cada uno.
      */
     public function index()
     {
-        $roles = Role::withCount('usuarios')->get();
-        return view('roles.index', compact('roles'));
-    }
+        $roles = Role::withCount('usuarios')->orderBy('id')->get();
 
-    /**
-     * Almacena un nuevo rol en la base de datos.
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'nombre' => ['required', 'string', 'max:50', 'unique:roles,nombre'],
-        ], [
-            'nombre.required' => 'El nombre del rol es obligatorio.',
-            'nombre.unique'   => 'Este rol ya se encuentra registrado.',
+        return view('roles.index', [
+            'roles'         => $roles,
+            'totalRoles'    => $roles->count(),
+            'totalUsuarios' => (int) $roles->sum('usuarios_count'),
+            'sinUsuarios'   => $roles->where('usuarios_count', 0)->count(),
+            'rolAdmin'      => self::ROL_ADMIN,
         ]);
-
-        Role::create([
-            'nombre' => trim($request->nombre),
-        ]);
-
-        return redirect()->route('roles.index')->with('success', 'Rol creado exitosamente.');
-    }
-
-    /**
-     * Actualiza el nombre de un rol existente.
-     */
-    public function update(Request $request, Role $role)
-    {
-        // Proteger el rol de Administrador General para evitar modificaciones que rompan el sistema
-        if ($role->id === 1 || $role->nombre === 'Administrador General') {
-            return redirect()->back()->with('error', 'El rol Administrador General no se puede modificar.');
-        }
-
-        $request->validate([
-            'nombre' => ['required', 'string', 'max:50', 'unique:roles,nombre,' . $role->id],
-        ], [
-            'nombre.required' => 'El nombre del rol es obligatorio.',
-            'nombre.unique'   => 'Ya existe otro rol con este nombre.',
-        ]);
-
-        $role->update([
-            'nombre' => trim($request->nombre),
-        ]);
-
-        return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
-    }
-
-    /**
-     * Elimina un rol si no tiene usuarios asignados.
-     */
-    public function destroy(Role $role)
-    {
-        // Impide eliminar el Administrador General
-        if ($role->id === 1 || $role->nombre === 'Administrador General') {
-            return redirect()->back()->with('error', 'El rol Administrador General no se puede eliminar.');
-        }
-
-        // Validar si el rol tiene usuarios vinculados antes de borrar
-        if ($role->usuarios()->count() > 0) {
-            return redirect()->back()->with('error', 'No se puede eliminar el rol porque tiene usuarios asignados.');
-        }
-
-        $role->delete();
-
-        return redirect()->route('roles.index')->with('success', 'Rol eliminado con éxito.');
     }
 
     public function create()
@@ -84,13 +46,66 @@ class RoleController extends Controller
         return view('roles.create');
     }
 
+    public function store(Request $request)
+    {
+        // Se quitan los espacios sobrantes ANTES de revisar si el nombre ya existe
+        $request->merge(['nombre' => trim((string) $request->input('nombre'))]);
+
+        $datos = $request->validate([
+            'nombre' => ['required', 'string', 'max:50', 'unique:roles,nombre'],
+        ], $this->mensajes('Ya existe un rol con ese nombre.'));
+
+        Role::create(['nombre' => $datos['nombre']]);
+
+        return redirect()->route('roles.index')->with('success', 'Rol creado correctamente.');
+    }
+
     public function edit(Role $role)
     {
-        // Proteger el rol de Administrador General
-        if ($role->id === 1 || $role->nombre === 'Administrador General') {
+        if ($this->esProtegido($role)) {
             return redirect()->route('roles.index')->with('error', 'El rol Administrador General no se puede modificar.');
         }
 
         return view('roles.edit', compact('role'));
+    }
+
+    public function update(Request $request, Role $role)
+    {
+        if ($this->esProtegido($role)) {
+            return redirect()->route('roles.index')->with('error', 'El rol Administrador General no se puede modificar.');
+        }
+
+        $request->merge(['nombre' => trim((string) $request->input('nombre'))]);
+
+        $datos = $request->validate([
+            'nombre' => ['required', 'string', 'max:50', Rule::unique('roles', 'nombre')->ignore($role->id)],
+        ], $this->mensajes('Ya existe otro rol con ese nombre.'));
+
+        $role->update(['nombre' => $datos['nombre']]);
+
+        return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
+    }
+
+    /**
+     * Elimina un rol solo si ningún empleado (activo o no) lo tiene.
+     */
+    public function destroy(Role $role)
+    {
+        if ($this->esProtegido($role)) {
+            return redirect()->route('roles.index')->with('error', 'El rol Administrador General no se puede eliminar.');
+        }
+
+        $usuarios = $role->usuarios()->count();
+
+        if ($usuarios > 0) {
+            return redirect()->route('roles.index')->with(
+                'error',
+                "No se puede eliminar el rol {$role->nombre} porque lo tienen {$usuarios} empleado(s). Cámbiales el rol primero."
+            );
+        }
+
+        $role->delete();
+
+        return redirect()->route('roles.index')->with('success', 'Rol eliminado correctamente.');
     }
 }
