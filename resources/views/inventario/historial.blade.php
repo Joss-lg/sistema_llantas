@@ -4,10 +4,7 @@
 
 @section('content')
 
-<!-- Flatpickr: selector de calendario para rango de fechas -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.js"></script>
+<!-- Flatpickr (calendario): viene dentro del proyecto, cargado desde el diseño principal -->
 
 <style>
     /* =========================================================

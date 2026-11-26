@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket #{{ $venta->folio }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    {{-- Letras y QR vienen dentro del proyecto (el ticket funciona sin internet) --}}
+    @vite('resources/css/fuentes.css')
     @if(config('empresa.whatsapp'))
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+        @vite('resources/js/ticket.js')
     @endif
     <style>
         :root {
@@ -434,14 +435,9 @@
 
             var url = "https://wa.me/{{ preg_replace('/\D+/', '', config('empresa.whatsapp')) }}?text=" + encodeURIComponent(mensaje);
 
-            new QRCode(document.getElementById("qrcode"), {
-                text: url,
-                width: 130,
-                height: 130,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
-            });
+            var lienzo = document.createElement("canvas");
+            document.getElementById("qrcode").appendChild(lienzo);
+            window.dibujarQr(lienzo, url, 130);
         };
     </script>
     @endif

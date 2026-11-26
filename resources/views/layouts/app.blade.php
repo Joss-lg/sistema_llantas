@@ -22,11 +22,6 @@
         })();
     </script>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
     <!-- Evita el doble scroll (página completa + contenedores internos) que provocaba el corte visual al desplazarse -->
     <style>
         html, body {
@@ -43,11 +38,8 @@
         }
     </style>
 
-    <!-- Alpine.js: requerido por los x-data de ventas/inventario/gastos/reportes -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
-    <!-- Scripts y Estilos (Vite + Tailwind CSS) -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Letras, estilos y scripts del sistema (Vite + Tailwind + Alpine, todo local, sin internet) -->
+    @vite(['resources/css/fuentes.css', 'resources/css/app.css', 'resources/js/app.js'])
 
     <!-- Imprimir tickets en la misma página (sin abrir otra ventana) -->
     <script>

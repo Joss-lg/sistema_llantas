@@ -1,0 +1,21 @@
+/* Letras del sistema, guardadas dentro del proyecto (no se bajan de internet). */
+
+/* Inter: pantallas del sistema */
+@import '@fontsource/inter/latin-300.css';
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+
+/* Oswald: títulos del login y del ticket */
+@import '@fontsource/oswald/latin-500.css';
+@import '@fontsource/oswald/latin-600.css';
+@import '@fontsource/oswald/latin-700.css';
+
+/* Archivo Narrow: texto del ticket */
+@import '@fontsource/archivo-narrow/latin-400.css';
+@import '@fontsource/archivo-narrow/latin-600.css';
+@import '@fontsource/archivo-narrow/latin-700.css';
+
+/* JetBrains Mono: detalles del login */
+@import '@fontsource/jetbrains-mono/latin-500.css';

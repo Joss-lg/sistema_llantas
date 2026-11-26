@@ -6,10 +6,6 @@
 
 @section('content')
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-
 <style>
     @media (prefers-reduced-motion: no-preference) {
         .anim-rise        { animation: fade-in-up .8s cubic-bezier(.16,1,.3,1) both; }

@@ -4,12 +4,10 @@
 
 @section('content')
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+{{-- Gráficas: Chart.js viene dentro del proyecto (no se baja de internet) --}}
+@vite('resources/js/reportes.js')
 
-{{-- Flatpickr: calendario para elegir el rango de fechas --}}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/l10n/es.js"></script>
+{{-- Flatpickr (calendario del rango de fechas): viene dentro del proyecto, cargado desde el diseño principal --}}
 
 <style>
     /* Calendario con los colores del sistema (y modo oscuro) */
