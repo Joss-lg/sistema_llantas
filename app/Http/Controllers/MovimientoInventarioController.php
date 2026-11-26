@@ -6,9 +6,11 @@ use App\Http\Controllers\Concerns\ResuelveContextoSucursal;
 use App\Models\MovimientoInventario;
 use App\Models\Producto;
 use App\Models\StockSucursal;
+use App\Models\Sucursal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MovimientoInventarioController extends Controller
 {
@@ -82,9 +84,15 @@ class MovimientoInventarioController extends Controller
 
             DB::commit();
             return redirect()->route('inventario.index')->with('success', 'Entrada registrada y precios actualizados con éxito.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+            Log::error('Inventario: no se pudo registrar la entrada', [
+                'usuario_id'  => Auth::id(),
+                'producto_id' => $request->producto_id,
+                'sucursal_id' => $sucursalDestino,
+                'exception'   => $e,
+            ]);
+            return redirect()->back()->withInput()->with('error', 'No se pudo registrar la entrada. Inténtalo de nuevo; si el problema sigue, avisa al administrador.');
         }
     }
 
@@ -132,9 +140,15 @@ class MovimientoInventarioController extends Controller
 
             DB::commit();
             return redirect()->route('inventario.index')->with('success', "Salida por {$request->motivo} registrada correctamente.");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error: ' . $e->getMessage());
+            Log::error('Inventario: no se pudo registrar la salida', [
+                'usuario_id'  => Auth::id(),
+                'producto_id' => $request->producto_id,
+                'sucursal_id' => $sucursalDestino,
+                'exception'   => $e,
+            ]);
+            return redirect()->back()->withInput()->with('error', 'No se pudo registrar la salida. Inténtalo de nuevo; si el problema sigue, avisa al administrador.');
         }
     }
 
@@ -157,6 +171,8 @@ class MovimientoInventarioController extends Controller
 
             $producto = Producto::findOrFail($request->producto_id);
             $cantidadATraspasar = $request->cantidad;
+            $nombreOrigen = Sucursal::whereKey($request->sucursal_origen)->value('nombre');
+            $nombreDestino = Sucursal::whereKey($request->sucursal_destino)->value('nombre');
 
             $stockOrigen = StockSucursal::where('producto_id', $producto->id)
                 ->where('sucursal_id', $request->sucursal_origen)
@@ -178,7 +194,7 @@ class MovimientoInventarioController extends Controller
                 'tipo'          => 'salida',
                 'cantidad'      => $cantidadATraspasar,
                 'motivo'        => 'traspaso',
-                'observaciones' => 'Traspaso enviado a sucursal ID: ' . $request->sucursal_destino,
+                'observaciones' => 'Traspaso enviado a ' . $nombreDestino,
                 'fecha'         => now(),
             ]);
 
@@ -196,15 +212,22 @@ class MovimientoInventarioController extends Controller
                 'cantidad'       => $cantidadATraspasar,
                 'motivo'         => 'traspaso',
                 'costo_unitario' => $producto->costo,
-                'observaciones'  => 'Traspaso recibido de sucursal ID: ' . $request->sucursal_origen,
+                'observaciones'  => 'Traspaso recibido de ' . $nombreOrigen,
                 'fecha'          => now(),
             ]);
 
             DB::commit();
             return redirect()->back()->with('success', 'Traspaso de llantas realizado con éxito.');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->back()->with('error', 'Error al realizar el traspaso: ' . $e->getMessage());
+            Log::error('Inventario: no se pudo realizar el traspaso', [
+                'usuario_id'       => Auth::id(),
+                'producto_id'      => $request->producto_id,
+                'sucursal_origen'  => $request->sucursal_origen,
+                'sucursal_destino' => $request->sucursal_destino,
+                'exception'        => $e,
+            ]);
+            return redirect()->back()->withInput()->with('error', 'No se pudo realizar el traspaso. Inténtalo de nuevo; si el problema sigue, avisa al administrador.');
         }
     }
 
