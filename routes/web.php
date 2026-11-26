@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PuntoVentaController;
 use App\Http\Controllers\EmpleadoController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SucursalController;
 use App\Http\Controllers\ClienteController;
 
 // Controllers de inventario
@@ -54,6 +55,12 @@ Route::middleware(['auth', 'permiso'])->group(function () {
 
     Route::resource('empleados', EmpleadoController::class)->except(['show']);
     Route::resource('roles', RoleController::class)->except(['show']);
+
+    // Módulo de Sucursales (se activan o desactivan; solo se elimina una que nunca se usó)
+    Route::patch('/sucursales/{sucursal}/toggle', [SucursalController::class, 'toggle'])->name('sucursales.toggle');
+    Route::resource('sucursales', SucursalController::class)
+        ->parameters(['sucursales' => 'sucursal'])
+        ->except(['show']);
 
     // Módulo de Clientes
     Route::resource('clientes', ClienteController::class);

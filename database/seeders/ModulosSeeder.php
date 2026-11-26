@@ -44,6 +44,16 @@ class ModulosSeeder extends Seeder
                 'roles.destroy' => 'Eliminar Rol',
             ],
 
+            'Sucursales' => [
+                'sucursales.index'  => 'Ver Listado de Sucursales',
+                'sucursales.create' => 'Ver Formulario de Nueva Sucursal',
+                'sucursales.store'  => 'Registrar Sucursal',
+                'sucursales.edit'   => 'Ver Formulario de Edición de Sucursal',
+                'sucursales.update' => 'Actualizar Sucursal',
+                'sucursales.toggle' => 'Activar o Desactivar Sucursal',
+                'sucursales.destroy' => 'Eliminar Sucursal sin historial',
+            ],
+
             'Inventario' => [
                 'inventario.index'           => 'Ver Inventario',
                 'inventario.storeProducto'   => 'Agregar Producto',

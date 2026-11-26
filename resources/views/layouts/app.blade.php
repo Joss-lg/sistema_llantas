@@ -147,9 +147,10 @@
                         $mostrarSeccionInventario = $puedeInventario;
 
                         $puedeEmpleados      = Auth::user()->tienePermiso('empleados.index');
+                        $puedeSucursales     = Auth::user()->tienePermiso('sucursales.index');
                         $puedeReportes       = Auth::user()->tienePermiso('reportes.index');
                         $puedeCajaHistorial  = Auth::user()->tienePermiso('caja.historial');
-                        $mostrarSeccionAdmin = $puedeEmpleados || $puedeReportes || $puedeCajaHistorial;
+                        $mostrarSeccionAdmin = $puedeEmpleados || $puedeSucursales || $puedeReportes || $puedeCajaHistorial;
                     @endphp
 
                     <div class="px-4 pb-4 pt-2 transition-all duration-300"
@@ -281,6 +282,16 @@
                                    :class="sidebarOpen ? '' : 'justify-center px-0'">
                                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                     <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Empleados</span>
+                                </a>
+                            @endif
+
+                            @if($puedeSucursales)
+                                <a href="{{ route('sucursales.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
+                                   {{ request()->routeIs('sucursales.*') ? 'bg-gradient-to-r from-[#818CF8]/10 to-transparent text-[#818CF8] font-semibold shadow-[inset_3px_0_0_0_#818CF8]' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-0.5' }}"
+                                   :class="sidebarOpen ? '' : 'justify-center px-0'">
+                                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2M5 21H3M9 7h1m4 0h1M9 11h1m4 0h1M9 15h1m4 0h1"></path></svg>
+                                    <span class="whitespace-nowrap" x-show="sidebarOpen" x-transition:enter="transition ease-out duration-200 delay-100" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">Sucursales</span>
                                 </a>
                             @endif
 
