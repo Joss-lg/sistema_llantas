@@ -19,12 +19,9 @@ class SucursalesSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Crear las 5 sucursales base (si ya existen, no se duplican)
-        $adminSucursal = Sucursal::firstOrCreate(['nombre' => 'Administración General'], ['activa' => true]);
-        Sucursal::firstOrCreate(['nombre' => 'Chalco'], ['activa' => true]);
-        Sucursal::firstOrCreate(['nombre' => 'Atlanta'], ['activa' => true]);
-        Sucursal::firstOrCreate(['nombre' => 'Las Torres'], ['activa' => true]);
-        Sucursal::firstOrCreate(['nombre' => 'Valle de Chalco'], ['activa' => true]);
+        // 1. Una sola sucursal inicial (si ya existe, no se duplica).
+        //    Las demás sucursales las da de alta el cliente desde el sistema.
+        $adminSucursal = Sucursal::firstOrCreate(['nombre' => 'Sucursal Principal'], ['activa' => true]);
 
         // 2. Rol de Administrador General (se asegura que exista antes de asignarlo)
         $rolAdmin = Role::firstOrCreate(['nombre' => 'Administrador General']);

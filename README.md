@@ -105,8 +105,11 @@ php artisan migrate --pretend
 php artisan db:seed
 ```
 
-Esto crea los roles, los permisos, las sucursales y el usuario administrador.
+Esto crea los roles, los permisos, la sucursal inicial y el usuario administrador.
 **Este paso es obligatorio**: sin él no hay con qué iniciar sesión.
+
+El sistema arranca **sin productos**. Cada producto se da de alta desde Inventario
+(o con la importación de Excel), para que quede registrado en la base de datos.
 
 ### 8. Instalar las dependencias de JavaScript
 
@@ -177,20 +180,18 @@ Las rutas protegidas usan el middleware `permiso`, que valida **por nombre de ru
 Por eso los permisos registrados en `ModulosSeeder` tienen que coincidir exactamente
 con los nombres de las rutas en `routes/web.php`.
 
-### Sucursales que crea el seeder
+### Sucursal que crea el seeder
 
 | ID | Nombre |
 |---|---|
-| 1 | Administración General |
-| 2 | Chalco |
-| 3 | Atlanta |
-| 4 | Las Torres |
-| 5 | Valle de Chalco |
+| 1 | Sucursal Principal |
+
+Las demás sucursales se dan de alta desde el sistema.
 
 ### Usuario administrador
 
 El seeder crea `admin@llantas.com` con el rol Administrador General y la sucursal
-Administración General. La contraseña sale de `ADMIN_PASSWORD` en el `.env`, o se
+Sucursal Principal. La contraseña sale de `ADMIN_PASSWORD` en el `.env`, o se
 genera aleatoria si esa variable está vacía.
 
 ---
