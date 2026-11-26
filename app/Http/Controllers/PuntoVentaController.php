@@ -36,37 +36,50 @@ class PuntoVentaController extends Controller
         // Admin: la sucursal elegida en el selector (o la suya). Empleado: siempre la suya.
         $sucursalDefecto = $this->sucursalParaOperar($request) ?? ($sucursales->first()->id ?? null);
 
-        // IDs de productos con entrada de inventario registrada hoy
-        $productosNuevosHoy = MovimientoInventario::where('tipo', 'entrada')
-            ->whereDate('fecha', today())
-            ->pluck('producto_id')
-            ->unique()
-            ->toArray();
+        // IDs de productos con entrada de inventario registrada hoy (para marcarlos "Nuevo")
+        $productosNuevosHoy = array_flip(
+            MovimientoInventario::where('tipo', 'entrada')
+                ->whereDate('fecha', today())
+                ->pluck('producto_id')
+                ->unique()
+                ->all()
+        );
 
-        $query = Producto::where('estado', true);
+        // Solo viajan al navegador los datos que la pantalla usa.
+        // El costo nunca se pide; el precio de mayoreo solo si el usuario puede usarlo;
+        // y el stock es el de la sucursal en uso (no el de las demás).
+        $columnas = ['id', 'tipo', 'marca', 'medida', 'descripcion', 'precio_publico'];
+        if ($puedeMayoreo) {
+            $columnas[] = 'precio_mayoreo';
+        }
+
+        $query = Producto::where('estado', true)->select($columnas);
 
         if ($sucursalDefecto) {
-            $query->withSum(['stock as stock_cantidad' => function($q) use ($sucursalDefecto) {
+            $query->withSum(['stock as stock_cantidad' => function ($q) use ($sucursalDefecto) {
                 $q->where('sucursal_id', $sucursalDefecto);
             }], 'cantidad');
         } else {
             $query->withSum('stock as stock_cantidad', 'cantidad');
         }
 
-        $productos = $query->with('stock')->get()->map(function ($producto) use ($productosNuevosHoy, $puedeMayoreo) {
-            $producto->stocks = $producto->stock->pluck('cantidad', 'sucursal_id')->toArray();
-            $producto->stock_cantidad = (int) ($producto->stock_cantidad ?? 0);
-            // Marca si el producto tuvo entrada de inventario hoy
-            $producto->es_nuevo = in_array($producto->id, $productosNuevosHoy);
+        $productos = $query
+            ->orderBy('marca')
+            ->orderBy('medida')
+            ->orderBy('id')
+            ->get()
+            ->map(function ($producto) use ($productosNuevosHoy) {
+                $producto->stock_cantidad = (int) ($producto->stock_cantidad ?? 0);
+                $producto->es_nuevo = isset($productosNuevosHoy[$producto->id]);
 
-            // El costo nunca viaja al navegador; el mayoreo solo si el usuario puede usarlo
-            $producto->makeHidden($puedeMayoreo ? ['costo'] : ['costo', 'precio_mayoreo']);
-
-            return $producto;
-        });
+                return $producto;
+            });
 
         // Clientes para el selector de la venta
         $clientes = Cliente::orderBy('nombre')->get(['id', 'nombre', 'rfc', 'razon_social']);
+
+        // Del selector de sucursales solo hace falta el id y el nombre
+        $sucursales = collect($sucursales)->map(fn ($s) => ['id' => $s->id, 'nombre' => $s->nombre])->values();
 
         // La vista usa $sucursalSeleccionada para saber qué sucursal mostrar marcada
         $sucursalSeleccionada = $sucursalDefecto;
