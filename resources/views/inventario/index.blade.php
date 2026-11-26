@@ -11,7 +11,27 @@
     $viendoSoloServicios = request('tipo') === 'Servicio';
     $nuevosHoy           = $productosNuevosHoy ?? [];
     $totalNuevos         = count($nuevosHoy);
-    $porcentaje          = fn ($n) => $totalProductos > 0 ? round(($n / $totalProductos) * 100) : 0;
+    // Porcentaje de las tarjetas, ya con su signo. Un redondeo normal engaña:
+    // 1 de 589 saldría "0%" y 588 de 589 saldría "100%", así que esos casos se dicen como son.
+    $porcentaje = function ($n) use ($totalProductos) {
+        if ($totalProductos <= 0 || $n <= 0) {
+            return '0%';
+        }
+        if ($n >= $totalProductos) {
+            return '100%';
+        }
+
+        $p = ($n / $totalProductos) * 100;
+
+        if ($p < 1) {
+            return 'menos de 1%';
+        }
+        if ($p > 99) {
+            return 'más de 99%';
+        }
+
+        return round($p) . '%';
+    };
 
     $hayFiltros = collect(['q', 'stock_status', 'marca_filtro', 'ordenar_precio', 'sucursal_id', 'tipo', 'solo_nuevos'])
         ->contains(fn ($k) => request()->filled($k) && ! in_array(request($k), ['Todos', 'Todas'], true));
@@ -145,7 +165,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">En stock</p>
             </div>
             <p class="mt-3 text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">{{ number_format($enStock) }}</p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($enStock) }}% del total</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($enStock) }} del total</p>
         </div>
 
         <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
@@ -156,7 +176,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Bajo mínimo</p>
             </div>
             <p class="mt-3 text-3xl font-extrabold text-amber-600 dark:text-amber-400 tabular-nums">{{ number_format($bajoStock) }}</p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($bajoStock) }}% del total</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($bajoStock) }} del total</p>
         </div>
 
         <div class="bg-white dark:bg-[#15161A] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm p-5">
@@ -167,7 +187,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Sin stock</p>
             </div>
             <p class="mt-3 text-3xl font-extrabold text-red-600 dark:text-red-400 tabular-nums">{{ number_format($sinStock) }}</p>
-            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($sinStock) }}% del total</p>
+            <p class="mt-1 text-xs text-gray-400 dark:text-gray-500 tabular-nums">{{ $porcentaje($sinStock) }} del total</p>
         </div>
     </div>
     <p class="-mt-3 text-xs text-gray-400 dark:text-gray-500">
