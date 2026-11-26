@@ -24,6 +24,20 @@
 </head>
 <body>
 
+    @php
+        // Misma redacción que la pantalla de Reportes (sin flechas: la letra del PDF no las trae).
+        $variacion = function (float $p): string {
+            if ($p > 0) {
+                return rtrim(rtrim(number_format($p, 1), '0'), '.') . '% más';
+            }
+            if ($p < 0) {
+                return rtrim(rtrim(number_format(abs($p), 1), '0'), '.') . '% menos';
+            }
+
+            return 'Sin cambio';
+        };
+    @endphp
+
     <div class="header">
         <h1>Reporte de Ventas y Estadísticas</h1>
         <p>Periodo: {{ ucfirst($periodo) }} — Del {{ $fechaInicio->format('d/m/Y') }} al {{ $fechaFin->format('d/m/Y') }}</p>
@@ -37,17 +51,17 @@
             <td>
                 <div class="metrica-label">Ingresos Totales</div>
                 <div class="metrica-valor">${{ number_format($ingresosTotales, 2) }}</div>
-                <div class="metrica-nota">{{ $porcentajeIngresos >= 0 ? '+' : '' }}{{ $porcentajeIngresos }}% {{ $etiquetaComparativa }}</div>
+                <div class="metrica-nota">{{ $variacion((float) $porcentajeIngresos) }} {{ $etiquetaComparativa }}</div>
             </td>
             <td>
                 <div class="metrica-label">Ventas Realizadas</div>
                 <div class="metrica-valor">{{ $ventasRealizadas }}</div>
-                <div class="metrica-nota">{{ $porcentajeVentas >= 0 ? '+' : '' }}{{ $porcentajeVentas }}% {{ $etiquetaComparativa }}</div>
+                <div class="metrica-nota">{{ $variacion((float) $porcentajeVentas) }} {{ $etiquetaComparativa }}</div>
             </td>
             <td>
                 <div class="metrica-label">Nuevos Clientes</div>
                 <div class="metrica-valor">{{ $clientesNuevos }}</div>
-                <div class="metrica-nota">{{ $porcentajeClientes >= 0 ? '+' : '' }}{{ $porcentajeClientes }}% {{ $etiquetaComparativa }}</div>
+                <div class="metrica-nota">{{ $variacion((float) $porcentajeClientes) }} {{ $etiquetaComparativa }}</div>
                 <div class="metrica-nota">De todo el negocio (no se separa por sucursal)</div>
             </td>
         </tr>
