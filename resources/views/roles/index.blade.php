@@ -120,6 +120,10 @@
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-white/10 tabular-nums">
                                     {{ $role->usuarios_count }} {{ $role->usuarios_count === 1 ? 'empleado' : 'empleados' }}
                                 </span>
+                                @if(! $protegido && $role->usuarios_count > 0)
+                                    <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10"
+                                          title="Cámbiales el rol a sus empleados para poder eliminarlo">En uso</span>
+                                @endif
                             </td>
 
                             <td class="px-5 py-4">
@@ -133,7 +137,10 @@
                                         </a>
 
                                         @if($role->usuarios_count > 0)
-                                            <span class="text-xs text-gray-400 dark:text-gray-500 w-20 text-right leading-tight" title="Cámbiales el rol a sus empleados para poder eliminarlo">En uso</span>
+                                            <span class="inline-flex items-center justify-center w-9 h-9 rounded-full text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                                                  title="No se puede eliminar: tiene empleados. Cámbiales el rol primero." aria-label="No se puede eliminar: tiene empleados">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </span>
                                         @else
                                             <button type="button"
                                                     @click="urlEliminar = @js(route('roles.destroy', $role->id)); nombreEliminar = @js($role->nombre); modalEliminar = true"
