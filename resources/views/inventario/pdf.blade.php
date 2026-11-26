@@ -19,7 +19,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>LLANTAS ECONOMICAS CHALCO</h1>
+        <h1>{{ mb_strtoupper(config('empresa.nombre')) }}</h1>
         <p>Reporte de Inventario - Generado el {{ $fecha }}</p>
     </div>
 
@@ -50,6 +50,6 @@
 
     <p style="font-size:10px; color:#666; margin-top:8px;">Total de productos: <strong>{{ $productos->count() }}</strong></p>
 
-    <div class="footer">Generado por Llantas Economicas POS - {{ $fecha }}</div>
+    <div class="footer">Generado por {{ config('empresa.nombre') }} - {{ $fecha }}</div>
 </body>
 </html>

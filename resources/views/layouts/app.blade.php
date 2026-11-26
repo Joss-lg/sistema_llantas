@@ -7,7 +7,9 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Sistema Llantas') }}</title>
+    <title>{{ config('empresa.nombre') }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" href="{{ asset('img/icono-ollintem.png') }}">
 
     <!-- Aplica el tema guardado ANTES de pintar la página, evita parpadeo blanco/negro -->
     <script>
@@ -103,12 +105,9 @@
                        x-transition:leave="transition ease-in duration-75"
                        x-transition:leave-start="opacity-100"
                        x-transition:leave-end="opacity-0">
-                        <img src="{{ asset('img/logo-llantas.webp') }}" alt="Llantas Económicas" class="h-8 w-auto object-contain rounded-md shrink-0">
+                        <img src="{{ asset(config('empresa.icono')) }}" alt="{{ config('empresa.nombre') }}" class="h-8 w-auto object-contain shrink-0">
                         <!-- Nombre del sistema junto al logo -->
-                        <div class="flex flex-col leading-tight whitespace-nowrap">
-                            <span class="text-[15px] font-extrabold tracking-tight text-gray-900 dark:text-white">Llantas</span>
-                            <span class="text-[15px] font-extrabold tracking-tight text-[#D32030]">Económicas</span>
-                        </div>
+                        <span class="text-[15px] font-extrabold tracking-tight text-gray-900 dark:text-white whitespace-nowrap">{{ config('empresa.nombre') }}</span>
                     </a>
 
                     <!-- Botón hamburguesa (siempre 3 líneas) -->

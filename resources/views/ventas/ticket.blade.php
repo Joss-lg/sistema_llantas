@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket #{{ $venta->folio }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400;600;700&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+    @if(config('empresa.whatsapp'))
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    @endif
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -27,13 +29,10 @@
 
         /* ── Encabezado ── */
         .logo-wrap {
-            background: #000;
-            border-radius: 6px;
-            padding: 8px 14px;
             width: fit-content;
             margin: 0 auto 10px;
         }
-        .logo-wrap img { display: block; height: 52px; width: auto; }
+        .logo-wrap img { display: block; height: 80px; width: auto; }
 
         .brand {
             font-family: 'Oswald', 'Archivo Narrow', sans-serif;
@@ -222,16 +221,18 @@
 
         {{-- Logo --}}
         <div class="logo-wrap">
-            <img src="{{ asset('img/logo-llantas.webp') }}" alt="Logo">
+            <img src="{{ asset(config('empresa.logo')) }}" alt="Logo">
         </div>
 
         {{-- Nombre del negocio --}}
-        <div class="brand">LLANTAS ECONÓMICAS</div>
+        <div class="brand">{{ mb_strtoupper(config('empresa.nombre')) }}</div>
         <div class="brand-sub">{{ mb_strtoupper($venta->sucursal->nombre ?? 'SUCURSAL') }}</div>
 
         <div class="direccion">
-            Sucursal {{ $venta->sucursal->nombre ?? $venta->sucursal_id }}<br>
-            Tel: 55-0000-0000
+            Sucursal {{ $venta->sucursal->nombre ?? $venta->sucursal_id }}
+            @if(config('empresa.telefono'))
+                <br>Tel: {{ config('empresa.telefono') }}
+            @endif
         </div>
 
         <hr class="dash">
@@ -328,20 +329,17 @@
             @endif
         </div>
 
-        {{-- QR de facturación por WhatsApp --}}
+        {{-- QR de facturación por WhatsApp (solo si la empresa configuró su número) --}}
+        @if(config('empresa.whatsapp'))
         <div class="qr-zone">
             <div id="qrcode"></div>
             <div class="qr-hint">Escanea para facturar por WhatsApp</div>
         </div>
+        @endif
 
         {{-- Pie --}}
         <div class="footer">
             <div class="gracias">Gracias por su preferencia</div>
-            <div class="links">
-                Facturación en línea<br>
-                Quejas y sugerencias
-            </div>
-            <div class="version">L-E-C v1.0</div>
         </div>
     </div>
 
@@ -351,6 +349,7 @@
         <button class="btn-cerrar" onclick="window.close()">Cerrar</button>
     </div>
 
+    @if(config('empresa.whatsapp'))
     <script>
         window.onload = function () {
             var folio = "{{ $venta->folio }}";
@@ -366,7 +365,7 @@
                 "Uso de CFDI: \n" +
                 "Código postal: ";
 
-            var url = "https://wa.me/525535690077?text=" + encodeURIComponent(mensaje);
+            var url = "https://wa.me/{{ preg_replace('/\D+/', '', config('empresa.whatsapp')) }}?text=" + encodeURIComponent(mensaje);
 
             new QRCode(document.getElementById("qrcode"), {
                 text: url,
@@ -378,5 +377,6 @@
             });
         };
     </script>
+    @endif
 </body>
 </html>

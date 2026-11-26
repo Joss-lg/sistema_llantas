@@ -90,7 +90,7 @@ class InventarioExport implements FromCollection, WithHeadings, WithStyles, With
 
                 // 2. Título principal de empresa (fila 1)
                 $sheet->mergeCells('A1:E1');
-                $sheet->setCellValue('A1', 'LLANTAS ECONÓMICAS CHALCO');
+                $sheet->setCellValue('A1', mb_strtoupper(config('empresa.nombre')));
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
                 $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('0F0F0F');
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);

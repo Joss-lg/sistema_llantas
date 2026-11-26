@@ -145,7 +145,7 @@
     {{-- PANEL IZQUIERDO --}}
     <div id="photo-panel" class="relative overflow-hidden px-8 py-12 sm:px-14 sm:py-16 lg:min-h-screen flex flex-col justify-end">
         <div id="photo-layer" class="parallax-layer absolute inset-0 h-[108%] w-[108%] -left-[4%] -top-[4%]">
-            <img src="{{ asset('img/fondo-local.webp') }}" alt="" class="h-full w-full object-cover anim-kenburns">
+            <div class="h-full w-full bg-gradient-to-br from-[#0B1B2E] via-[#0B0C0E] to-[#0A3550] anim-kenburns"></div>
         </div>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B0C0E] via-[#0B0C0E]/55 to-[#0B0C0E]/5"></div>
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#0B0C0E]/50 via-transparent to-[#0B0C0E]/30"></div>
@@ -166,6 +166,10 @@
             <span class="particle absolute left-[58%] bottom-0 h-[3px] w-[3px] rounded-full bg-white/60" style="animation-delay:1.3s; animation-duration:10s;"></span>
             <span class="particle absolute left-[74%] bottom-0 h-1 w-1 rounded-full bg-[#818CF8]/70" style="animation-delay:5.5s; animation-duration:8.5s;"></span>
             <span class="particle absolute left-[88%] bottom-0 h-[3px] w-[3px] rounded-full bg-white/70" style="animation-delay:3s; animation-duration:12s;"></span>
+        </div>
+
+        <div class="relative z-10 anim-rise mb-10">
+            <img src="{{ asset(config('empresa.logo_blanco')) }}" alt="{{ config('empresa.nombre') }}" class="h-32 w-auto object-contain">
         </div>
 
         <div class="relative z-10 anim-rise mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 backdrop-blur-sm">

@@ -136,7 +136,7 @@
     @endif
 
     <div class="footer">
-        Reporte generado automáticamente por el Sistema de Llantas — {{ $fechaGeneracion }}
+        Reporte generado automáticamente por {{ config('empresa.nombre') }} — {{ $fechaGeneracion }}
     </div>
 
 </body>
