@@ -65,7 +65,7 @@ class InventarioExport implements FromCollection, WithHeadings, WithStyles, With
             'B' => 18,
             'C' => 45,
             'D' => 12,
-            'E' => 18,
+            'E' => 22,
         ];
     }
 
@@ -92,7 +92,7 @@ class InventarioExport implements FromCollection, WithHeadings, WithStyles, With
                 $sheet->mergeCells('A1:E1');
                 $sheet->setCellValue('A1', mb_strtoupper(config('empresa.nombre')));
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16)->getColor()->setRGB('FFFFFF');
-                $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('0F0F0F');
+                $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('00406F');
                 $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getRowDimension(1)->setRowHeight(30);
 
@@ -100,20 +100,26 @@ class InventarioExport implements FromCollection, WithHeadings, WithStyles, With
                 $sheet->mergeCells('A2:E2');
                 $sheet->setCellValue('A2', "Reporte de Inventario — SUCURSAL: {$this->nombreSucursal} — " . now()->format('d/m/Y H:i'));
                 $sheet->getStyle('A2')->getFont()->setSize(10)->getColor()->setRGB('FFFFFF');
-                $sheet->getStyle('A2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D32030');
+                $sheet->getStyle('A2')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('0090C0');
                 $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getRowDimension(2)->setRowHeight(20);
 
                 // 4. Encabezados de columna (fila 3)
-                $sheet->getStyle('A3:E3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-                $sheet->getStyle('A3:E3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1A1A1A');
+                $sheet->getStyle('A3:E3')->getFont()->setBold(true)->getColor()->setRGB('00406F');
+                $sheet->getStyle('A3:E3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('EAF5FA');
                 $sheet->getStyle('A3:E3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getRowDimension(3)->setRowHeight(22);
 
+                // Fija los encabezados para que no se pierdan al bajar en una lista larga
+                $sheet->freezePane('A4');
+
                 // Si hay datos, aplicamos bordes, formatos numéricos y cebra
                 if ($totalProductos > 0) {
+                    // Filtros en los encabezados de las columnas
+                    $sheet->setAutoFilter('A3:E' . $ultimaFila);
+
                     $rango = 'A3:E' . $ultimaFila;
-                    $sheet->getStyle($rango)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('DDDDDD');
+                    $sheet->getStyle($rango)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN)->getColor()->setRGB('C9D8E1');
 
                     // Formato de moneda en Precio Público (Columna E)
                     $sheet->getStyle('E4:E' . $ultimaFila)->getNumberFormat()->setFormatCode('"$"#,##0.00');
@@ -124,7 +130,7 @@ class InventarioExport implements FromCollection, WithHeadings, WithStyles, With
                     // Filas alternadas (Gris claro)
                     for ($i = 4; $i <= $ultimaFila; $i++) {
                         if ($i % 2 == 0) {
-                            $sheet->getStyle('A' . $i . ':E' . $i)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F7F7F7');
+                            $sheet->getStyle('A' . $i . ':E' . $i)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F4F9FC');
                         }
                     }
                 }

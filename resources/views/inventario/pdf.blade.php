@@ -5,12 +5,12 @@
     <style>
         * { font-family: DejaVu Sans, sans-serif; }
         body { margin: 0; padding: 18px; color: #1a1a1a; font-size: 10px; }
-        .header { text-align: center; border-bottom: 2px solid #D32030; padding-bottom: 8px; margin-bottom: 12px; }
-        .header h1 { margin: 0; font-size: 16px; color: #0F0F0F; }
-        .header p { margin: 2px 0 0; font-size: 10px; color: #666; }
+        .header { text-align: center; border-bottom: 2px solid #0090C0; padding-bottom: 8px; margin-bottom: 12px; }
+        .header h1 { margin: 0; font-size: 16px; color: #00406F; }
+        .header p { margin: 2px 0 0; font-size: 10px; color: #5B6B77; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #0F0F0F; color: #fff; text-align: left; padding: 5px 6px; font-size: 9px; }
-        td { padding: 4px 6px; border-bottom: 1px solid #ddd; }
+        th { background: #00406F; color: #fff; text-align: left; padding: 5px 6px; font-size: 9px; }
+        td { padding: 4px 6px; border-bottom: 1px solid #C9D8E1; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .bajo { color: #D32030; font-weight: bold; }
@@ -28,9 +28,9 @@
             <tr>
                 <th style="width:18%;">Marca</th>
                 <th style="width:18%;">Medida</th>
-                <th style="width:34%;">Descripcion</th>
+                <th style="width:34%;">Descripción</th>
                 <th style="width:12%;" class="text-center">Stock</th>
-                <th style="width:18%;" class="text-right">Precio Publico</th>
+                <th style="width:18%;" class="text-right">Precio público</th>
             </tr>
         </thead>
         <tbody>
@@ -38,7 +38,7 @@
                 <tr>
                     <td>{{ $p->marca }}</td>
                     <td>{{ $p->medida }}</td>
-                    <td>{{ $p->descripcion }}</td>
+                    <td>{{ $p->descripcion ?? 'S/D' }}</td>
                     <td class="text-center {{ ($p->stock_cantidad ?? 0) < 5 ? 'bajo' : '' }}">{{ (int) ($p->stock_cantidad ?? 0) }}</td>
                     <td class="text-right">${{ number_format($p->precio_publico, 2) }}</td>
                 </tr>
