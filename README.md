@@ -461,3 +461,11 @@ Si avisan de algo, actualiza **solo** el paquete afectado
 (`composer update vendor/paquete --with-dependencies`), corre `php artisan test` y
 revisa que todo siga igual. Evita `composer update` a secas: cambia muchas versiones
 a la vez.
+
+
+### Tablas reservadas
+
+Las tablas `proveedores`, `cotizaciones`, `cotizacion_detalles` y `cuentas_pagar` existen
+en la base de datos pero todavía **no tienen pantalla** en el sistema. Están reservadas
+para funciones futuras y no son un error. No las borres: una prueba y el borrado de
+sucursales revisan `cotizaciones`.
