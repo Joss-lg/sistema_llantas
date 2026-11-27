@@ -256,7 +256,7 @@
             </table>
         </div>
 
-        @if(method_exists($cortes, 'links'))
+        @if(method_exists($cortes, 'links') && $cortes->hasPages())
             <div class="px-6 py-4 border-t border-gray-100 dark:border-white/10">
                 {{ $cortes->links() }}
             </div>
