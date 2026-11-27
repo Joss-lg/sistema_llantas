@@ -194,6 +194,25 @@ El seeder crea `admin@llantas.com` con el rol Administrador General y la sucursa
 Sucursal Principal. La contraseña sale de `ADMIN_PASSWORD` en el `.env`, o se
 genera aleatoria si esa variable está vacía.
 
+**Antes de usarlo con datos reales:** cambia la contraseña del administrador desde el
+sistema. En el `.env` del servidor real pon `APP_ENV=production` y `APP_DEBUG=false`,
+para que un error nunca muestre detalles técnicos a los usuarios.
+
+### Datos de la empresa
+
+La marca se cambia en un solo lugar: `config/empresa.php`, que lee estas variables
+del `.env`:
+
+| Variable | Qué hace |
+|---|---|
+| `APP_NAME` | Nombre que sale en el login, el menú, el ticket y los PDF (por defecto `OllinLlantas`). |
+| `EMPRESA_TELEFONO` | Teléfono que sale en el ticket. Opcional. |
+| `EMPRESA_WHATSAPP` | Número de WhatsApp para el código QR del ticket. Opcional. |
+
+Si `EMPRESA_TELEFONO` o `EMPRESA_WHATSAPP` están vacías, el ticket simplemente no muestra
+el teléfono ni el QR. El logo, el logo blanco y el icono también se definen en
+`config/empresa.php`.
+
 ---
 
 ## Dónde vive cada cosa
@@ -394,15 +413,14 @@ Si corres `php artisan config:cache`, la variable `ADMIN_PASSWORD` deja de leers
 `.env` y el seeder genera una contraseña aleatoria. No es un riesgo de seguridad,
 pero hay que tenerlo presente al preparar un servidor.
 
-### Idioma de los mensajes de validación
+### Idioma
 
-El `.env` de desarrollo tiene `APP_LOCALE=es`, pero el proyecto **no tiene la carpeta
-`lang` publicada**. Por eso los mensajes automáticos de validación de Laravel salen en
-inglés (se van al idioma de respaldo). Los mensajes escritos a mano en los
-controladores sí están en español.
+El sistema está en español. `config/app.php` usa `es` por defecto y la carpeta `lang/es`
+trae los textos de validación, acceso, paginación y contraseñas. En `.env` van
+`APP_LOCALE=es` y `APP_FALLBACK_LOCALE=es` (ya vienen así en `.env.example`).
 
-Para traducirlos habría que correr `php artisan lang:publish` e instalar los archivos
-de español.
+Si en pantalla aparece un texto como `validation.algo`, falta esa traducción en
+`lang/es/validation.php`. La prueba `IdiomaEspanolTest` vigila que esto no se rompa.
 
 ### Librerías de Excel
 
@@ -416,7 +434,30 @@ El proyecto usa **dos** y ambas son necesarias:
 Se usa `barryvdh/laravel-dompdf` en `ExportInventarioController` y en
 `ReportesController`.
 
-### Códigos QR
+### Librerías de JavaScript y códigos QR
 
-El QR del ticket de venta se genera con JavaScript desde un CDN, dentro de
-`resources/views/ventas/ticket.blade.php`. **No** usa una librería de PHP.
+Todo lo que usan las pantallas viene incluido en el proyecto; ninguna vista pide
+archivos a internet (ni CDN ni fuentes de Google): Alpine, flatpickr (calendario en
+español), Chart.js (solo en Reportes), qrcode (solo en el ticket) y las fuentes. Se
+instalan con `npm install` y se empaquetan con `npm run build`.
+
+El QR del ticket se dibuja con `resources/js/ticket.js` y solo aparece si
+`EMPRESA_WHATSAPP` tiene un número. **No** usa una librería de PHP.
+
+La prueba `SinInternetTest` avisa si alguien agrega a una vista un enlace a otro sitio.
+Los únicos permitidos son `www.w3.org` (texto interno de los iconos) y `wa.me`
+(el enlace de WhatsApp).
+
+### Revisar la seguridad de los paquetes
+
+De vez en cuando, y siempre antes de entregar:
+
+```bash
+composer audit
+npm audit
+```
+
+Si avisan de algo, actualiza **solo** el paquete afectado
+(`composer update vendor/paquete --with-dependencies`), corre `php artisan test` y
+revisa que todo siga igual. Evita `composer update` a secas: cambia muchas versiones
+a la vez.
