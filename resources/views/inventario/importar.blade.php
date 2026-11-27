@@ -115,8 +115,8 @@
                 @if($vista['sin_stock'] > 0)
                     <p>
                         <span class="font-bold text-gray-900 dark:text-white">Stock vacío:</span>
-                        {{ number_format($vista['sin_stock']) }} filas no traen stock, así que su stock no se toca.
-                        {{ number_format($vista['con_stock']) }} filas sí traen stock.
+                        {{ number_format($vista['sin_stock']) }} {{ $vista['sin_stock'] == 1 ? 'fila no trae stock, así que su stock no se toca.' : 'filas no traen stock, así que su stock no se toca.' }}
+                        {{ number_format($vista['con_stock']) }} {{ $vista['con_stock'] == 1 ? 'fila sí trae' : 'filas sí traen' }} stock.
                     </p>
                 @endif
             </div>
@@ -172,7 +172,7 @@
             <div class="{{ $tarjeta }} overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 dark:border-white/10">
                     <h2 class="text-sm font-bold text-gray-900 dark:text-white">Así se importarán las primeras filas</h2>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Muestra de {{ count($vista['muestra']) }} de {{ number_format($vista['ok']) }} filas correctas.</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Muestra de {{ count($vista['muestra']) }} de {{ number_format($vista['ok']) }} {{ $vista['ok'] == 1 ? 'fila correcta' : 'filas correctas' }}.</p>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -231,7 +231,7 @@
             @else
                 <button type="submit" name="accion" value="confirmar" :disabled="enviando"
                         class="inline-flex items-center justify-center px-7 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl transition-colors">
-                    Confirmar e importar {{ number_format($vista['ok']) }} filas
+                    Confirmar e importar {{ number_format($vista['ok']) }} {{ $vista['ok'] == 1 ? 'fila' : 'filas' }}
                 </button>
             @endif
         </form>
